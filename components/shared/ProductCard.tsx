@@ -1,22 +1,28 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface ProductCardProps {
+  id?: string | number;
   name?: string;
   description?: string;
   price?: string;
 }
 
 export default function ProductCard({
+  id = 1,
   name = "Product",
   description = "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
   price = "$4.99",
 }: ProductCardProps) {
   const [wished, setWished] = useState(false);
+  const router = useRouter();
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow group">
-
+    <div
+      className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow group cursor-pointer"
+      onClick={() => router.push(`/product/${id}`)}
+    >
       {/* Image placeholder */}
       <div className="relative bg-gray-200 aspect-square">
         <div className="absolute inset-0 flex items-center justify-center text-gray-400">
@@ -25,10 +31,10 @@ export default function ProductCard({
           </svg>
         </div>
 
-        {/* Wishlist button */}
+        {/* Wishlist button — stopPropagation so card click doesn't fire */}
         <button
-          onClick={() => setWished(!wished)}
-          className="absolute top-2 right-2 p-1.5 rounded-full bg-white/80 hover:bg-white transition-colors shadow-sm"
+          onClick={(e) => { e.stopPropagation(); setWished(!wished); }}
+          className="absolute top-2 right-2 p-1.5 rounded-full bg-white/80 hover:bg-white transition-colors shadow-sm z-10"
           aria-label="Add to wishlist"
         >
           <svg
@@ -44,11 +50,12 @@ export default function ProductCard({
 
       {/* Content */}
       <div className="p-3">
-        <h3 className="font-semibold text-gray-800 text-sm mb-1 truncate">{name}</h3>
+        <h3 className="font-semibold text-gray-800 text-sm mb-1 truncate group-hover:text-[#1a4a2e] transition-colors">{name}</h3>
         <p className="text-xs text-gray-500 mb-2 line-clamp-2 leading-relaxed">{description}</p>
         <div className="flex items-center justify-between">
           <span className="font-bold text-[#1a4a2e] text-sm">{price}</span>
           <button
+            onClick={(e) => e.stopPropagation()}
             className="bg-[#8b1a1a] hover:bg-[#6d1414] text-white rounded-full p-1.5 transition-colors"
             aria-label="Add to cart"
           >
