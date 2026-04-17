@@ -2,6 +2,7 @@
 import { Suspense } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { useCart } from "@/lib/context/CartContext";
 
 const TABS = [
   { label: "All Products",         key: "all",               href: "/explore" },
@@ -41,6 +42,8 @@ function TabsRow({ activeKey }: { activeKey: string }) {
 }
 
 export default function Navbar() {
+  const { totalItems } = useCart();
+
   return (
     <header className="sticky top-0 z-50">
       {/* ── Main bar ─────────────────────────────────────────── */}
@@ -86,14 +89,16 @@ export default function Navbar() {
 
           {/* Icons */}
           <div className="flex items-center gap-3 ml-1 shrink-0">
-            <button className="relative text-white hover:text-green-200 transition-colors" aria-label="Cart">
+            <Link href="/cart" className="relative text-white hover:text-green-200 transition-colors" aria-label="Cart">
               <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
-              <span className="absolute -top-1.5 -right-1.5 bg-[#8b1a1a] text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center leading-none">
-                3
-              </span>
-            </button>
+              {totalItems > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 bg-[#8b1a1a] text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center leading-none">
+                  {totalItems > 9 ? "9+" : totalItems}
+                </span>
+              )}
+            </Link>
             <button className="text-white hover:text-green-200 transition-colors" aria-label="Profile">
               <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
