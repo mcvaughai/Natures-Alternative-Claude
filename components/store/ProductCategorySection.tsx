@@ -6,7 +6,6 @@ interface Product {
   name: string;
   description: string;
   price: string;
-  imageUrl: string;
 }
 
 interface ProductCategorySectionProps {
@@ -26,7 +25,6 @@ export default function ProductCategorySection({ title, products }: ProductCateg
             name={p.name}
             description={p.description}
             price={p.price}
-            imageUrl={p.imageUrl}
           />
         ))}
       </div>
