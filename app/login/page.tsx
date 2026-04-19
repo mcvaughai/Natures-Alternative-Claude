@@ -2,11 +2,53 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
+const MOCK_CREDENTIALS = {
+  email: "customer@test.com",
+  password: "password123",
+  user: {
+    name: "John Doe",
+    email: "customer@test.com",
+    role: "customer",
+    loggedIn: true,
+  },
+};
+
 export default function LoginPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    // Simulate a brief network delay for realism
+    setTimeout(() => {
+      if (
+        email.trim() === MOCK_CREDENTIALS.email &&
+        password === MOCK_CREDENTIALS.password
+      ) {
+        localStorage.setItem("user", JSON.stringify(MOCK_CREDENTIALS.user));
+        router.push("/account");
+      } else {
+        setError("Invalid email or password. Please try again.");
+        setLoading(false);
+      }
+    }, 500);
+  };
+
+  const handleGuest = () => {
+    localStorage.removeItem("user");
+    router.push("/");
+  };
 
   return (
     <div className="min-h-screen bg-[#f5f0e8] flex flex-col">
@@ -22,8 +64,18 @@ export default function LoginPage() {
               <p className="text-sm font-medium text-[#1a4a2e]">Natures Alternative Market Place</p>
             </div>
 
+            {/* Error message */}
+            {error && (
+              <div className="mb-4 flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {error}
+              </div>
+            )}
+
             {/* Form */}
-            <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+            <form className="space-y-4" onSubmit={handleLogin}>
               {/* Email */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5" htmlFor="email">
@@ -33,6 +85,9 @@ export default function LoginPage() {
                   id="email"
                   type="email"
                   placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => { setEmail(e.target.value); setError(""); }}
+                  required
                   className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a4a2e]/30 focus:border-[#1a4a2e] transition"
                 />
               </div>
@@ -47,6 +102,9 @@ export default function LoginPage() {
                     id="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => { setPassword(e.target.value); setError(""); }}
+                    required
                     className="w-full border border-gray-300 rounded-xl px-4 py-2.5 pr-11 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a4a2e]/30 focus:border-[#1a4a2e] transition"
                   />
                   <button
@@ -77,9 +135,16 @@ export default function LoginPage() {
               {/* Login button */}
               <button
                 type="submit"
-                className="w-full bg-[#1a4a2e] hover:bg-[#2d6b47] text-white font-semibold py-2.5 rounded-xl transition-colors mt-2"
+                disabled={loading}
+                className="w-full bg-[#1a4a2e] hover:bg-[#2d6b47] disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-2.5 rounded-xl transition-colors mt-2 flex items-center justify-center gap-2"
               >
-                Login
+                {loading && (
+                  <svg className="w-4 h-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                  </svg>
+                )}
+                {loading ? "Signing in..." : "Login"}
               </button>
             </form>
 
@@ -91,12 +156,20 @@ export default function LoginPage() {
             </div>
 
             {/* Continue as Guest */}
-            <Link
-              href="/"
-              className="block w-full text-center border border-[#1a4a2e] text-[#1a4a2e] font-semibold py-2.5 rounded-xl hover:bg-[#1a4a2e]/5 transition-colors text-sm"
+            <button
+              type="button"
+              onClick={handleGuest}
+              className="w-full text-center border border-[#1a4a2e] text-[#1a4a2e] font-semibold py-2.5 rounded-xl hover:bg-[#1a4a2e]/5 transition-colors text-sm"
             >
               Continue as Guest
-            </Link>
+            </button>
+
+            {/* Test credentials hint */}
+            <div className="mt-5 p-3 bg-[#1a4a2e]/5 rounded-xl border border-[#1a4a2e]/10">
+              <p className="text-xs text-gray-500 font-medium mb-1">Test credentials:</p>
+              <p className="text-xs text-gray-600 font-mono">customer@test.com</p>
+              <p className="text-xs text-gray-600 font-mono">password123</p>
+            </div>
           </div>
 
           {/* Below card links */}

@@ -1,9 +1,27 @@
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import AccountSidebar from "@/components/account/AccountSidebar";
 import DashboardSection from "@/components/account/DashboardSection";
 
 export default function AccountPage() {
+  const router = useRouter();
+
+  // Guard: redirect to login if no valid session
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("user");
+      if (!stored || !JSON.parse(stored).loggedIn) {
+        router.replace("/login");
+      }
+    } catch {
+      router.replace("/login");
+    }
+  }, [router]);
+
   return (
     <div className="min-h-screen bg-[#f5f0e8] flex flex-col">
       <Navbar />

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ProductCard from "@/components/shared/ProductCard";
@@ -64,12 +65,26 @@ const RECENT_PRODUCTS = [
 
 export default function DashboardSection() {
   const router = useRouter();
+  const [firstName, setFirstName] = useState("there");
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("user");
+      if (stored) {
+        const user = JSON.parse(stored);
+        // Use just the first name for the greeting
+        setFirstName(user.name?.split(" ")[0] ?? "there");
+      }
+    } catch {
+      // keep default
+    }
+  }, []);
 
   return (
     <div className="space-y-6">
       {/* Welcome card */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-        <h2 className="text-lg font-bold text-[#1a4a2e] mb-1">Welcome back, John!</h2>
+        <h2 className="text-lg font-bold text-[#1a4a2e] mb-1">Welcome back, {firstName}!</h2>
         <p className="text-sm text-gray-500">Here is a summary of your account activity.</p>
       </div>
 
