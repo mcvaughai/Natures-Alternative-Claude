@@ -131,6 +131,7 @@ export default function Navbar() {
             <a href="#" className="hover:text-green-200 transition-colors">About us</a>
             <Link href="/explore" className="hover:text-green-200 transition-colors">Our Store</Link>
             <Link href="/seller" className="hover:text-green-200 transition-colors">Become a seller</Link>
+            <Link href="/seller/login" className="text-green-300 hover:text-white transition-colors text-xs border border-green-600 hover:border-green-300 px-2.5 py-1 rounded-lg">Seller Center</Link>
           </nav>
 
           {/* Icons */}

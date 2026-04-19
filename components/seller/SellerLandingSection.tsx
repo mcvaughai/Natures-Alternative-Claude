@@ -57,6 +57,12 @@ function Hero() {
             Learn More
           </a>
         </div>
+        <p className="mt-6 text-sm text-green-200">
+          Already a seller?{" "}
+          <Link href="/seller/login" className="text-white font-semibold underline underline-offset-2 hover:text-green-100 transition-colors">
+            Login here
+          </Link>
+        </p>
       </div>
     </section>
   );
