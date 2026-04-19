@@ -58,8 +58,6 @@ function CheckboxItem({
 }
 
 function RadioItem({
-  name,
-  value,
   checked,
   onChange,
   label,
