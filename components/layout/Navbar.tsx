@@ -130,7 +130,7 @@ export default function Navbar() {
           <nav className="hidden lg:flex items-center gap-5 text-white text-sm whitespace-nowrap">
             <a href="#" className="hover:text-green-200 transition-colors">About us</a>
             <Link href="/explore" className="hover:text-green-200 transition-colors">Our Store</Link>
-            <a href="#" className="hover:text-green-200 transition-colors">Become a seller</a>
+            <Link href="/seller" className="hover:text-green-200 transition-colors">Become a seller</Link>
           </nav>
 
           {/* Icons */}
