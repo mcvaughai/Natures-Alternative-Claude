@@ -105,6 +105,7 @@ export default function Footer() {
           <a href="#" className="hover:text-white transition-colors">FAQ</a>
         </div>
         <p className="text-green-600 text-xs mt-4">© {new Date().getFullYear()} Natures Alternative Market Place. All rights reserved.</p>
+        <a href="/admin/login" className="text-green-800 text-xs mt-2 inline-block hover:text-green-600 transition-colors">Admin</a>
       </div>
     </footer>
   );
