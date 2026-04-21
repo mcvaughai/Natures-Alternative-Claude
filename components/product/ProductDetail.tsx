@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import ProductCard from "@/components/shared/ProductCard";
+import { useCart } from "@/lib/context/CartContext";
 
 const MORE_FROM_SELLER = [
   { id: 301, name: "Product", description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit ut aliquip.", price: "$4.99" },
@@ -22,11 +23,14 @@ interface ProductDetailProps {
 
 export default function ProductDetail({ productId }: ProductDetailProps) {
   const [qty, setQty] = useState(1);
+  const [added, setAdded] = useState(false);
   const router = useRouter();
+  const { addToCart } = useCart();
 
   function handleAddToCart() {
-    // Placeholder: wire to cart context/state when ready
-    console.log(`Cart: added ${qty}× product #${productId}`);
+    addToCart({ id: productId, name: "Pancakes", description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.", price: "$23.75", quantity: qty });
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1000);
   }
 
   function handleDecrement() {
@@ -109,12 +113,23 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
           {/* Add to Cart */}
           <button
             onClick={handleAddToCart}
-            className="w-full bg-[#8b1a1a] hover:bg-[#6d1414] active:bg-[#561010] text-white py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2.5 transition-colors shadow-sm mb-6 text-base"
+            className={`w-full ${added ? "bg-[#1a4a2e] hover:bg-[#2d6b47]" : "bg-[#8b1a1a] hover:bg-[#6d1414] active:bg-[#561010]"} text-white py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2.5 transition-colors shadow-sm mb-6 text-base`}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-            </svg>
-            Add to Cart
+            {added ? (
+              <>
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                </svg>
+                Added!
+              </>
+            ) : (
+              <>
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                Add to Cart
+              </>
+            )}
           </button>
 
           {/* Store info card */}

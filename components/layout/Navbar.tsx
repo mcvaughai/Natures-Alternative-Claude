@@ -14,20 +14,16 @@ interface MockUser {
 
 const TABS = [
   { label: "All Products",         key: "all",               href: "/explore" },
-  { label: "Meat & Seafood",       key: "meat-seafood",      href: "/category/meat-seafood" },
-  { label: "Fruits & Vegetables",  key: "fruits-vegetables", href: "/category/fruits-vegetables" },
+  { label: "Meat & Seafood",       key: "meat-seafood",      href: "/explore?category=meat-seafood" },
+  { label: "Fruits & Vegetables",  key: "fruits-vegetables", href: "/explore?category=fruits-vegetables" },
 ];
 
 // Separated so Suspense can wrap just this piece (useSearchParams requirement)
 function CategoryTabs() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  let activeKey = "all";
-  if (pathname.startsWith("/category/meat-seafood")) {
-    activeKey = "meat-seafood";
-  } else if (pathname.startsWith("/category/fruits-vegetables")) {
-    activeKey = "fruits-vegetables";
-  } else if (pathname === "/explore") {
+  let activeKey = "";
+  if (pathname === "/explore") {
     activeKey = searchParams.get("category") || "all";
   }
   return <TabsRow activeKey={activeKey} />;

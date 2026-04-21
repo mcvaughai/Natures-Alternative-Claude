@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useCart } from "@/lib/context/CartContext";
 
 interface ProductCardProps {
   id?: string | number;
@@ -19,7 +20,16 @@ export default function ProductCard({
   imageUrl,
 }: ProductCardProps) {
   const [wished, setWished] = useState(false);
+  const [added, setAdded] = useState(false);
   const router = useRouter();
+  const { addToCart } = useCart();
+
+  function handleAddToCart(e: React.MouseEvent) {
+    e.stopPropagation();
+    addToCart({ id, name, description, price });
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1000);
+  }
 
   return (
     <div
@@ -67,13 +77,19 @@ export default function ProductCard({
         <div className="flex items-center justify-between">
           <span className="font-bold text-[#1a4a2e] text-sm">{price}</span>
           <button
-            onClick={(e) => e.stopPropagation()}
-            className="bg-[#8b1a1a] hover:bg-[#6d1414] text-white rounded-full p-1.5 transition-colors"
+            onClick={handleAddToCart}
+            className={`rounded-full p-1.5 transition-colors ${added ? "bg-[#1a4a2e] hover:bg-[#2d6b47]" : "bg-[#8b1a1a] hover:bg-[#6d1414]"} text-white`}
             aria-label="Add to cart"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-            </svg>
+            {added ? (
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+            )}
           </button>
         </div>
       </div>
