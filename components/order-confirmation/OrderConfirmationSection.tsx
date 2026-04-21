@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import SectionHeader from "@/components/shared/SectionHeader";
 import ProductCard from "@/components/shared/ProductCard";
@@ -78,6 +79,18 @@ function ImgPlaceholder({ className = "" }: { className?: string }) {
 function ConfirmationHero() {
   return (
     <div className="text-center py-10 px-4">
+      {/* Logo */}
+      <div className="flex justify-center mb-6">
+        <div className="bg-[#1a4a2e] rounded-xl px-6 py-3">
+          <Image
+            src="/main_logo.png"
+            alt="Natures Alternative Market Place"
+            width={160}
+            height={52}
+            className="object-contain"
+          />
+        </div>
+      </div>
       {/* Checkmark circle */}
       <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-[#1a4a2e] mb-5 shadow-lg">
         <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">

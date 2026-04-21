@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
@@ -18,11 +19,22 @@ export default function SignUpPage() {
       <main className="flex-1 flex items-center justify-center py-12 px-4">
         <div className="w-full max-w-md">
           {/* Card */}
-          <div className="bg-white rounded-2xl shadow-md p-8">
+          <div className="bg-white rounded-2xl shadow-md overflow-hidden">
+            {/* Logo bar */}
+            <div className="bg-[#1a4a2e] flex items-center justify-center py-5">
+              <Image
+                src="/main_logo.png"
+                alt="Natures Alternative Market Place"
+                width={200}
+                height={65}
+                className="object-contain"
+              />
+            </div>
+            {/* Card content */}
+            <div className="p-8">
             {/* Header */}
             <div className="text-center mb-7">
               <h1 className="text-2xl font-bold text-gray-800 mb-1">Create an Account</h1>
-              <p className="text-sm font-medium text-[#1a4a2e]">Natures Alternative Market Place</p>
             </div>
 
             {/* Form */}
@@ -240,6 +252,7 @@ export default function SignUpPage() {
             >
               Continue as Guest
             </Link>
+            </div>{/* end p-8 */}
           </div>
 
           {/* Below card links */}

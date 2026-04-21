@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 interface SellerUser { name: string; email: string; loggedIn: boolean; }
@@ -25,9 +26,15 @@ export default function SellerNavbar() {
   return (
     <header className="bg-[#1a4a2e] h-14 flex items-center px-4 sm:px-6 shrink-0 z-40 shadow-sm">
       {/* Logo */}
-      <div className="flex flex-col mr-8 shrink-0">
-        <span className="text-white font-bold text-sm leading-tight">Natures Alternative</span>
-        <span className="text-green-300 text-[11px] tracking-wide">Seller Center</span>
+      <div className="flex flex-col items-start mr-8 shrink-0">
+        <Image
+          src="/main_logo.png"
+          alt="Natures Alternative Market Place"
+          width={150}
+          height={50}
+          className="object-contain"
+        />
+        <span className="text-green-300 text-[11px] tracking-wide -mt-1">Seller Center</span>
       </div>
 
       <div className="flex-1" />

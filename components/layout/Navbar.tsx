@@ -2,6 +2,7 @@
 import { Suspense, useState, useEffect, useRef } from "react";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { useCart } from "@/lib/context/CartContext";
 
 interface MockUser {
@@ -110,17 +111,15 @@ export default function Navbar() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center gap-3">
 
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 text-white font-bold shrink-0">
-            <svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="15" cy="12" r="9" fill="none" stroke="white" strokeWidth="1.2" opacity="0.6" />
-              <path d="M15 4 C10 4 7 8 7 12 C7 16 10 19 15 20 C20 19 23 16 23 12 C23 8 20 4 15 4Z" fill="white" opacity="0.85" />
-              <line x1="15" y1="20" x2="15" y2="27" stroke="white" strokeWidth="2" strokeLinecap="round" />
-              <path d="M11 15 Q15 11 19 15" stroke="#1a4a2e" strokeWidth="1" fill="none" opacity="0.5" />
-              <path d="M12 18 Q15 14 18 18" stroke="#1a4a2e" strokeWidth="1" fill="none" opacity="0.5" />
-            </svg>
-            <span className="text-sm sm:text-[15px] leading-snug font-semibold tracking-tight max-w-[150px] sm:max-w-none">
-              Natures Alternative<br className="sm:hidden" /><span className="hidden sm:inline"> </span>Market Place
-            </span>
+          <Link href="/" className="flex items-center shrink-0">
+            <Image
+              src="/main_logo.png"
+              alt="Natures Alternative Market Place"
+              width={180}
+              height={60}
+              className="object-contain"
+              priority
+            />
           </Link>
 
           {/* Search bar */}

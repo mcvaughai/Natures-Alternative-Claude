@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 export default function Footer() {
   return (
     <footer className="bg-[#1a4a2e] text-white relative overflow-hidden mt-10">
@@ -25,14 +27,14 @@ export default function Footer() {
       <div className="relative z-10 max-w-2xl mx-auto px-8 py-14 text-center">
 
         {/* Logo */}
-        <div className="flex items-center justify-center gap-3 mb-1">
-          <svg width="38" height="38" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M15 4 C10 4 7 8 7 12 C7 16 10 19 15 20 C20 19 23 16 23 12 C23 8 20 4 15 4Z" fill="white" opacity="0.9" />
-            <line x1="15" y1="20" x2="15" y2="27" stroke="white" strokeWidth="2" strokeLinecap="round" />
-            <path d="M11 15 Q15 11 19 15" stroke="#1a4a2e" strokeWidth="1" fill="none" opacity="0.5" />
-            <path d="M12 18 Q15 14 18 18" stroke="#1a4a2e" strokeWidth="1" fill="none" opacity="0.5" />
-          </svg>
-          <span className="text-xl font-bold tracking-tight">Natures Alternative Market Place</span>
+        <div className="flex items-center justify-center mb-1">
+          <Image
+            src="/main_logo.png"
+            alt="Natures Alternative Market Place"
+            width={220}
+            height={70}
+            className="object-contain"
+          />
         </div>
         <p className="text-green-300 text-sm mb-8">Farm-fresh produce, delivered with care.</p>
 

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import StoreCard from "@/components/shared/StoreCard";
 
 // ── Hero ──────────────────────────────────────────────────────────────────────
@@ -37,6 +38,15 @@ function Hero() {
       </div>
 
       <div className="relative z-10 max-w-4xl mx-auto px-6 py-20 sm:py-28 text-center">
+        <div className="flex justify-center mb-8">
+          <Image
+            src="/main_logo.png"
+            alt="Natures Alternative Market Place"
+            width={220}
+            height={70}
+            className="object-contain"
+          />
+        </div>
         <h1 className="text-3xl sm:text-5xl font-bold text-white leading-tight mb-5">
           Sell Your Farm Products<br className="hidden sm:block" /> Directly to Consumers
         </h1>

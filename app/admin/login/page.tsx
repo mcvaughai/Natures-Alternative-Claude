@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 export default function AdminLoginPage() {
@@ -34,18 +35,22 @@ export default function AdminLoginPage() {
   return (
     <div className="min-h-screen bg-[#f5f0e8] flex flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-md p-8">
-          {/* Logo */}
+        <div className="bg-white rounded-2xl shadow-md overflow-hidden">
+          {/* Logo bar */}
+          <div className="bg-[#1a4a2e] flex flex-col items-center justify-center py-5">
+            <Image
+              src="/main_logo.png"
+              alt="Natures Alternative Market Place"
+              width={200}
+              height={65}
+              className="object-contain"
+            />
+            <span className="text-green-200 text-xs font-semibold tracking-wide mt-1">Admin Portal</span>
+          </div>
+          {/* Card content */}
+          <div className="p-8">
           <div className="text-center mb-7">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <svg width="28" height="28" viewBox="0 0 30 30" fill="none">
-                <path d="M15 4 C10 4 7 8 7 12 C7 16 10 19 15 20 C20 19 23 16 23 12 C23 8 20 4 15 4Z" fill="#1a4a2e" opacity="0.9"/>
-                <line x1="15" y1="20" x2="15" y2="27" stroke="#1a4a2e" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
-              <span className="font-bold text-gray-900 text-lg">Natures Alternative</span>
-            </div>
-            <p className="text-sm font-bold text-[#1a4a2e]">Admin Portal</p>
-            <p className="text-xs text-red-500 font-medium mt-1">Restricted Access — Authorized Personnel Only</p>
+            <p className="text-xs text-red-500 font-medium">Restricted Access — Authorized Personnel Only</p>
           </div>
 
           {/* Error */}
@@ -100,6 +105,7 @@ export default function AdminLoginPage() {
             <p className="text-xs font-mono text-gray-600">admin@test.com</p>
             <p className="text-xs font-mono text-gray-600">admin123</p>
           </div>
+          </div>{/* end p-8 */}
         </div>
 
         <div className="text-center mt-5">

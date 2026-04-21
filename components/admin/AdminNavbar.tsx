@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function AdminNavbar() {
   const router = useRouter();
@@ -26,15 +27,15 @@ export default function AdminNavbar() {
   return (
     <header className="h-14 bg-[#1a4a2e] flex items-center px-5 gap-4 shrink-0 z-30">
       {/* Logo */}
-      <div className="flex items-center gap-2.5 shrink-0">
-        <svg width="26" height="26" viewBox="0 0 30 30" fill="none">
-          <path d="M15 4 C10 4 7 8 7 12 C7 16 10 19 15 20 C20 19 23 16 23 12 C23 8 20 4 15 4Z" fill="white" opacity="0.9"/>
-          <line x1="15" y1="20" x2="15" y2="27" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-        </svg>
-        <div className="leading-none">
-          <p className="text-white font-bold text-sm">Natures Alternative</p>
-          <p className="text-green-300 text-xs font-medium">Admin Portal</p>
-        </div>
+      <div className="flex flex-col items-start shrink-0">
+        <Image
+          src="/main_logo.png"
+          alt="Natures Alternative Market Place"
+          width={150}
+          height={50}
+          className="object-contain"
+        />
+        <span className="text-green-300 text-[11px] font-medium -mt-1">Admin Portal</span>
       </div>
 
       <div className="flex-1"/>
