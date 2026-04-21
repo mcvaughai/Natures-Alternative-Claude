@@ -13,16 +13,22 @@ interface MockUser {
 
 const TABS = [
   { label: "All Products",         key: "all",               href: "/explore" },
-  { label: "Meat & Seafood",       key: "meat-seafood",      href: "/explore?category=meat-seafood" },
-  { label: "Fruits & Vegetables",  key: "fruits-vegetables", href: "/explore?category=fruits-vegetables" },
+  { label: "Meat & Seafood",       key: "meat-seafood",      href: "/category/meat-seafood" },
+  { label: "Fruits & Vegetables",  key: "fruits-vegetables", href: "/category/fruits-vegetables" },
 ];
 
 // Separated so Suspense can wrap just this piece (useSearchParams requirement)
 function CategoryTabs() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const category = searchParams.get("category") || "all";
-  const activeKey = pathname === "/explore" ? category : "all";
+  let activeKey = "all";
+  if (pathname.startsWith("/category/meat-seafood")) {
+    activeKey = "meat-seafood";
+  } else if (pathname.startsWith("/category/fruits-vegetables")) {
+    activeKey = "fruits-vegetables";
+  } else if (pathname === "/explore") {
+    activeKey = searchParams.get("category") || "all";
+  }
   return <TabsRow activeKey={activeKey} />;
 }
 
@@ -53,6 +59,7 @@ export default function Navbar() {
   const router = useRouter();
   const [user, setUser] = useState<MockUser | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Read auth state from localStorage on mount
@@ -79,6 +86,12 @@ export default function Navbar() {
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [menuOpen]);
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && searchQuery.trim()) {
+      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
 
   const handleSignOut = () => {
     localStorage.removeItem("user");
@@ -115,6 +128,9 @@ export default function Navbar() {
             <div className="relative">
               <input
                 type="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
                 placeholder="Search Available Products"
                 className="w-full rounded-full px-5 py-2 pr-10 text-sm text-gray-800 placeholder-gray-400 bg-white focus:outline-none focus:ring-2 focus:ring-green-300"
               />
@@ -128,7 +144,7 @@ export default function Navbar() {
 
           {/* Nav links */}
           <nav className="hidden lg:flex items-center gap-5 text-white text-sm whitespace-nowrap">
-            <a href="#" className="hover:text-green-200 transition-colors">About us</a>
+            <Link href="/about" className="hover:text-green-200 transition-colors">About us</Link>
             <Link href="/explore" className="hover:text-green-200 transition-colors">Our Store</Link>
             <Link href="/seller" className="hover:text-green-200 transition-colors">Become a seller</Link>
             <Link href="/seller/login" className="text-green-300 hover:text-white transition-colors text-xs border border-green-600 hover:border-green-300 px-2.5 py-1 rounded-lg">Seller Center</Link>

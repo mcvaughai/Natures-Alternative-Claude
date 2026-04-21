@@ -94,15 +94,15 @@ export default function Footer() {
 
         {/* Footer links */}
         <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-green-300">
-          <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
+          <a href="/privacy" className="hover:text-white transition-colors">Privacy Policy</a>
           <span className="text-green-700 text-xs">|</span>
-          <a href="#" className="hover:text-white transition-colors">Terms of use</a>
+          <a href="/terms" className="hover:text-white transition-colors">Terms of use</a>
           <span className="text-green-700 text-xs">|</span>
-          <a href="#" className="hover:text-white transition-colors">About Us</a>
+          <a href="/about" className="hover:text-white transition-colors">About Us</a>
           <span className="text-green-700 text-xs">|</span>
-          <a href="#" className="hover:text-white transition-colors">Contact Us</a>
+          <a href="/contact" className="hover:text-white transition-colors">Contact Us</a>
           <span className="text-green-700 text-xs">|</span>
-          <a href="#" className="hover:text-white transition-colors">FAQ</a>
+          <a href="/faq" className="hover:text-white transition-colors">FAQ</a>
         </div>
         <p className="text-green-600 text-xs mt-4">© {new Date().getFullYear()} Natures Alternative Market Place. All rights reserved.</p>
         <a href="/admin/login" className="text-green-800 text-xs mt-2 inline-block hover:text-green-600 transition-colors">Admin</a>
