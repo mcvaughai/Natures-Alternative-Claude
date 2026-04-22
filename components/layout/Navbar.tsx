@@ -14,6 +14,7 @@ interface MockUser {
 
 const TABS = [
   { label: "All Products",         key: "all",               href: "/explore" },
+  { label: "Farms",                key: "farms",             href: "/farms" },
   { label: "Meat & Poultry",       key: "meat-poultry",      href: "/category/meat-poultry" },
   { label: "Fruits & Vegetables",  key: "fruits-vegetables", href: "/category/fruits-vegetables" },
   { label: "Dairy & Eggs",         key: "dairy-eggs",        href: "/category/dairy-eggs" },
@@ -32,6 +33,8 @@ function CategoryTabs() {
   let activeKey = "";
   if (pathname === "/explore") {
     activeKey = "all";
+  } else if (pathname === "/farms") {
+    activeKey = "farms";
   } else if (pathname.startsWith("/category/")) {
     activeKey = pathname.replace("/category/", "");
   }
