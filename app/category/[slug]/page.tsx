@@ -70,7 +70,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
           <FilterProvider>
             <div className="flex flex-col lg:flex-row gap-8 items-start">
               {/* Sidebar */}
-              <FilterSidebar />
+              <FilterSidebar category={slug} />
 
               {/* Main content */}
               <div className="flex-1 min-w-0">
