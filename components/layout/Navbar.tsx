@@ -1,6 +1,6 @@
 "use client";
-import { Suspense, useState, useEffect, useRef } from "react";
-import { usePathname, useSearchParams, useRouter } from "next/navigation";
+import { useState, useEffect, useRef } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useCart } from "@/lib/context/CartContext";
@@ -14,39 +14,98 @@ interface MockUser {
 
 const TABS = [
   { label: "All Products",         key: "all",               href: "/explore" },
-  { label: "Meat & Seafood",       key: "meat-seafood",      href: "/explore?category=meat-seafood" },
-  { label: "Fruits & Vegetables",  key: "fruits-vegetables", href: "/explore?category=fruits-vegetables" },
+  { label: "Meat & Poultry",       key: "meat-poultry",      href: "/category/meat-poultry" },
+  { label: "Fruits & Vegetables",  key: "fruits-vegetables", href: "/category/fruits-vegetables" },
+  { label: "Dairy & Eggs",         key: "dairy-eggs",        href: "/category/dairy-eggs" },
+  { label: "Seafood",              key: "seafood",           href: "/category/seafood" },
+  { label: "Bakery & Breads",      key: "bakery-breads",     href: "/category/bakery-breads" },
+  { label: "Honey & Preserves",    key: "honey-preserves",   href: "/category/honey-preserves" },
+  { label: "Herbs & Botanicals",   key: "herbs-botanicals",  href: "/category/herbs-botanicals" },
 ];
 
-// Separated so Suspense can wrap just this piece (useSearchParams requirement)
+// ── Category tab bar ─────────────────────────────────────────────────────────
 function CategoryTabs() {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   let activeKey = "";
   if (pathname === "/explore") {
-    activeKey = searchParams.get("category") || "all";
+    activeKey = "all";
+  } else if (pathname.startsWith("/category/")) {
+    activeKey = pathname.replace("/category/", "");
   }
   return <TabsRow activeKey={activeKey} />;
 }
 
 function TabsRow({ activeKey }: { activeKey: string }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft]   = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  function checkScroll() {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 2);
+    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 2);
+  }
+
+  useEffect(() => {
+    checkScroll();
+    const el = scrollRef.current;
+    if (el) el.addEventListener("scroll", checkScroll, { passive: true });
+    window.addEventListener("resize", checkScroll);
+    return () => {
+      if (el) el.removeEventListener("scroll", checkScroll);
+      window.removeEventListener("resize", checkScroll);
+    };
+  }, []);
+
   return (
-    <div className="bg-white border-b border-gray-200 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex overflow-x-auto">
+    <div className="bg-white border-b border-gray-200 shadow-sm relative">
+      {/* Left scroll arrow */}
+      {canScrollLeft && (
+        <button
+          onClick={() => scrollRef.current?.scrollBy({ left: -180, behavior: "smooth" })}
+          className="absolute left-0 top-0 bottom-0 z-10 px-2 bg-gradient-to-r from-white via-white/90 to-transparent flex items-center"
+          aria-label="Scroll tabs left"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+      )}
+
+      {/* Scrollable tab list */}
+      <div
+        ref={scrollRef}
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex gap-1 overflow-x-auto py-2"
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+      >
         {TABS.map((tab) => (
           <Link
             key={tab.key}
             href={tab.href}
-            className={`px-5 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+            className={`px-4 py-1.5 text-sm font-medium whitespace-nowrap rounded-full transition-colors shrink-0 ${
               activeKey === tab.key
-                ? "border-[#1a4a2e] text-[#1a4a2e]"
-                : "border-transparent text-gray-500 hover:text-[#1a4a2e] hover:border-gray-300"
+                ? "bg-[#1a4a2e] text-white"
+                : "text-[#1a4a2e] hover:bg-[#1a4a2e]/10"
             }`}
           >
             {tab.label}
           </Link>
         ))}
       </div>
+
+      {/* Right scroll arrow */}
+      {canScrollRight && (
+        <button
+          onClick={() => scrollRef.current?.scrollBy({ left: 180, behavior: "smooth" })}
+          className="absolute right-0 top-0 bottom-0 z-10 px-2 bg-gradient-to-l from-white via-white/90 to-transparent flex items-center"
+          aria-label="Scroll tabs right"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      )}
     </div>
   );
 }
@@ -97,7 +156,6 @@ export default function Navbar() {
     router.push("/login");
   };
 
-  // First initial of the user's name for the avatar
   const initial = user?.name?.charAt(0).toUpperCase() ?? "";
 
   return (
@@ -168,11 +226,9 @@ export default function Navbar() {
                   aria-label="User menu"
                   aria-expanded={menuOpen}
                 >
-                  {/* Avatar initial circle */}
                   <div className="w-8 h-8 rounded-full bg-white/20 border-2 border-white/50 flex items-center justify-center text-white text-sm font-bold">
                     {initial}
                   </div>
-                  {/* Name — hidden on small screens */}
                   <span className="hidden sm:block text-white text-sm font-medium max-w-[100px] truncate">
                     {user.name.split(" ")[0]}
                   </span>
@@ -181,39 +237,26 @@ export default function Navbar() {
                   </svg>
                 </button>
 
-                {/* Dropdown */}
                 {menuOpen && (
                   <div className="absolute right-0 top-full mt-2 bg-white rounded-xl shadow-lg border border-gray-100 py-1 w-52 z-50">
-                    {/* User info */}
                     <div className="px-4 py-3 border-b border-gray-100">
                       <p className="text-sm font-semibold text-gray-800 truncate">{user.name}</p>
                       <p className="text-xs text-gray-500 truncate mt-0.5">{user.email}</p>
                     </div>
-                    <Link
-                      href="/account"
-                      onClick={() => setMenuOpen(false)}
-                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                    >
+                    <Link href="/account" onClick={() => setMenuOpen(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                       <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
                       My Account
                     </Link>
-                    <Link
-                      href="/account/orders"
-                      onClick={() => setMenuOpen(false)}
-                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                    >
+                    <Link href="/account/orders" onClick={() => setMenuOpen(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                       <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                       </svg>
                       My Orders
                     </Link>
                     <div className="border-t border-gray-100 mt-1 pt-1">
-                      <button
-                        onClick={handleSignOut}
-                        className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
-                      >
+                      <button onClick={handleSignOut} className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                         </svg>
@@ -234,10 +277,8 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* ── Category tabs — Suspense required for useSearchParams ─ */}
-      <Suspense fallback={<TabsRow activeKey="all" />}>
-        <CategoryTabs />
-      </Suspense>
+      {/* ── Category tabs ─────────────────────────────────────── */}
+      <CategoryTabs />
     </header>
   );
 }

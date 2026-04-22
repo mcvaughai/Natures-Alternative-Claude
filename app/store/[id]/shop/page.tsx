@@ -2,9 +2,10 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import StoreNavbar from "@/components/store/StoreNavbar";
 import ShopHeroBanner from "@/components/store/ShopHeroBanner";
-import FiltersPanel from "@/components/store/FiltersPanel";
 import ProductCategorySection from "@/components/store/ProductCategorySection";
 import Pagination from "@/components/explore/Pagination";
+import FilterSidebar, { FilterProvider, ActiveFiltersBar } from "@/components/FilterSidebar";
+import GridHeader from "@/components/explore/GridHeader";
 
 const BEST_SELLERS = [
   { id: 101, name: "Fresh Tomatoes",       description: "Vine-ripened heirloom tomatoes bursting with flavour, picked at peak ripeness.", price: "$3.99" },
@@ -55,6 +56,8 @@ const OTHER_CATEGORY = [
   { id: 316, name: "Mackerel Fillets",     description: "Freshly smoked mackerel fillets. Rich, oily, and packed with omega-3.", price: "$8.99" },
 ];
 
+const TOTAL_PRODUCTS = BEST_SELLERS.length + POULTRY_CUTS.length + OTHER_CATEGORY.length;
+
 interface PageProps {
   params: { id: string };
 }
@@ -67,22 +70,22 @@ export default function StoreShopPage({ params }: PageProps) {
       <ShopHeroBanner />
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-[200px_1fr] gap-8 items-start">
+        <FilterProvider>
+          <div className="flex flex-col lg:flex-row gap-8 items-start">
+            {/* Sidebar */}
+            <FilterSidebar />
 
-          {/* ── LEFT: Filters ── */}
-          <div className="lg:sticky lg:top-[140px]">
-            <FiltersPanel />
+            {/* Product sections */}
+            <div className="flex-1 min-w-0">
+              <ActiveFiltersBar />
+              <GridHeader resultCount={TOTAL_PRODUCTS} />
+              <ProductCategorySection title="Best Sellers"   products={BEST_SELLERS} />
+              <ProductCategorySection title="Poultry Cuts"   products={POULTRY_CUTS} />
+              <ProductCategorySection title="Meat & Seafood" products={OTHER_CATEGORY} />
+              <Pagination totalPages={6} />
+            </div>
           </div>
-
-          {/* ── RIGHT: Product sections ── */}
-          <div>
-            <ProductCategorySection title="Best Sellers"   products={BEST_SELLERS} />
-            <ProductCategorySection title="Poultry Cuts"   products={POULTRY_CUTS} />
-            <ProductCategorySection title="Meat & Seafood" products={OTHER_CATEGORY} />
-
-            <Pagination totalPages={6} />
-          </div>
-        </div>
+        </FilterProvider>
       </main>
 
       <Footer />
