@@ -21,6 +21,9 @@ const TABS = [
   { label: "Bakery & Breads",      key: "bakery-breads",     href: "/category/bakery-breads" },
   { label: "Honey & Preserves",    key: "honey-preserves",   href: "/category/honey-preserves" },
   { label: "Herbs & Botanicals",   key: "herbs-botanicals",  href: "/category/herbs-botanicals" },
+  { label: "Natural Skincare",     key: "natural-skincare",  href: "/category/natural-skincare" },
+  { label: "Candles & Home",       key: "candles-home",      href: "/category/candles-home" },
+  { label: "Natural Cleaning",     key: "natural-cleaning",  href: "/category/natural-cleaning" },
 ];
 
 // ── Category tab bar ─────────────────────────────────────────────────────────

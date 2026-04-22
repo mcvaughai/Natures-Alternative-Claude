@@ -32,7 +32,7 @@ interface FilterContextValue {
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
 const CATEGORIES = [
-  { label: "All Products",        key: "all",               count: 128 },
+  { label: "All Products",        key: "all",               count: 183 },
   { label: "Meat & Poultry",      key: "meat-poultry",      count: 34  },
   { label: "Fruits & Vegetables", key: "fruits-vegetables", count: 42  },
   { label: "Dairy & Eggs",        key: "dairy-eggs",        count: 18  },
@@ -40,6 +40,9 @@ const CATEGORIES = [
   { label: "Bakery & Breads",     key: "bakery-breads",     count: 9   },
   { label: "Honey & Preserves",   key: "honey-preserves",   count: 7   },
   { label: "Herbs & Botanicals",  key: "herbs-botanicals",  count: 6   },
+  { label: "Natural Skincare",    key: "natural-skincare",  count: 31  },
+  { label: "Candles & Home",      key: "candles-home",      count: 14  },
+  { label: "Natural Cleaning",    key: "natural-cleaning",  count: 10  },
 ];
 
 const CATEGORY_LABEL: Record<string, string> = Object.fromEntries(
@@ -54,11 +57,19 @@ const SUBCATEGORIES: Record<string, string[]> = {
   "bakery-breads":     ["Sourdough Bread", "Whole Grain Breads", "Pastries & Sweets", "Tortillas & Flatbreads", "Granola & Cereals"],
   "honey-preserves":   ["Raw Honey", "Jams & Jellies", "Fermented Foods", "Pickles & Ferments", "Sauces & Condiments", "Syrups & Sweeteners"],
   "herbs-botanicals":  ["Fresh Herbs", "Dried Herbs & Spices", "Herbal Teas", "Tinctures & Extracts", "Essential Oils"],
+  "natural-skincare":  ["Facial Care", "Body Lotions & Butters", "Lip Care", "Serums & Oils", "Soaps & Cleansers", "Scrubs & Exfoliants", "Deodorants", "Hair Care", "Baby & Kids Skincare", "Sun Care"],
+  "candles-home":      ["Beeswax Candles", "Soy Candles", "Tallow Candles", "Reed Diffusers", "Room Sprays", "Potpourri & Dried Florals", "Home Fragrance", "Beeswax Wraps", "Natural Home Decor"],
+  "natural-cleaning":  ["All Purpose Cleaners", "Dish Soap & Detergents", "Laundry Products", "Bathroom Cleaners", "Floor Cleaners", "Cleaning Concentrates", "Scrubbing Powders", "Cleaning Cloths & Tools", "Air Fresheners"],
 };
 
 const FULFILLMENT    = ["Farm Pickup", "Local Delivery", "Shipping Available", "Ready to Ship"];
 const DISTANCES      = ["Within 10 miles", "Within 25 miles", "Within 50 miles", "Within 100 miles", "Nationwide"];
-const CERTIFICATIONS = ["Certified Organic", "Regenerative Farming", "Pasture Raised", "Grass Fed & Finished", "Non GMO", "No Synthetic Pesticides", "Free Range", "Humane Certified"];
+const CERTIFICATIONS = [
+  "Certified Organic", "Regenerative Farming", "Pasture Raised", "Grass Fed & Finished",
+  "Non GMO", "No Synthetic Pesticides", "Free Range", "Humane Certified",
+  "Cruelty Free", "Vegan", "No Synthetic Fragrances", "No Parabens",
+  "No Sulfates", "Biodegradable", "Plastic Free Packaging", "Small Batch Handmade",
+];
 const AVAILABILITY   = ["In Stock Only", "On Sale / Discounted", "New Arrivals", "Seasonal Items"];
 const FARMS          = ["Example Farms", "Purple Food Crew", "Force of Nature", "W&W Farms"];
 

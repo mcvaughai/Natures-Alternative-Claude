@@ -147,6 +147,9 @@ const PRODUCT_TYPES = [
   "Honey & Preserves",
   "Baked Goods",
   "Herbs & Botanicals",
+  "Natural Skincare",
+  "Candles & Home Products",
+  "Natural Cleaning Products",
   "Other",
 ];
 const FULFILLMENT_TYPES = ["Farm Pickup", "Local Delivery", "Shipping"];

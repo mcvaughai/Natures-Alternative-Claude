@@ -21,7 +21,7 @@ const ALL_PRODUCTS: Product[] = [
   { id:8, name:"Wildflower Honey",   farm:"Blue Ridge Honey", category:"Other",                price:"$10.00", stock:0,  status:"Removed",       added:"Oct 20, 2024" },
 ];
 
-const CATEGORIES = ["All Categories","Baked Goods","Dairy & Eggs","Fruits & Vegetables","Herbs & Botanicals","Meat & Poultry","Other"];
+const CATEGORIES = ["All Categories","Baked Goods","Candles & Home","Dairy & Eggs","Fruits & Vegetables","Herbs & Botanicals","Meat & Poultry","Natural Cleaning","Natural Skincare","Other","Seafood"];
 const FARMS      = ["All Farms","Example Farms","Blue Ridge Honey","Green Valley Farm","Sunrise Organics","Heritage Acres"];
 
 const STATUS_STYLES: Record<ProdStatus, string> = {
