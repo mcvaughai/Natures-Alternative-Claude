@@ -54,7 +54,7 @@ const SUBCATEGORIES: Record<string, string[]> = {
   "fruits-vegetables": ["Fresh Vegetables", "Fresh Fruits", "Leafy Greens", "Root Vegetables", "Microgreens & Sprouts", "Mushrooms", "Seasonal Produce"],
   "dairy-eggs":        ["Raw Milk", "Pasteurized Milk", "Cheese", "Butter & Cream", "Yogurt & Kefir", "Chicken Eggs", "Duck & Quail Eggs"],
   "seafood":           ["Fresh Fish", "Shellfish", "Smoked Fish", "Dried & Preserved Seafood"],
-  "bakery-breads":     ["Sourdough Bread", "Whole Grain Breads", "Pastries & Sweets", "Tortillas & Flatbreads", "Granola & Cereals"],
+  "bakery-breads":     ["Sourdough Bread", "Whole Grain Breads", "Pastries & Sweets", "Tortillas & Flatbreads", "Granola & Cereals", "Stone Ground Flour"],
   "honey-preserves":   ["Raw Honey", "Jams & Jellies", "Fermented Foods", "Pickles & Ferments", "Sauces & Condiments", "Syrups & Sweeteners"],
   "herbs-botanicals":  ["Fresh Herbs", "Dried Herbs & Spices", "Herbal Teas", "Tinctures & Extracts", "Essential Oils"],
   "natural-skincare":  ["Facial Care", "Body Lotions & Butters", "Lip Care", "Serums & Oils", "Soaps & Cleansers", "Scrubs & Exfoliants", "Deodorants", "Hair Care", "Baby & Kids Skincare", "Sun Care"],

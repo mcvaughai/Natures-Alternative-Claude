@@ -146,6 +146,7 @@ const PRODUCT_TYPES = [
   "Seafood",
   "Honey & Preserves",
   "Baked Goods",
+  "Stone Ground Flour",
   "Herbs & Botanicals",
   "Natural Skincare",
   "Candles & Home Products",

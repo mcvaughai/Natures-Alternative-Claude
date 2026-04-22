@@ -3,7 +3,7 @@
 import { useState } from "react";
 import SellerLayout from "@/components/seller/SellerLayout";
 
-const CATEGORIES = ["Fruits & Vegetables","Meat & Poultry","Dairy & Eggs","Seafood","Baked Goods","Herbs & Botanicals","Natural Skincare","Candles & Home","Natural Cleaning","Other"];
+const CATEGORIES = ["Fruits & Vegetables","Meat & Poultry","Dairy & Eggs","Seafood","Baked Goods","Stone Ground Flour","Herbs & Botanicals","Natural Skincare","Candles & Home","Natural Cleaning","Other"];
 const FILTER_TABS = ["All Products","Active","Draft","Out of Stock"] as const;
 type FilterTab = (typeof FILTER_TABS)[number];
 
