@@ -40,6 +40,13 @@ const NAV_ITEMS = [
     ),
   },
   {
+    label: "Auto Harvest",
+    href: "/account/auto-harvest",
+    icon: (
+      <span className="text-sm leading-none">🌾</span>
+    ),
+  },
+  {
     label: "Saved Addresses",
     href: "/account/addresses",
     icon: (
