@@ -2,19 +2,17 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/authContext";
-import { signOut } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
 
 export default function SellerNavbar() {
-  const router = useRouter();
   const { sellerProfile } = useAuth();
 
   const sellerName = sellerProfile?.farm_name ?? "Seller";
 
   const handleLogout = async () => {
-    await signOut();
-    router.push("/seller/login");
+    await supabase.auth.signOut();
+    window.location.href = "/seller/login";
   };
 
   return (

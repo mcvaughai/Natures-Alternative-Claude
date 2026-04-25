@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { signOut } from "@/lib/auth";
+import { usePathname } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 
 const NAV = [
   {
@@ -92,11 +92,10 @@ const NAV = [
 
 export default function AdminSidebar() {
   const pathname = usePathname();
-  const router = useRouter();
 
   const handleLogout = async () => {
-    await signOut();
-    router.push("/admin/login");
+    await supabase.auth.signOut();
+    window.location.href = "/admin/login";
   };
 
   const isActive = (href: string) =>

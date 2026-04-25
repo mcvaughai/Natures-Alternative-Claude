@@ -1,8 +1,10 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AdminLayout from "@/components/admin/AdminLayout";
+import { supabase } from "@/lib/supabase";
 
 const PENDING_APPS = [
   { farm: "Green Valley Farm",  owner: "John Smith",    location: "Austin, TX",  date: "Dec 10, 2024" },
@@ -52,6 +54,38 @@ function StatCard({ label, value, sub, color = "text-[#1a4a2e]", trend, urgent }
 export default function AdminDashboardPage() {
   const router = useRouter();
   const today = new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+
+  // Belt-and-suspenders: verify admin session directly on mount
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      window.location.href = "/admin/login";
+    }, 3000);
+
+    async function verifyAdmin() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        clearTimeout(timeout);
+        window.location.href = "/admin/login";
+        return;
+      }
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", session.user.id)
+        .single();
+      clearTimeout(timeout);
+      if (profile?.role !== "admin") {
+        window.location.href = "/admin/login";
+      }
+    }
+
+    verifyAdmin().catch(() => {
+      clearTimeout(timeout);
+      window.location.href = "/admin/login";
+    });
+
+    return () => clearTimeout(timeout);
+  }, []);
 
   return (
     <AdminLayout>

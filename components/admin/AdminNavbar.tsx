@@ -1,13 +1,11 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/lib/authContext";
-import { signOut } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
 
 export default function AdminNavbar() {
-  const router = useRouter();
   const { userProfile } = useAuth();
 
   const name = userProfile
@@ -15,8 +13,8 @@ export default function AdminNavbar() {
     : "Admin";
 
   const handleLogout = async () => {
-    await signOut();
-    router.push("/admin/login");
+    await supabase.auth.signOut();
+    window.location.href = "/admin/login";
   };
 
   return (

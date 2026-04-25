@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useCart } from "@/lib/context/CartContext";
 import { useAuth } from "@/lib/authContext";
-import { signOut } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
 
 const TABS = [
   { label: "All Products",         key: "all",               href: "/explore" },
@@ -138,9 +138,8 @@ export default function Navbar() {
   };
 
   const handleSignOut = async () => {
-    await signOut();
-    setMenuOpen(false);
-    router.push("/");
+    await supabase.auth.signOut();
+    window.location.href = "/";
   };
 
   const displayName = userProfile

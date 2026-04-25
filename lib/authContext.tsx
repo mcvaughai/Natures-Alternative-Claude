@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
 import {
@@ -19,6 +19,7 @@ interface AuthContextValue {
   sellerProfile: SellerProfile | null;
   loading: boolean;
   refreshProfile: () => Promise<void>;
+  signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue>({
@@ -28,6 +29,7 @@ const AuthContext = createContext<AuthContextValue>({
   sellerProfile: null,
   loading: true,
   refreshProfile: async () => {},
+  signOut: async () => {},
 });
 
 // ─── Provider ────────────────────────────────────────────────────────────────
@@ -48,35 +50,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSellerProfile(seller);
   }
 
-  async function refreshProfile() {
-    if (user) {
-      await loadProfiles(user.id);
+  const refreshProfile = useCallback(async () => {
+    const { data: { user: u } } = await supabase.auth.getUser();
+    if (u) await loadProfiles(u.id);
+  }, []);
+
+  const signOut = useCallback(async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      // Ignore signOut errors — still clear state
     }
-  }
+    setUser(null);
+    setSession(null);
+    setUserProfile(null);
+    setSellerProfile(null);
+    window.location.href = "/";
+  }, []);
 
   useEffect(() => {
-    // Safety net: never spin forever — force loading=false after 3 seconds
-    const maxLoadTimeout = setTimeout(() => setLoading(false), 3000);
-
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
-      setSession(s);
-      setUser(s?.user ?? null);
-      if (s?.user) {
-        loadProfiles(s.user.id).finally(() => {
-          clearTimeout(maxLoadTimeout);
-          setLoading(false);
-        });
-      } else {
-        clearTimeout(maxLoadTimeout);
-        setLoading(false);
-      }
-    }).catch(() => {
-      clearTimeout(maxLoadTimeout);
+    // Hard cap: loading must resolve within 3 seconds no matter what
+    const maxTimeout = setTimeout(() => {
       setLoading(false);
-    });
+    }, 3000);
 
-    // Listen for auth changes
+    // Get initial session from Supabase (reads from local storage — fast)
+    supabase.auth.getSession()
+      .then(({ data: { session: s } }) => {
+        setSession(s);
+        setUser(s?.user ?? null);
+        if (s?.user) {
+          loadProfiles(s.user.id).finally(() => {
+            clearTimeout(maxTimeout);
+            setLoading(false);
+          });
+        } else {
+          clearTimeout(maxTimeout);
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        clearTimeout(maxTimeout);
+        setLoading(false);
+      });
+
+    // Keep state in sync with Supabase auth events (sign in, sign out, token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, s) => {
         setSession(s);
@@ -87,19 +105,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUserProfile(null);
           setSellerProfile(null);
         }
-        clearTimeout(maxLoadTimeout);
+        clearTimeout(maxTimeout);
         setLoading(false);
       }
     );
 
     return () => {
       subscription.unsubscribe();
-      clearTimeout(maxLoadTimeout);
+      clearTimeout(maxTimeout);
     };
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, session, userProfile, sellerProfile, loading, refreshProfile }}>
+    <AuthContext.Provider value={{ user, session, userProfile, sellerProfile, loading, refreshProfile, signOut }}>
       {children}
     </AuthContext.Provider>
   );

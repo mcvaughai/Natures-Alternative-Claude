@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/authContext";
-import { signOut } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
 
 const NAV_ITEMS = [
   {
@@ -74,14 +74,13 @@ const NAV_ITEMS = [
 
 export default function SellerSidebar() {
   const pathname = usePathname();
-  const router = useRouter();
   const { sellerProfile } = useAuth();
 
   const sellerName = sellerProfile?.farm_name ?? "My Farm";
 
   const handleLogout = async () => {
-    await signOut();
-    router.push("/seller/login");
+    await supabase.auth.signOut();
+    window.location.href = "/seller/login";
   };
 
   return (

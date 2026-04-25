@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useAuth } from "@/lib/authContext";
-import { signOut } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
 
 const NAV_ITEMS = [
   {
@@ -74,8 +74,8 @@ export default function AccountSidebar() {
   }, [loading, user, router]);
 
   const handleLogout = async () => {
-    await signOut();
-    router.push("/login");
+    await supabase.auth.signOut();
+    window.location.href = "/login";
   };
 
   const displayName = userProfile

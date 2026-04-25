@@ -1,31 +1,54 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import AdminNavbar from "./AdminNavbar";
 import AdminSidebar from "./AdminSidebar";
-import { useAuth } from "@/lib/authContext";
+import { supabase } from "@/lib/supabase";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
-  const { user, userProfile, loading } = useAuth();
+  const [authorized, setAuthorized] = useState(false);
 
-  // Redirect when auth resolves and user is not an admin
   useEffect(() => {
-    if (loading) return;
-    if (!user || userProfile?.role !== "admin") {
-      router.replace("/admin/login");
+    // Hard 3-second timeout: if auth check hasn't finished, redirect to login
+    const timeout = setTimeout(() => {
+      window.location.href = "/admin/login";
+    }, 3000);
+
+    async function checkAuth() {
+      // Check for an active session
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        clearTimeout(timeout);
+        window.location.href = "/admin/login";
+        return;
+      }
+
+      // Query profiles table directly to verify admin role
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", session.user.id)
+        .single();
+
+      clearTimeout(timeout);
+
+      if (profile?.role === "admin") {
+        setAuthorized(true);
+      } else {
+        window.location.href = "/admin/login";
+      }
     }
-  }, [loading, user, userProfile, router]);
 
-  // Safety timeout: if still loading after 3s, redirect to login
-  useEffect(() => {
-    if (!loading) return;
-    const timeout = setTimeout(() => router.replace("/admin/login"), 3000);
+    checkAuth().catch(() => {
+      clearTimeout(timeout);
+      window.location.href = "/admin/login";
+    });
+
     return () => clearTimeout(timeout);
-  }, [loading, router]);
+  }, []);
 
-  if (loading || !user || userProfile?.role !== "admin") {
+  if (!authorized) {
     return (
       <div className="min-h-screen bg-[#f5f0e8] flex items-center justify-center">
         <div className="w-8 h-8 rounded-full border-2 border-[#1a4a2e] border-t-transparent animate-spin"/>
