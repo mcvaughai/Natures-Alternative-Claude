@@ -1,42 +1,27 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 
 // ── Shared primitives ─────────────────────────────────────────────────────────
 const inputCls =
   "w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a4a2e]/30 focus:border-[#1a4a2e] transition";
 
-function Field({
-  label,
-  id,
-  optional,
-  children,
-}: {
-  label: string;
-  id?: string;
-  optional?: boolean;
-  children: React.ReactNode;
+function Field({ label, id, optional, children }: {
+  label: string; id?: string; optional?: boolean; children: React.ReactNode;
 }) {
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 mb-1.5" htmlFor={id}>
-        {label}
-        {optional && <span className="text-gray-400 font-normal"> (optional)</span>}
+        {label}{optional && <span className="text-gray-400 font-normal"> (optional)</span>}
       </label>
       {children}
     </div>
   );
 }
 
-function CheckboxItem({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: (v: boolean) => void;
+function CheckboxItem({ label, checked, onChange }: {
+  label: string; checked: boolean; onChange: (v: boolean) => void;
 }) {
   return (
     <label className="flex items-center gap-3 cursor-pointer group">
@@ -57,16 +42,8 @@ function CheckboxItem({
   );
 }
 
-function RadioItem({
-  checked,
-  onChange,
-  label,
-}: {
-  name: string;
-  value: string;
-  checked: boolean;
-  onChange: () => void;
-  label: string;
+function RadioItem({ checked, onChange, label }: {
+  name: string; value: string; checked: boolean; onChange: () => void; label: string;
 }) {
   return (
     <label className="flex items-center gap-3 cursor-pointer">
@@ -94,7 +71,7 @@ const US_STATES = [
   "Virginia","Washington","West Virginia","Wisconsin","Wyoming",
 ];
 
-// ── Progress indicator ────────────────────────────────────────────────────────
+// ── Progress bar ──────────────────────────────────────────────────────────────
 const STEPS = ["Farm Info", "Farming Practices", "Agreement"];
 
 function ProgressBar({ current }: { current: number }) {
@@ -107,22 +84,14 @@ function ProgressBar({ current }: { current: number }) {
         return (
           <div key={label} className="flex items-center">
             <div className="flex flex-col items-center">
-              <div
-                className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-colors ${
-                  done
-                    ? "bg-[#1a4a2e] border-[#1a4a2e] text-white"
-                    : active
-                    ? "bg-[#1a4a2e] border-[#1a4a2e] text-white"
-                    : "border-gray-300 text-gray-400 bg-white"
-                }`}
-              >
+              <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-colors ${
+                done || active ? "bg-[#1a4a2e] border-[#1a4a2e] text-white" : "border-gray-300 text-gray-400 bg-white"
+              }`}>
                 {done ? (
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                   </svg>
-                ) : (
-                  stepNum
-                )}
+                ) : stepNum}
               </div>
               <span className={`text-xs mt-1.5 font-medium whitespace-nowrap ${active ? "text-[#1a4a2e]" : "text-gray-400"}`}>
                 {label}
@@ -138,61 +107,94 @@ function ProgressBar({ current }: { current: number }) {
   );
 }
 
+// ── Form data (maps 1-to-1 with seller_applications columns) ──────────────────
+interface FormData {
+  farmName: string;
+  ownerName: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  state: string;
+  zip: string;
+  website: string;
+  productTypes: string[];
+  fulfillmentMethods: string[];
+  farmingPractices: string;
+  usesSyntheticPesticides: string;  // "yes" | "no" | ""
+  sellsGmoProducts: string;
+  practicesMonocrop: string;
+  isCertifiedOrganic: string;
+  organicCertification: string;
+  yearsFarming: string;
+  uniqueDescription: string;
+}
+
+const INITIAL_FORM: FormData = {
+  farmName: "", ownerName: "", email: "", phone: "",
+  address: "", city: "", state: "", zip: "", website: "",
+  productTypes: [], fulfillmentMethods: [],
+  farmingPractices: "",
+  usesSyntheticPesticides: "", sellsGmoProducts: "", practicesMonocrop: "",
+  isCertifiedOrganic: "", organicCertification: "",
+  yearsFarming: "", uniqueDescription: "",
+};
+
 // ── Step 1: Farm Information ──────────────────────────────────────────────────
 const PRODUCT_TYPES = [
-  "Fruits & Vegetables",
-  "Meat & Poultry",
-  "Dairy & Eggs",
-  "Seafood",
-  "Honey & Preserves",
-  "Baked Goods",
-  "Stone Ground Flour",
-  "Herbs & Botanicals",
-  "Natural Skincare",
-  "Candles & Home Products",
-  "Natural Cleaning Products",
-  "Other",
+  "Fruits & Vegetables", "Meat & Poultry", "Dairy & Eggs", "Seafood",
+  "Honey & Preserves", "Baked Goods", "Stone Ground Flour", "Herbs & Botanicals",
+  "Natural Skincare", "Candles & Home Products", "Natural Cleaning Products", "Other",
 ];
 const FULFILLMENT_TYPES = ["Farm Pickup", "Local Delivery", "Shipping"];
 
-function Step1({ onNext }: { onNext: () => void }) {
-  const [products, setProducts] = useState<Record<string, boolean>>({});
-  const [fulfillment, setFulfillment] = useState<Record<string, boolean>>({});
-  const [otherText, setOtherText] = useState("");
+function toggle(arr: string[], item: string): string[] {
+  return arr.includes(item) ? arr.filter(x => x !== item) : [...arr, item];
+}
 
-  const toggleProduct = (p: string) =>
-    setProducts((prev) => ({ ...prev, [p]: !prev[p] }));
-  const toggleFulfillment = (f: string) =>
-    setFulfillment((prev) => ({ ...prev, [f]: !prev[f] }));
+function Step1({ data, update, onNext }: {
+  data: FormData;
+  update: (f: Partial<FormData>) => void;
+  onNext: () => void;
+}) {
+  const [otherText, setOtherText] = useState("");
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8 space-y-5">
       <h2 className="text-lg font-bold text-gray-900">Farm Information</h2>
 
       <Field label="Farm / Business Name" id="farmName">
-        <input id="farmName" type="text" placeholder="e.g. Green Valley Farm" className={inputCls} />
+        <input id="farmName" type="text" placeholder="e.g. Green Valley Farm" className={inputCls}
+          value={data.farmName} onChange={e => update({ farmName: e.target.value })} />
       </Field>
-      <Field label="Your Full Name" id="fullName">
-        <input id="fullName" type="text" placeholder="Jane Doe" className={inputCls} />
+      <Field label="Your Full Name" id="ownerName">
+        <input id="ownerName" type="text" placeholder="Jane Doe" className={inputCls}
+          value={data.ownerName} onChange={e => update({ ownerName: e.target.value })} />
       </Field>
       <Field label="Email Address" id="email">
-        <input id="email" type="email" placeholder="you@example.com" className={inputCls} />
+        <input id="email" type="email" placeholder="you@example.com" className={inputCls}
+          value={data.email} onChange={e => update({ email: e.target.value })} />
       </Field>
       <Field label="Phone Number" id="phone">
-        <input id="phone" type="tel" placeholder="+1 (555) 000-0000" className={inputCls} />
+        <input id="phone" type="tel" placeholder="+1 (555) 000-0000" className={inputCls}
+          value={data.phone} onChange={e => update({ phone: e.target.value })} />
       </Field>
       <Field label="Farm Street Address" id="address">
-        <input id="address" type="text" placeholder="123 Farm Road" className={inputCls} />
+        <input id="address" type="text" placeholder="123 Farm Road" className={inputCls}
+          value={data.address} onChange={e => update({ address: e.target.value })} />
       </Field>
+
       <div className="grid grid-cols-3 gap-3">
         <Field label="City" id="city">
-          <input id="city" type="text" placeholder="Austin" className={inputCls} />
+          <input id="city" type="text" placeholder="Austin" className={inputCls}
+            value={data.city} onChange={e => update({ city: e.target.value })} />
         </Field>
         <Field label="State" id="state">
           <div className="relative">
-            <select id="state" defaultValue="" className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-[#1a4a2e]/30 focus:border-[#1a4a2e] transition appearance-none">
-              <option value="" disabled>State</option>
-              {US_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
+            <select id="state" className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-[#1a4a2e]/30 focus:border-[#1a4a2e] transition appearance-none"
+              value={data.state} onChange={e => update({ state: e.target.value })}>
+              <option value="">State</option>
+              {US_STATES.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
             <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
               <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -202,47 +204,45 @@ function Step1({ onNext }: { onNext: () => void }) {
           </div>
         </Field>
         <Field label="Zip Code" id="zip">
-          <input id="zip" type="text" placeholder="78701" maxLength={10} className={inputCls} />
+          <input id="zip" type="text" placeholder="78701" maxLength={10} className={inputCls}
+            value={data.zip} onChange={e => update({ zip: e.target.value })} />
         </Field>
       </div>
+
       <Field label="Farm Website or Social Media" id="website" optional>
-        <input id="website" type="url" placeholder="https://yourfarm.com" className={inputCls} />
+        <input id="website" type="url" placeholder="https://yourfarm.com" className={inputCls}
+          value={data.website} onChange={e => update({ website: e.target.value })} />
       </Field>
 
-      {/* Product types */}
       <div>
         <p className="text-sm font-medium text-gray-700 mb-3">What types of products do you sell?</p>
         <div className="grid grid-cols-2 gap-2.5">
-          {PRODUCT_TYPES.map((p) => (
-            <CheckboxItem key={p} label={p} checked={!!products[p]} onChange={() => toggleProduct(p)} />
+          {PRODUCT_TYPES.map(p => (
+            <CheckboxItem key={p} label={p}
+              checked={data.productTypes.includes(p)}
+              onChange={() => update({ productTypes: toggle(data.productTypes, p) })} />
           ))}
         </div>
-        {products["Other"] && (
-          <input
-            type="text"
-            value={otherText}
-            onChange={(e) => setOtherText(e.target.value)}
-            placeholder="Please describe..."
-            className={`${inputCls} mt-2`}
-          />
+        {data.productTypes.includes("Other") && (
+          <input type="text" value={otherText} onChange={e => setOtherText(e.target.value)}
+            placeholder="Please describe..." className={`${inputCls} mt-2`} />
         )}
       </div>
 
-      {/* Fulfillment */}
       <div>
         <p className="text-sm font-medium text-gray-700 mb-3">How do you currently fulfill orders?</p>
         <div className="space-y-2.5">
-          {FULFILLMENT_TYPES.map((f) => (
-            <CheckboxItem key={f} label={f} checked={!!fulfillment[f]} onChange={() => toggleFulfillment(f)} />
+          {FULFILLMENT_TYPES.map(f => (
+            <CheckboxItem key={f} label={f}
+              checked={data.fulfillmentMethods.includes(f)}
+              onChange={() => update({ fulfillmentMethods: toggle(data.fulfillmentMethods, f) })} />
           ))}
         </div>
       </div>
 
       <div className="pt-2">
-        <button
-          onClick={onNext}
-          className="w-full bg-[#1a4a2e] hover:bg-[#2d6b47] text-white font-semibold py-2.5 rounded-xl transition-colors"
-        >
+        <button onClick={onNext}
+          className="w-full bg-[#1a4a2e] hover:bg-[#2d6b47] text-white font-semibold py-2.5 rounded-xl transition-colors">
           Next Step
         </button>
       </div>
@@ -251,67 +251,57 @@ function Step1({ onNext }: { onNext: () => void }) {
 }
 
 // ── Step 2: Farming Practices ─────────────────────────────────────────────────
-type YesNo = "yes" | "no" | "";
-
-function Step2({ onBack, onNext }: { onBack: () => void; onNext: () => void }) {
-  const [synthetic, setSynthetic] = useState<YesNo>("");
-  const [gmo, setGmo] = useState<YesNo>("");
-  const [monocrop, setMonocrop] = useState<YesNo>("");
-  const [organic, setOrganic] = useState<YesNo>("");
-  const [certName, setCertName] = useState("");
-
+function Step2({ data, update, onBack, onNext }: {
+  data: FormData;
+  update: (f: Partial<FormData>) => void;
+  onBack: () => void;
+  onNext: () => void;
+}) {
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8 space-y-5">
       <h2 className="text-lg font-bold text-gray-900">Your Farming Practices</h2>
 
-      <Field label="Describe your farming practices in detail:" id="practices">
-        <textarea
-          id="practices"
-          rows={4}
+      <Field label="Describe your farming practices in detail:" id="farmingPractices">
+        <textarea id="farmingPractices" rows={4}
           placeholder="Tell us about your soil care, crop rotation, water usage, pest management and overall approach to farming..."
           className={`${inputCls} resize-none`}
-        />
+          value={data.farmingPractices} onChange={e => update({ farmingPractices: e.target.value })} />
       </Field>
 
-      {/* Yes/No questions */}
       {([
-        { q: "Do you use synthetic pesticides or herbicides?", state: synthetic, set: setSynthetic },
-        { q: "Do you grow or sell any GMO products?",          state: gmo,       set: setGmo       },
-        { q: "Do you practice monocrop agriculture?",          state: monocrop,  set: setMonocrop  },
-      ] as const).map(({ q, state, set }) => (
-        <div key={q}>
+        { q: "Do you use synthetic pesticides or herbicides?", key: "usesSyntheticPesticides" as const },
+        { q: "Do you grow or sell any GMO products?",          key: "sellsGmoProducts"         as const },
+        { q: "Do you practice monocrop agriculture?",          key: "practicesMonocrop"         as const },
+      ]).map(({ q, key }) => (
+        <div key={key}>
           <p className="text-sm font-medium text-gray-700 mb-2.5">{q}</p>
           <div className="flex gap-6">
-            <RadioItem name={q} value="yes" checked={state === "yes"} onChange={() => set("yes")} label="Yes" />
-            <RadioItem name={q} value="no"  checked={state === "no"}  onChange={() => set("no")}  label="No"  />
+            <RadioItem name={key} value="yes" checked={data[key] === "yes"} onChange={() => update({ [key]: "yes" })} label="Yes" />
+            <RadioItem name={key} value="no"  checked={data[key] === "no"}  onChange={() => update({ [key]: "no"  })} label="No"  />
           </div>
         </div>
       ))}
 
-      {/* Organic certification */}
       <div>
         <p className="text-sm font-medium text-gray-700 mb-2.5">Are you certified organic?</p>
         <div className="flex gap-6 mb-3">
-          <RadioItem name="organic" value="yes" checked={organic === "yes"} onChange={() => setOrganic("yes")} label="Yes" />
-          <RadioItem name="organic" value="no"  checked={organic === "no"}  onChange={() => setOrganic("no")}  label="No"  />
+          <RadioItem name="isCertifiedOrganic" value="yes" checked={data.isCertifiedOrganic === "yes"} onChange={() => update({ isCertifiedOrganic: "yes" })} label="Yes" />
+          <RadioItem name="isCertifiedOrganic" value="no"  checked={data.isCertifiedOrganic === "no"}  onChange={() => update({ isCertifiedOrganic: "no"  })} label="No"  />
         </div>
-        {organic === "yes" && (
-          <input
-            type="text"
-            placeholder="Which certification? (e.g. USDA Organic, Certified Naturally Grown)"
-            value={certName}
-            onChange={(e) => setCertName(e.target.value)}
-            className={inputCls}
-          />
+        {data.isCertifiedOrganic === "yes" && (
+          <input type="text" placeholder="Which certification? (e.g. USDA Organic, Certified Naturally Grown)"
+            value={data.organicCertification} onChange={e => update({ organicCertification: e.target.value })}
+            className={inputCls} />
         )}
       </div>
 
-      {/* Years farming */}
-      <Field label="How long have you been farming?" id="years">
+      <Field label="How long have you been farming?" id="yearsFarming">
         <div className="relative">
-          <select id="years" defaultValue="" className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-[#1a4a2e]/30 focus:border-[#1a4a2e] transition appearance-none">
-            <option value="" disabled>Select...</option>
-            {["Less than 1 year","1–3 years","3–5 years","5–10 years","10+ years"].map((o) => (
+          <select id="yearsFarming"
+            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-[#1a4a2e]/30 focus:border-[#1a4a2e] transition appearance-none"
+            value={data.yearsFarming} onChange={e => update({ yearsFarming: e.target.value })}>
+            <option value="">Select...</option>
+            {["Less than 1 year","1–3 years","3–5 years","5–10 years","10+ years"].map(o => (
               <option key={o} value={o}>{o}</option>
             ))}
           </select>
@@ -323,16 +313,13 @@ function Step2({ onBack, onNext }: { onBack: () => void; onNext: () => void }) {
         </div>
       </Field>
 
-      <Field label="Tell us what makes your farm unique:" id="unique">
-        <textarea
-          id="unique"
-          rows={3}
+      <Field label="Tell us what makes your farm unique:" id="uniqueDescription">
+        <textarea id="uniqueDescription" rows={3}
           placeholder="Share your story, your values, and what sets your farm apart..."
           className={`${inputCls} resize-none`}
-        />
+          value={data.uniqueDescription} onChange={e => update({ uniqueDescription: e.target.value })} />
       </Field>
 
-      {/* File upload */}
       <div>
         <p className="text-sm font-medium text-gray-700 mb-2">
           Upload photos of your farm <span className="text-gray-400 font-normal">(optional)</span>
@@ -348,16 +335,12 @@ function Step2({ onBack, onNext }: { onBack: () => void; onNext: () => void }) {
       </div>
 
       <div className="flex gap-3 pt-2">
-        <button
-          onClick={onBack}
-          className="flex-1 border border-gray-300 text-gray-600 font-semibold py-2.5 rounded-xl hover:bg-gray-50 transition-colors"
-        >
+        <button onClick={onBack}
+          className="flex-1 border border-gray-300 text-gray-600 font-semibold py-2.5 rounded-xl hover:bg-gray-50 transition-colors">
           Back
         </button>
-        <button
-          onClick={onNext}
-          className="flex-1 bg-[#1a4a2e] hover:bg-[#2d6b47] text-white font-semibold py-2.5 rounded-xl transition-colors"
-        >
+        <button onClick={onNext}
+          className="flex-1 bg-[#1a4a2e] hover:bg-[#2d6b47] text-white font-semibold py-2.5 rounded-xl transition-colors">
           Next Step
         </button>
       </div>
@@ -392,18 +375,21 @@ By applying, you consent to Natures Alternative collecting and using the informa
 8. CHANGES TO TERMS
 These terms may be updated periodically. Continued use of the platform after notification of changes constitutes acceptance of the updated terms.`;
 
-function Step3({ onBack, onSubmit }: { onBack: () => void; onSubmit: () => void }) {
+function Step3({ onBack, onSubmit, loading, error }: {
+  onBack: () => void;
+  onSubmit: () => void;
+  loading: boolean;
+  error: string;
+}) {
   const [agreedTerms, setAgreedTerms] = useState(false);
   const [agreedStandards, setAgreedStandards] = useState(false);
   const [agreedReview, setAgreedReview] = useState(false);
-
   const allChecked = agreedTerms && agreedStandards && agreedReview;
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8 space-y-5">
       <h2 className="text-lg font-bold text-gray-900">Terms &amp; Agreement</h2>
 
-      {/* Scrollable terms box */}
       <div>
         <p className="text-sm font-medium text-gray-700 mb-2">Terms and Conditions</p>
         <div className="border-2 border-gray-200 rounded-xl p-4 h-52 overflow-y-auto text-xs text-gray-500 leading-relaxed whitespace-pre-line bg-gray-50">
@@ -411,38 +397,38 @@ function Step3({ onBack, onSubmit }: { onBack: () => void; onSubmit: () => void 
         </div>
       </div>
 
-      {/* Agreement checkboxes */}
       <div className="space-y-3 pt-1">
-        <CheckboxItem
-          label="I have read and agree to the Terms & Conditions"
-          checked={agreedTerms}
-          onChange={setAgreedTerms}
-        />
-        <CheckboxItem
-          label="I confirm that my farming practices meet Natures Alternative standards"
-          checked={agreedStandards}
-          onChange={setAgreedStandards}
-        />
-        <CheckboxItem
-          label="I understand that my application will be reviewed before approval"
-          checked={agreedReview}
-          onChange={setAgreedReview}
-        />
+        <CheckboxItem label="I have read and agree to the Terms & Conditions"
+          checked={agreedTerms} onChange={setAgreedTerms} />
+        <CheckboxItem label="I confirm that my farming practices meet Natures Alternative standards"
+          checked={agreedStandards} onChange={setAgreedStandards} />
+        <CheckboxItem label="I understand that my application will be reviewed before approval"
+          checked={agreedReview} onChange={setAgreedReview} />
       </div>
 
+      {error && (
+        <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          {error}
+        </div>
+      )}
+
       <div className="flex gap-3 pt-2">
-        <button
-          onClick={onBack}
-          className="flex-1 border border-gray-300 text-gray-600 font-semibold py-2.5 rounded-xl hover:bg-gray-50 transition-colors"
-        >
+        <button onClick={onBack} disabled={loading}
+          className="flex-1 border border-gray-300 text-gray-600 font-semibold py-2.5 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-40">
           Back
         </button>
-        <button
-          onClick={onSubmit}
-          disabled={!allChecked}
-          className="flex-1 bg-[#1a4a2e] hover:bg-[#2d6b47] disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold py-2.5 rounded-xl transition-colors"
-        >
-          Submit Application
+        <button onClick={onSubmit} disabled={!allChecked || loading}
+          className="flex-1 bg-[#1a4a2e] hover:bg-[#2d6b47] disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2">
+          {loading && (
+            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
+            </svg>
+          )}
+          {loading ? "Submitting..." : "Submit Application"}
         </button>
       </div>
     </div>
@@ -452,27 +438,67 @@ function Step3({ onBack, onSubmit }: { onBack: () => void; onSubmit: () => void 
 // ── Main export ───────────────────────────────────────────────────────────────
 export default function SellerApplicationForm() {
   const [step, setStep] = useState(1);
-  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [formData, setFormData] = useState<FormData>(INITIAL_FORM);
 
-  const handleSubmit = () => {
-    router.push("/seller/apply/submitted");
+  const update = (fields: Partial<FormData>) =>
+    setFormData(prev => ({ ...prev, ...fields }));
+
+  const handleSubmit = async () => {
+    setLoading(true);
+    setError("");
+
+    const referenceNumber = `APP-${Date.now()}`;
+
+    const { error: dbError } = await supabase
+      .from("seller_applications")
+      .insert({
+        reference_number:          referenceNumber,
+        farm_name:                 formData.farmName,
+        owner_name:                formData.ownerName,
+        email:                     formData.email,
+        phone:                     formData.phone,
+        address:                   formData.address,
+        city:                      formData.city,
+        state:                     formData.state,
+        zip:                       formData.zip,
+        website:                   formData.website || null,
+        product_types:             formData.productTypes,
+        fulfillment_methods:       formData.fulfillmentMethods,
+        farming_practices:         formData.farmingPractices,
+        uses_synthetic_pesticides: formData.usesSyntheticPesticides === "yes",
+        sells_gmo_products:        formData.sellsGmoProducts === "yes",
+        practices_monocrop:        formData.practicesMonocrop === "yes",
+        is_certified_organic:      formData.isCertifiedOrganic === "yes",
+        organic_certification:     formData.organicCertification || null,
+        years_farming:             formData.yearsFarming,
+        unique_description:        formData.uniqueDescription,
+        agreed_to_terms:           true,
+        status:                    "pending",
+      });
+
+    if (dbError) {
+      setError(dbError.message);
+      setLoading(false);
+      return;
+    }
+
+    window.location.href = `/seller/apply/submitted?ref=${referenceNumber}`;
   };
 
   return (
     <section className="max-w-2xl mx-auto px-4 sm:px-6 py-10">
-      {/* Header */}
       <div className="text-center mb-8">
         <h1 className="text-2xl sm:text-3xl font-bold text-[#1a4a2e] mb-2">Seller Application</h1>
         <p className="text-sm text-gray-500">Tell us about your farm. We review every application carefully.</p>
       </div>
 
-      {/* Progress bar */}
       <ProgressBar current={step} />
 
-      {/* Step content */}
-      {step === 1 && <Step1 onNext={() => setStep(2)} />}
-      {step === 2 && <Step2 onBack={() => setStep(1)} onNext={() => setStep(3)} />}
-      {step === 3 && <Step3 onBack={() => setStep(2)} onSubmit={handleSubmit} />}
+      {step === 1 && <Step1 data={formData} update={update} onNext={() => setStep(2)} />}
+      {step === 2 && <Step2 data={formData} update={update} onBack={() => setStep(1)} onNext={() => setStep(3)} />}
+      {step === 3 && <Step3 onBack={() => setStep(2)} onSubmit={handleSubmit} loading={loading} error={error} />}
     </section>
   );
 }

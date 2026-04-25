@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -10,6 +13,14 @@ const NEXT_STEPS = [
 ];
 
 export default function SellerApplicationSubmittedPage() {
+  const [refNumber, setRefNumber] = useState("");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get("ref");
+    if (ref) setRefNumber(ref);
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#f5f0e8] flex flex-col">
       <Navbar />
@@ -31,7 +42,12 @@ export default function SellerApplicationSubmittedPage() {
             <p className="text-gray-500 text-sm leading-relaxed mb-4">
               We will review your application and get back to you within 3–5 business days.
             </p>
-            <p className="text-xs text-gray-400 mb-8">Application Reference: <span className="font-semibold text-gray-500">#APP-2024-001</span></p>
+
+            {refNumber && (
+              <p className="text-xs text-gray-400 mb-8">
+                Application Reference: <span className="font-semibold text-gray-600">{refNumber}</span>
+              </p>
+            )}
 
             {/* What happens next */}
             <div className="text-left mb-8">
@@ -50,16 +66,12 @@ export default function SellerApplicationSubmittedPage() {
 
             {/* Action buttons */}
             <div className="space-y-3">
-              <Link
-                href="/"
-                className="block w-full bg-[#1a4a2e] hover:bg-[#2d6b47] text-white font-semibold py-2.5 rounded-xl transition-colors text-sm"
-              >
+              <Link href="/"
+                className="block w-full bg-[#1a4a2e] hover:bg-[#2d6b47] text-white font-semibold py-2.5 rounded-xl transition-colors text-sm">
                 Return to Homepage
               </Link>
-              <a
-                href="#"
-                className="block w-full border border-[#1a4a2e] text-[#1a4a2e] font-semibold py-2.5 rounded-xl hover:bg-[#1a4a2e]/5 transition-colors text-sm"
-              >
+              <a href="#"
+                className="block w-full border border-[#1a4a2e] text-[#1a4a2e] font-semibold py-2.5 rounded-xl hover:bg-[#1a4a2e]/5 transition-colors text-sm">
                 Follow Us on Social Media
               </a>
             </div>
