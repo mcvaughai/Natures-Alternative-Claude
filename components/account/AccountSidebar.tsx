@@ -1,15 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-
-interface MockUser {
-  name: string;
-  email: string;
-  role: string;
-  loggedIn: boolean;
-}
+import { useEffect } from "react";
+import { useAuth } from "@/lib/authContext";
+import { signOut } from "@/lib/auth";
 
 const NAV_ITEMS = [
   {
@@ -71,33 +66,22 @@ const NAV_ITEMS = [
 export default function AccountSidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const [user, setUser] = useState<MockUser | null>(null);
+  const { user, userProfile, loading } = useAuth();
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem("user");
-      if (!stored) {
-        router.replace("/login");
-        return;
-      }
-      const parsed: MockUser = JSON.parse(stored);
-      if (!parsed.loggedIn) {
-        router.replace("/login");
-        return;
-      }
-      setUser(parsed);
-    } catch {
-      router.replace("/login");
-    }
-  }, [router]);
+    if (loading) return;
+    if (!user) router.replace("/login");
+  }, [loading, user, router]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("user");
+  const handleLogout = async () => {
+    await signOut();
     router.push("/login");
   };
 
-  // Derive initials for avatar
-  const initial = user?.name?.charAt(0).toUpperCase() ?? "?";
+  const displayName = userProfile
+    ? `${userProfile.first_name ?? ""} ${userProfile.last_name ?? ""}`.trim() || userProfile.email
+    : user?.email ?? "—";
+  const initial = displayName.charAt(0).toUpperCase();
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden lg:sticky lg:top-[120px]">
@@ -106,17 +90,15 @@ export default function AccountSidebar() {
         <div className="flex flex-col items-center text-center">
           {/* Avatar circle */}
           <div className="w-16 h-16 rounded-full bg-[#1a4a2e]/10 flex items-center justify-center text-[#1a4a2e] text-2xl font-bold mb-3">
-            {user ? (
-              initial
-            ) : (
+            {user ? initial : (
               <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
             )}
           </div>
-          <p className="font-bold text-gray-900 text-sm">{user?.name ?? "—"}</p>
-          <p className="text-xs text-gray-500 mt-0.5">{user?.email ?? "—"}</p>
-          <p className="text-xs text-[#1a4a2e] font-medium mt-1">Member since 2024</p>
+          <p className="font-bold text-gray-900 text-sm">{displayName}</p>
+          <p className="text-xs text-gray-500 mt-0.5">{userProfile?.email ?? user?.email ?? "—"}</p>
+          <p className="text-xs text-[#1a4a2e] font-medium mt-1">Member since {userProfile ? new Date(userProfile.created_at).getFullYear() : "—"}</p>
         </div>
       </div>
 

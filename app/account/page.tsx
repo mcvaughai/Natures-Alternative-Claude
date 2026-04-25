@@ -6,21 +6,15 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import AccountSidebar from "@/components/account/AccountSidebar";
 import DashboardSection from "@/components/account/DashboardSection";
+import { useAuth } from "@/lib/authContext";
 
 export default function AccountPage() {
   const router = useRouter();
+  const { user, loading } = useAuth();
 
-  // Guard: redirect to login if no valid session
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem("user");
-      if (!stored || !JSON.parse(stored).loggedIn) {
-        router.replace("/login");
-      }
-    } catch {
-      router.replace("/login");
-    }
-  }, [router]);
+    if (!loading && !user) router.replace("/login");
+  }, [loading, user, router]);
 
   return (
     <div className="min-h-screen bg-[#f5f0e8] flex flex-col">

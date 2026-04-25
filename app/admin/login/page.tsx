@@ -4,6 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { signIn, getUserProfile } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -13,23 +15,29 @@ export default function AdminLoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
-    setTimeout(() => {
-      if (email.trim() === "admin@test.com" && password === "admin123") {
-        localStorage.setItem(
-          "admin",
-          JSON.stringify({ name: "Owner", email: "admin@test.com", role: "admin", loggedIn: true })
-        );
-        router.push("/admin/dashboard");
-      } else {
-        setError("Invalid credentials. Access denied.");
+    try {
+      const { user } = await signIn({ email: email.trim(), password });
+      if (!user) throw new Error("Login failed.");
+
+      const profile = await getUserProfile(user.id);
+      if (!profile || profile.role !== "admin") {
+        await supabase.auth.signOut();
+        setError("Unauthorized access. Admin accounts only.");
         setLoading(false);
+        return;
       }
-    }, 500);
+
+      router.push("/admin/dashboard");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Invalid credentials. Access denied.";
+      setError(message);
+      setLoading(false);
+    }
   };
 
   return (
@@ -99,12 +107,6 @@ export default function AdminLoginPage() {
             </button>
           </form>
 
-          {/* Test credentials */}
-          <div className="mt-5 p-3 bg-[#1a4a2e]/5 rounded-xl border border-[#1a4a2e]/10">
-            <p className="text-xs text-gray-500 font-medium mb-1">Test credentials:</p>
-            <p className="text-xs font-mono text-gray-600">admin@test.com</p>
-            <p className="text-xs font-mono text-gray-600">admin123</p>
-          </div>
           </div>{/* end p-8 */}
         </div>
 

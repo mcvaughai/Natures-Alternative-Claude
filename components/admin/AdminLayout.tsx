@@ -1,28 +1,23 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import AdminNavbar from "./AdminNavbar";
 import AdminSidebar from "./AdminSidebar";
+import { useAuth } from "@/lib/authContext";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const [ready, setReady] = useState(false);
+  const { user, userProfile, loading } = useAuth();
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem("admin");
-      if (!stored || !JSON.parse(stored).loggedIn) {
-        router.replace("/admin/login");
-        return;
-      }
-      setReady(true);
-    } catch {
+    if (loading) return;
+    if (!user || userProfile?.role !== "admin") {
       router.replace("/admin/login");
     }
-  }, [router]);
+  }, [loading, user, userProfile, router]);
 
-  if (!ready) {
+  if (loading || !user || userProfile?.role !== "admin") {
     return (
       <div className="min-h-screen bg-[#f5f0e8] flex items-center justify-center">
         <div className="w-8 h-8 rounded-full border-2 border-[#1a4a2e] border-t-transparent animate-spin"/>

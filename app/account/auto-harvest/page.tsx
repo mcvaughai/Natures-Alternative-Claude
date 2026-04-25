@@ -7,6 +7,7 @@ import Footer from "@/components/layout/Footer";
 import AccountSidebar from "@/components/account/AccountSidebar";
 import AutoHarvestCard from "@/components/AutoHarvestCard";
 import CreateAutoHarvestModal from "@/components/CreateAutoHarvestModal";
+import { useAuth } from "@/lib/authContext";
 
 // ─── Mock data ────────────────────────────────────────────────────────────────
 
@@ -72,19 +73,13 @@ function HowItWorksStep({
 
 export default function AutoHarvestPage() {
   const router = useRouter();
+  const { user, loading } = useAuth();
   const [showModal, setShowModal] = useState(false);
   const [hasLists] = useState(true); // set to false to see empty state
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem("user");
-      if (!stored || !JSON.parse(stored).loggedIn) {
-        router.replace("/login");
-      }
-    } catch {
-      router.replace("/login");
-    }
-  }, [router]);
+    if (!loading && !user) router.replace("/login");
+  }, [loading, user, router]);
 
   return (
     <div className="min-h-screen bg-[#f5f0e8] flex flex-col">
