@@ -407,11 +407,14 @@ function Step3({ onBack, onSubmit, loading, error }: {
       </div>
 
       {error && (
-        <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="flex items-start gap-3 bg-red-50 border-2 border-red-300 text-red-800 text-sm rounded-xl px-4 py-4">
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 shrink-0 mt-0.5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
           </svg>
-          {error}
+          <div>
+            <p className="font-semibold mb-0.5">Submission Failed</p>
+            <p className="text-red-700">{error}</p>
+          </div>
         </div>
       )}
 
@@ -451,40 +454,64 @@ export default function SellerApplicationForm() {
 
     const referenceNumber = `APP-${Date.now()}`;
 
-    const { error: dbError } = await supabase
-      .from("seller_applications")
-      .insert({
-        reference_number:          referenceNumber,
-        farm_name:                 formData.farmName,
-        owner_name:                formData.ownerName,
-        email:                     formData.email,
-        phone:                     formData.phone,
-        address:                   formData.address,
-        city:                      formData.city,
-        state:                     formData.state,
-        zip:                       formData.zip,
-        website:                   formData.website || null,
-        product_types:             formData.productTypes,
-        fulfillment_methods:       formData.fulfillmentMethods,
-        farming_practices:         formData.farmingPractices,
-        uses_synthetic_pesticides: formData.usesSyntheticPesticides === "yes",
-        sells_gmo_products:        formData.sellsGmoProducts === "yes",
-        practices_monocrop:        formData.practicesMonocrop === "yes",
-        is_certified_organic:      formData.isCertifiedOrganic === "yes",
-        organic_certification:     formData.organicCertification || null,
-        years_farming:             formData.yearsFarming,
-        unique_description:        formData.uniqueDescription,
-        agreed_to_terms:           true,
-        status:                    "pending",
+    // 10-second timeout: stop spinning and show error if Supabase doesn't respond
+    const timeoutId = setTimeout(() => {
+      setLoading(false);
+      setError("Submission timed out. Please check your connection and try again.");
+    }, 10000);
+
+    try {
+      console.log("[SellerApply] Submitting application to seller_applications table…", {
+        reference_number: referenceNumber,
+        farm_name:        formData.farmName,
+        email:            formData.email,
       });
 
-    if (dbError) {
-      setError(dbError.message);
-      setLoading(false);
-      return;
-    }
+      const { error: dbError } = await supabase
+        .from("seller_applications")
+        .insert({
+          reference_number:          referenceNumber,
+          farm_name:                 formData.farmName,
+          owner_name:                formData.ownerName,
+          email:                     formData.email,
+          phone:                     formData.phone || null,
+          address:                   formData.address || null,
+          city:                      formData.city || null,
+          state:                     formData.state || null,
+          zip:                       formData.zip || null,
+          website:                   formData.website || null,
+          product_types:             formData.productTypes,
+          fulfillment_methods:       formData.fulfillmentMethods,
+          farming_practices:         formData.farmingPractices || null,
+          uses_synthetic_pesticides: formData.usesSyntheticPesticides === "yes",
+          sells_gmo_products:        formData.sellsGmoProducts === "yes",
+          practices_monocrop:        formData.practicesMonocrop === "yes",
+          is_certified_organic:      formData.isCertifiedOrganic === "yes",
+          organic_certification:     formData.organicCertification || null,
+          years_farming:             formData.yearsFarming || null,
+          unique_description:        formData.uniqueDescription || null,
+          agreed_to_terms:           true,
+          status:                    "pending",
+        });
 
-    window.location.href = `/seller/apply/submitted?ref=${referenceNumber}`;
+      clearTimeout(timeoutId);
+
+      if (dbError) {
+        console.error("[SellerApply] Supabase insert error:", dbError);
+        setError(`Submission failed: ${dbError.message}`);
+        setLoading(false);
+        return;
+      }
+
+      console.log("[SellerApply] Application submitted successfully:", referenceNumber);
+      window.location.href = `/seller/apply/submitted?ref=${referenceNumber}`;
+    } catch (err: unknown) {
+      clearTimeout(timeoutId);
+      const message = err instanceof Error ? err.message : "An unexpected error occurred. Please try again.";
+      console.error("[SellerApply] Unexpected error:", err);
+      setError(message);
+      setLoading(false);
+    }
   };
 
   return (
