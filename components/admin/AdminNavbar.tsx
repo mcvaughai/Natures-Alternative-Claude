@@ -1,26 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { useAuth } from "@/lib/authContext";
+import { signOut } from "@/lib/auth";
 
 export default function AdminNavbar() {
   const router = useRouter();
-  const [name, setName] = useState("Owner");
+  const { userProfile } = useAuth();
 
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem("admin");
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed.name) setName(parsed.name);
-      }
-    } catch {}
-  }, []);
+  const name = userProfile
+    ? `${userProfile.first_name ?? ""} ${userProfile.last_name ?? ""}`.trim() || userProfile.email
+    : "Admin";
 
-  const handleLogout = () => {
-    localStorage.removeItem("admin");
+  const handleLogout = async () => {
+    await signOut();
     router.push("/admin/login");
   };
 
@@ -61,7 +56,7 @@ export default function AdminNavbar() {
         {/* Avatar + name */}
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-full bg-white/20 border border-white/40 flex items-center justify-center text-white text-xs font-bold">
-            {name.charAt(0)}
+            {name.charAt(0).toUpperCase()}
           </div>
           <span className="hidden sm:block text-white text-sm font-medium">{name}</span>
         </div>

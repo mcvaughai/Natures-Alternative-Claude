@@ -1,25 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-
-interface SellerUser { name: string; email: string; loggedIn: boolean; }
+import { useAuth } from "@/lib/authContext";
+import { signOut } from "@/lib/auth";
 
 export default function SellerNavbar() {
   const router = useRouter();
-  const [seller, setSeller] = useState<SellerUser | null>(null);
+  const { sellerProfile } = useAuth();
 
-  useEffect(() => {
-    try {
-      const s = localStorage.getItem("seller");
-      if (s) setSeller(JSON.parse(s));
-    } catch {}
-  }, []);
+  const sellerName = sellerProfile?.farm_name ?? "Seller";
 
-  const handleLogout = () => {
-    localStorage.removeItem("seller");
+  const handleLogout = async () => {
+    await signOut();
     router.push("/seller/login");
   };
 
@@ -63,10 +57,10 @@ export default function SellerNavbar() {
         {/* Avatar + name */}
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-full bg-white/20 border border-white/30 flex items-center justify-center text-white text-xs font-bold shrink-0">
-            {seller?.name?.charAt(0)?.toUpperCase() ?? "S"}
+            {sellerName.charAt(0).toUpperCase()}
           </div>
           <span className="hidden sm:block text-white text-sm font-medium max-w-[130px] truncate">
-            {seller?.name ?? "Seller"}
+            {sellerName}
           </span>
         </div>
 

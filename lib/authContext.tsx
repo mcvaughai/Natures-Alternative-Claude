@@ -55,15 +55,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
+    // Safety net: never spin forever — force loading=false after 3 seconds
+    const maxLoadTimeout = setTimeout(() => setLoading(false), 3000);
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session: s } }) => {
       setSession(s);
       setUser(s?.user ?? null);
       if (s?.user) {
-        loadProfiles(s.user.id).finally(() => setLoading(false));
+        loadProfiles(s.user.id).finally(() => {
+          clearTimeout(maxLoadTimeout);
+          setLoading(false);
+        });
       } else {
+        clearTimeout(maxLoadTimeout);
         setLoading(false);
       }
+    }).catch(() => {
+      clearTimeout(maxLoadTimeout);
+      setLoading(false);
     });
 
     // Listen for auth changes
@@ -77,11 +87,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUserProfile(null);
           setSellerProfile(null);
         }
+        clearTimeout(maxLoadTimeout);
         setLoading(false);
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(maxLoadTimeout);
+    };
   }, []);
 
   return (

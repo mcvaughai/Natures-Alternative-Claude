@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useAuth } from "@/lib/authContext";
+import { signOut } from "@/lib/auth";
 
 const NAV_ITEMS = [
   {
@@ -74,17 +75,12 @@ const NAV_ITEMS = [
 export default function SellerSidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const [sellerName, setSellerName] = useState("Example Farms");
+  const { sellerProfile } = useAuth();
 
-  useEffect(() => {
-    try {
-      const s = localStorage.getItem("seller");
-      if (s) setSellerName(JSON.parse(s).name ?? "Example Farms");
-    } catch {}
-  }, []);
+  const sellerName = sellerProfile?.farm_name ?? "My Farm";
 
-  const handleLogout = () => {
-    localStorage.removeItem("seller");
+  const handleLogout = async () => {
+    await signOut();
     router.push("/seller/login");
   };
 

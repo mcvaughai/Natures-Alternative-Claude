@@ -140,7 +140,7 @@ export default function Navbar() {
   const handleSignOut = async () => {
     await signOut();
     setMenuOpen(false);
-    router.push("/login");
+    router.push("/");
   };
 
   const displayName = userProfile

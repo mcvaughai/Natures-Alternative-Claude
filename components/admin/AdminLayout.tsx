@@ -10,12 +10,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
   const { user, userProfile, loading } = useAuth();
 
+  // Redirect when auth resolves and user is not an admin
   useEffect(() => {
     if (loading) return;
     if (!user || userProfile?.role !== "admin") {
       router.replace("/admin/login");
     }
   }, [loading, user, userProfile, router]);
+
+  // Safety timeout: if still loading after 3s, redirect to login
+  useEffect(() => {
+    if (!loading) return;
+    const timeout = setTimeout(() => router.replace("/admin/login"), 3000);
+    return () => clearTimeout(timeout);
+  }, [loading, router]);
 
   if (loading || !user || userProfile?.role !== "admin") {
     return (
