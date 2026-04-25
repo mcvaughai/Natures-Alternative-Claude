@@ -5,12 +5,23 @@ import Link from "next/link";
 import Image from "next/image";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import { signUp } from "@/lib/auth";
 
 export default function SignUpPage() {
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [zipCode, setZipCode] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [newsletter, setNewsletter] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   return (
     <div className="min-h-screen bg-[#f5f0e8] flex flex-col">
@@ -37,8 +48,46 @@ export default function SignUpPage() {
               <h1 className="text-2xl font-bold text-gray-800 mb-1">Create an Account</h1>
             </div>
 
+            {/* Success message */}
+            {success && (
+              <div className="mb-6 flex items-start gap-2.5 bg-green-50 border border-green-200 text-green-800 text-sm rounded-xl px-4 py-3">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>
+                  Account created! Please check your email to confirm your address, then{" "}
+                  <Link href="/login" className="font-semibold underline">sign in</Link>.
+                </span>
+              </div>
+            )}
+
+            {/* Error message */}
+            {error && (
+              <div className="mb-4 flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {error}
+              </div>
+            )}
+
             {/* Form */}
-            <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+            <form className="space-y-4" onSubmit={async (e) => {
+              e.preventDefault();
+              if (!agreeTerms) { setError("You must agree to the Terms of Use to continue."); return; }
+              if (password !== confirmPassword) { setError("Passwords do not match."); return; }
+              setError("");
+              setLoading(true);
+              try {
+                await signUp({ email, password, firstName, lastName, phone, zipCode, newsletter });
+                setSuccess(true);
+              } catch (err: unknown) {
+                const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
+                setError(message);
+              } finally {
+                setLoading(false);
+              }
+            }}>
               {/* First & Last Name */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -49,6 +98,9 @@ export default function SignUpPage() {
                     id="firstName"
                     type="text"
                     placeholder="Jane"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    required
                     className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a4a2e]/30 focus:border-[#1a4a2e] transition"
                   />
                 </div>
@@ -60,6 +112,9 @@ export default function SignUpPage() {
                     id="lastName"
                     type="text"
                     placeholder="Doe"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    required
                     className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a4a2e]/30 focus:border-[#1a4a2e] transition"
                   />
                 </div>
@@ -74,6 +129,9 @@ export default function SignUpPage() {
                   id="email"
                   type="email"
                   placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => { setEmail(e.target.value); setError(""); }}
+                  required
                   className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a4a2e]/30 focus:border-[#1a4a2e] transition"
                 />
               </div>
@@ -88,6 +146,10 @@ export default function SignUpPage() {
                     id="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="Create a password"
+                    value={password}
+                    onChange={(e) => { setPassword(e.target.value); setError(""); }}
+                    required
+                    minLength={6}
                     className="w-full border border-gray-300 rounded-xl px-4 py-2.5 pr-11 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a4a2e]/30 focus:border-[#1a4a2e] transition"
                   />
                   <button
@@ -120,6 +182,9 @@ export default function SignUpPage() {
                     id="confirmPassword"
                     type={showConfirmPassword ? "text" : "password"}
                     placeholder="Re-enter your password"
+                    value={confirmPassword}
+                    onChange={(e) => { setConfirmPassword(e.target.value); setError(""); }}
+                    required
                     className="w-full border border-gray-300 rounded-xl px-4 py-2.5 pr-11 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a4a2e]/30 focus:border-[#1a4a2e] transition"
                   />
                   <button
@@ -151,6 +216,8 @@ export default function SignUpPage() {
                   id="phone"
                   type="tel"
                   placeholder="+1 (555) 000-0000"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
                   className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a4a2e]/30 focus:border-[#1a4a2e] transition"
                 />
               </div>
@@ -165,6 +232,8 @@ export default function SignUpPage() {
                   type="text"
                   placeholder="e.g. 90210"
                   maxLength={10}
+                  value={zipCode}
+                  onChange={(e) => setZipCode(e.target.value)}
                   className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a4a2e]/30 focus:border-[#1a4a2e] transition"
                 />
               </div>
@@ -232,9 +301,16 @@ export default function SignUpPage() {
               {/* Create Account button */}
               <button
                 type="submit"
-                className="w-full bg-[#1a4a2e] hover:bg-[#2d6b47] text-white font-semibold py-2.5 rounded-xl transition-colors mt-2"
+                disabled={loading || success}
+                className="w-full bg-[#1a4a2e] hover:bg-[#2d6b47] disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-2.5 rounded-xl transition-colors mt-2 flex items-center justify-center gap-2"
               >
-                Create Account
+                {loading && (
+                  <svg className="w-4 h-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                  </svg>
+                )}
+                {loading ? "Creating Account..." : "Create Account"}
               </button>
             </form>
 

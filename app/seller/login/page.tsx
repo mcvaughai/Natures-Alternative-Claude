@@ -4,6 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { signIn, getSellerProfileForUser } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
 
 export default function SellerLoginPage() {
   const router = useRouter();
@@ -13,23 +15,38 @@ export default function SellerLoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
-    setTimeout(() => {
-      if (email.trim() === "seller@test.com" && password === "password123") {
-        localStorage.setItem(
-          "seller",
-          JSON.stringify({ name: "Example Farms", email: "seller@test.com", role: "seller", loggedIn: true })
-        );
-        router.push("/seller/dashboard");
-      } else {
-        setError("Invalid email or password. Please try again.");
+    try {
+      const { user } = await signIn({ email: email.trim(), password });
+      if (!user) throw new Error("Login failed. Please try again.");
+
+      // Check if user has an approved seller profile
+      const seller = await getSellerProfileForUser(user.id);
+
+      if (!seller) {
+        await supabase.auth.signOut();
+        setError("No seller account found for this email. Please apply to sell first.");
         setLoading(false);
+        return;
       }
-    }, 500);
+
+      if (seller.status !== "approved") {
+        await supabase.auth.signOut();
+        setError("Your seller application is still under review. We'll email you when approved.");
+        setLoading(false);
+        return;
+      }
+
+      router.push("/seller/dashboard");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Invalid email or password. Please try again.";
+      setError(message);
+      setLoading(false);
+    }
   };
 
   return (
@@ -110,13 +127,6 @@ export default function SellerLoginPage() {
             <div className="flex-1 h-px bg-gray-200" />
             <span className="text-xs text-gray-400 font-medium">or</span>
             <div className="flex-1 h-px bg-gray-200" />
-          </div>
-
-          {/* Test credentials */}
-          <div className="p-3 bg-[#1a4a2e]/5 rounded-xl border border-[#1a4a2e]/10 mb-4">
-            <p className="text-xs text-gray-500 font-medium mb-1">Test credentials:</p>
-            <p className="text-xs font-mono text-gray-600">seller@test.com</p>
-            <p className="text-xs font-mono text-gray-600">password123</p>
           </div>
 
           <p className="text-sm text-gray-500 text-center">

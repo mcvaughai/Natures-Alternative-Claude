@@ -4,13 +4,8 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useCart } from "@/lib/context/CartContext";
-
-interface MockUser {
-  name: string;
-  email: string;
-  role: string;
-  loggedIn: boolean;
-}
+import { useAuth } from "@/lib/authContext";
+import { signOut } from "@/lib/auth";
 
 const TABS = [
   { label: "All Products",         key: "all",               href: "/explore" },
@@ -118,24 +113,11 @@ function TabsRow({ activeKey }: { activeKey: string }) {
 
 export default function Navbar() {
   const { totalItems } = useCart();
+  const { user, userProfile } = useAuth();
   const router = useRouter();
-  const [user, setUser] = useState<MockUser | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const menuRef = useRef<HTMLDivElement>(null);
-
-  // Read auth state from localStorage on mount
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem("user");
-      if (stored) {
-        const parsed: MockUser = JSON.parse(stored);
-        if (parsed.loggedIn) setUser(parsed);
-      }
-    } catch {
-      // ignore malformed data
-    }
-  }, []);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -155,14 +137,16 @@ export default function Navbar() {
     }
   };
 
-  const handleSignOut = () => {
-    localStorage.removeItem("user");
-    setUser(null);
+  const handleSignOut = async () => {
+    await signOut();
     setMenuOpen(false);
     router.push("/login");
   };
 
-  const initial = user?.name?.charAt(0).toUpperCase() ?? "";
+  const displayName = userProfile
+    ? `${userProfile.first_name ?? ""} ${userProfile.last_name ?? ""}`.trim() || userProfile.email
+    : user?.email ?? "";
+  const initial = displayName.charAt(0).toUpperCase();
 
   return (
     <header className="sticky top-0 z-50">
@@ -236,7 +220,7 @@ export default function Navbar() {
                     {initial}
                   </div>
                   <span className="hidden sm:block text-white text-sm font-medium max-w-[100px] truncate">
-                    {user.name.split(" ")[0]}
+                    {displayName.split(" ")[0]}
                   </span>
                   <svg xmlns="http://www.w3.org/2000/svg" className={`w-3.5 h-3.5 text-white/70 transition-transform ${menuOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -246,7 +230,7 @@ export default function Navbar() {
                 {menuOpen && (
                   <div className="absolute right-0 top-full mt-2 bg-white rounded-xl shadow-lg border border-gray-100 py-1 w-52 z-50">
                     <div className="px-4 py-3 border-b border-gray-100">
-                      <p className="text-sm font-semibold text-gray-800 truncate">{user.name}</p>
+                      <p className="text-sm font-semibold text-gray-800 truncate">{displayName}</p>
                       <p className="text-xs text-gray-500 truncate mt-0.5">{user.email}</p>
                     </div>
                     <Link href="/account" onClick={() => setMenuOpen(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">

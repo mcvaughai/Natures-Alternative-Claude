@@ -6,17 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-
-const MOCK_CREDENTIALS = {
-  email: "customer@test.com",
-  password: "password123",
-  user: {
-    name: "John Doe",
-    email: "customer@test.com",
-    role: "customer",
-    loggedIn: true,
-  },
-};
+import { signIn } from "@/lib/auth";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -26,28 +16,22 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
-    // Simulate a brief network delay for realism
-    setTimeout(() => {
-      if (
-        email.trim() === MOCK_CREDENTIALS.email &&
-        password === MOCK_CREDENTIALS.password
-      ) {
-        localStorage.setItem("user", JSON.stringify(MOCK_CREDENTIALS.user));
-        router.push("/account");
-      } else {
-        setError("Invalid email or password. Please try again.");
-        setLoading(false);
-      }
-    }, 500);
+    try {
+      await signIn({ email: email.trim(), password });
+      router.push("/account");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Invalid email or password. Please try again.";
+      setError(message);
+      setLoading(false);
+    }
   };
 
   const handleGuest = () => {
-    localStorage.removeItem("user");
     router.push("/");
   };
 
@@ -176,12 +160,6 @@ export default function LoginPage() {
               Continue as Guest
             </button>
 
-            {/* Test credentials hint */}
-            <div className="mt-5 p-3 bg-[#1a4a2e]/5 rounded-xl border border-[#1a4a2e]/10">
-              <p className="text-xs text-gray-500 font-medium mb-1">Test credentials:</p>
-              <p className="text-xs text-gray-600 font-mono">customer@test.com</p>
-              <p className="text-xs text-gray-600 font-mono">password123</p>
-            </div>
             </div>{/* end p-8 */}
           </div>
 
