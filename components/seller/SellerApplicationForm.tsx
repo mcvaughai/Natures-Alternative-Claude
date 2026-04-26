@@ -448,26 +448,81 @@ export default function SellerApplicationForm() {
   const update = (fields: Partial<FormData>) =>
     setFormData(prev => ({ ...prev, ...fields }));
 
+  // ── Connection test on mount — shows immediately in DevTools console ─────
+  // Open browser DevTools → Console to see results.
+  // If you see "FAILED" here the anon key or URL in .env.local is wrong.
+  useState(() => {
+    async function testConnection() {
+      console.log("=== [SellerApply] SUPABASE CONNECTION TEST ===");
+      console.log("[SellerApply] URL:", process.env.NEXT_PUBLIC_SUPABASE_URL ?? "NOT SET");
+      console.log("[SellerApply] Key (first 20 chars):",
+        (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "NOT SET").slice(0, 20) + "…"
+      );
+      try {
+        const { data, error: selErr } = await supabase
+          .from("seller_applications")
+          .select("id")
+          .limit(1);
+        if (selErr) {
+          console.error("[SellerApply] SELECT test FAILED ❌", selErr.code, selErr.message);
+          console.error("[SellerApply] This means the key/URL is wrong OR the table does not exist OR RLS is blocking reads.");
+        } else {
+          console.log("[SellerApply] SELECT test PASSED ✅ — Supabase is reachable. Rows returned:", data?.length ?? 0);
+        }
+      } catch (e) {
+        console.error("[SellerApply] SELECT test threw an exception ❌", e);
+      }
+      console.log("=== [SellerApply] END CONNECTION TEST ===");
+    }
+    testConnection();
+  });
+
   const handleSubmit = async () => {
     setLoading(true);
     setError("");
 
     const referenceNumber = `APP-${Date.now()}`;
 
-    // 10-second timeout: stop spinning and show error if Supabase doesn't respond
+    // 10-second hard timeout
     const timeoutId = setTimeout(() => {
       setLoading(false);
-      setError("Submission timed out. Please check your connection and try again.");
+      setError(
+        "Submission timed out after 10 seconds. " +
+        "Check the browser console (DevTools → Console) for the exact error. " +
+        "The most likely cause is an invalid Supabase anon key in .env.local."
+      );
     }, 10000);
 
     try {
-      console.log("[SellerApply] Submitting application to seller_applications table…", {
-        reference_number: referenceNumber,
-        farm_name:        formData.farmName,
-        email:            formData.email,
-      });
+      // ── STEP 1: log what we are about to send ──────────────────────────
+      console.log("[SellerApply] STEP 1 — starting insert to seller_applications");
+      console.log("[SellerApply] Reference number:", referenceNumber);
+      console.log("[SellerApply] farm_name:", formData.farmName);
+      console.log("[SellerApply] email:", formData.email);
+      console.log("[SellerApply] product_types:", formData.productTypes);
+      console.log("[SellerApply] fulfillment_methods:", formData.fulfillmentMethods);
 
-      const { error: dbError } = await supabase
+      // ── STEP 2: run a quick SELECT first to confirm connection is alive ─
+      console.log("[SellerApply] STEP 2 — pre-insert connectivity check…");
+      const { error: pingError } = await supabase
+        .from("seller_applications")
+        .select("id")
+        .limit(1);
+      if (pingError) {
+        console.error("[SellerApply] Pre-insert ping FAILED ❌ — aborting.", pingError);
+        clearTimeout(timeoutId);
+        setError(
+          `Cannot reach Supabase: ${pingError.message}. ` +
+          "Check that NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local are correct."
+        );
+        setLoading(false);
+        return;
+      }
+      console.log("[SellerApply] STEP 2 — ping OK ✅");
+
+      // ── STEP 3: run the insert ─────────────────────────────────────────
+      console.log("[SellerApply] STEP 3 — running insert…");
+      const { data: insertedRow, error: dbError } = await supabase
         .from("seller_applications")
         .insert({
           reference_number:          referenceNumber,
@@ -492,23 +547,33 @@ export default function SellerApplicationForm() {
           unique_description:        formData.uniqueDescription || null,
           agreed_to_terms:           true,
           status:                    "pending",
-        });
+        })
+        .select("id");
 
       clearTimeout(timeoutId);
 
       if (dbError) {
-        console.error("[SellerApply] Supabase insert error:", dbError);
-        setError(`Submission failed: ${dbError.message}`);
+        console.error("[SellerApply] STEP 3 — insert FAILED ❌");
+        console.error("[SellerApply] Error code:", dbError.code);
+        console.error("[SellerApply] Error message:", dbError.message);
+        console.error("[SellerApply] Error details:", dbError.details);
+        console.error("[SellerApply] Error hint:", dbError.hint);
+        setError(
+          `Submission failed: ${dbError.message}` +
+          (dbError.hint ? ` — ${dbError.hint}` : "") +
+          (dbError.details ? ` (${dbError.details})` : "")
+        );
         setLoading(false);
         return;
       }
 
-      console.log("[SellerApply] Application submitted successfully:", referenceNumber);
+      console.log("[SellerApply] STEP 3 — insert SUCCEEDED ✅", insertedRow);
+      console.log("[SellerApply] Redirecting to submitted page…");
       window.location.href = `/seller/apply/submitted?ref=${referenceNumber}`;
     } catch (err: unknown) {
       clearTimeout(timeoutId);
+      console.error("[SellerApply] Unexpected exception thrown:", err);
       const message = err instanceof Error ? err.message : "An unexpected error occurred. Please try again.";
-      console.error("[SellerApply] Unexpected error:", err);
       setError(message);
       setLoading(false);
     }
