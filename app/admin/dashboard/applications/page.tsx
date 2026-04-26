@@ -13,6 +13,8 @@ interface Application {
   farm: string;
   owner: string;
   location: string;
+  city: string;
+  state: string;
   products: string;
   date: string;
   status: AppStatus;
@@ -22,6 +24,7 @@ interface Application {
   description: string;
   farming_practices: string;
   unique_description: string;
+  applicant_user_id: string | null;
 }
 
 const STATUS_STYLES: Record<AppStatus, string> = {
@@ -45,6 +48,8 @@ function mapRow(row: any): Application {
     farm:             row.farm_name ?? "",
     owner:            row.owner_name ?? "",
     location:         [row.city, row.state].filter(Boolean).join(", "),
+    city:             row.city ?? "",
+    state:            row.state ?? "",
     products:         Array.isArray(row.product_types) ? row.product_types.join(", ") : "",
     date:             row.created_at
       ? new Date(row.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
@@ -56,6 +61,7 @@ function mapRow(row: any): Application {
     description:      row.farming_practices ?? row.unique_description ?? row.description ?? "",
     farming_practices: row.farming_practices ?? "",
     unique_description: row.unique_description ?? "",
+    applicant_user_id: row.applicant_user_id ?? null,
   };
 }
 
@@ -67,6 +73,7 @@ export default function ApplicationsPage() {
   const [selected, setSelected]   = useState<Application | null>(null);
   const [note, setNote]           = useState("");
   const [actionLoading, setActionLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   const fetchApplications = useCallback(async () => {
     setLoading(true);
@@ -88,30 +95,64 @@ export default function ApplicationsPage() {
     fetchApplications();
   }, [fetchApplications]);
 
-  const handleApprove = async (id: string) => {
+  const handleApprove = async (app: Application) => {
     setActionLoading(true);
-    const { error } = await supabase
+    setSuccessMessage("");
+
+    // 1. Mark application approved
+    const { error: appError } = await supabase
       .from("seller_applications")
       .update({ status: "approved" })
-      .eq("id", id);
-    setActionLoading(false);
-    if (!error) {
-      await fetchApplications();
-      setSelected(null);
+      .eq("id", app.id);
+
+    if (appError) { setActionLoading(false); return; }
+
+    // NOTE: Applications approved before this flow was added (e.g. Blessings Ranch)
+    // will have applicant_user_id = null — their profiles/sellers records must be
+    // created manually in the Supabase dashboard.
+    if (app.applicant_user_id) {
+      // 2. Promote user role to seller
+      await supabase
+        .from("profiles")
+        .update({ role: "seller" })
+        .eq("id", app.applicant_user_id);
+
+      // 3. Create sellers record
+      const baseSlug = app.farm.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      const slug = `${baseSlug}-${Date.now().toString(36)}`;
+      await supabase.from("sellers").insert({
+        user_id:    app.applicant_user_id,
+        farm_name:  app.farm,
+        owner_name: app.owner,
+        slug,
+        status:     "approved",
+        city:       app.city || null,
+        state:      app.state || null,
+        email:      app.email,
+        phone:      app.phone || null,
+      });
     }
+
+    setActionLoading(false);
+    setSuccessMessage("Seller approved! Their account is now active.");
+    await fetchApplications();
+    setSelected(null);
   };
 
-  const handleReject = async (id: string) => {
+  const handleReject = async (app: Application) => {
     setActionLoading(true);
-    const { error } = await supabase
+    setSuccessMessage("");
+
+    await supabase
       .from("seller_applications")
       .update({ status: "rejected" })
-      .eq("id", id);
+      .eq("id", app.id);
+
+    // Application status is checked on login; no profile update needed for rejections.
+
     setActionLoading(false);
-    if (!error) {
-      await fetchApplications();
-      setSelected(null);
-    }
+    await fetchApplications();
+    setSelected(null);
   };
 
   const filtered = tab === "All" ? apps : apps.filter(a => a.status === tab);
@@ -146,6 +187,13 @@ export default function ApplicationsPage() {
         {fetchError && (
           <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">
             Failed to load applications: {fetchError}
+          </div>
+        )}
+
+        {/* Success message */}
+        {successMessage && (
+          <div className="bg-green-50 border border-green-200 text-green-700 text-sm rounded-xl px-4 py-3">
+            {successMessage}
           </div>
         )}
 
@@ -292,13 +340,13 @@ export default function ApplicationsPage() {
             {selected.status === "Pending" && (
               <div className="flex gap-3">
                 <button
-                  onClick={() => handleApprove(selected.id)}
+                  onClick={() => handleApprove(selected)}
                   disabled={actionLoading}
                   className="flex-1 bg-[#1a4a2e] hover:bg-[#2d6b47] disabled:opacity-50 text-white font-semibold py-2.5 rounded-xl transition-colors text-sm">
                   {actionLoading ? "Processing..." : "Approve Application"}
                 </button>
                 <button
-                  onClick={() => handleReject(selected.id)}
+                  onClick={() => handleReject(selected)}
                   disabled={actionLoading}
                   className="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-semibold py-2.5 rounded-xl transition-colors text-sm">
                   {actionLoading ? "Processing..." : "Reject Application"}

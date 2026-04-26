@@ -3,12 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { signIn, getSellerProfileForUser } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 
 export default function SellerLoginPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -21,27 +18,57 @@ export default function SellerLoginPage() {
     setLoading(true);
 
     try {
-      const { user } = await signIn({ email: email.trim(), password });
-      if (!user) throw new Error("Login failed. Please try again.");
+      const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
 
-      // Check if user has an approved seller profile
-      const seller = await getSellerProfileForUser(user.id);
+      if (signInError || !authData.user) {
+        setError("Invalid email or password. Please try again.");
+        setLoading(false);
+        return;
+      }
 
-      if (!seller) {
+      const userId = authData.user.id;
+
+      // Check role in profiles table
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", userId)
+        .single();
+
+      if (profile?.role === "seller") {
+        window.location.href = "/seller/dashboard";
+        return;
+      }
+
+      if (profile?.role === "seller_pending") {
         await supabase.auth.signOut();
+        setError("Your application is still under review. You will receive an email when approved.");
+        setLoading(false);
+        return;
+      }
+
+      // Fall back: check seller_applications for more specific status message
+      const { data: application } = await supabase
+        .from("seller_applications")
+        .select("status")
+        .eq("applicant_user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      await supabase.auth.signOut();
+
+      if (application?.status === "pending") {
+        setError("Your application is still under review. You will receive an email when approved.");
+      } else if (application?.status === "rejected") {
+        setError("Your application was not approved. Please contact us for more information.");
+      } else {
         setError("No seller account found for this email. Please apply to sell first.");
-        setLoading(false);
-        return;
       }
-
-      if (seller.status !== "approved") {
-        await supabase.auth.signOut();
-        setError("Your seller application is still under review. We'll email you when approved.");
-        setLoading(false);
-        return;
-      }
-
-      router.push("/seller/dashboard");
+      setLoading(false);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Invalid email or password. Please try again.";
       setError(message);

@@ -128,6 +128,8 @@ interface FormData {
   organicCertification: string;
   yearsFarming: string;
   uniqueDescription: string;
+  password: string;
+  confirmPassword: string;
 }
 
 const INITIAL_FORM: FormData = {
@@ -138,6 +140,7 @@ const INITIAL_FORM: FormData = {
   usesSyntheticPesticides: "", sellsGmoProducts: "", practicesMonocrop: "",
   isCertifiedOrganic: "", organicCertification: "",
   yearsFarming: "", uniqueDescription: "",
+  password: "", confirmPassword: "",
 };
 
 // ── Step 1: Farm Information ──────────────────────────────────────────────────
@@ -158,6 +161,16 @@ function Step1({ data, update, onNext }: {
   onNext: () => void;
 }) {
   const [otherText, setOtherText] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [pwError, setPwError] = useState("");
+
+  const validateAndNext = () => {
+    if (data.password.length < 8) { setPwError("Password must be at least 8 characters."); return; }
+    if (data.password !== data.confirmPassword) { setPwError("Passwords do not match."); return; }
+    setPwError("");
+    onNext();
+  };
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8 space-y-5">
@@ -175,6 +188,58 @@ function Step1({ data, update, onNext }: {
         <input id="email" type="email" placeholder="you@example.com" className={inputCls}
           value={data.email} onChange={e => update({ email: e.target.value })} />
       </Field>
+
+      <div className="space-y-4 p-4 bg-[#f5f0e8] rounded-xl border border-[#1a4a2e]/10">
+        <div>
+          <p className="text-sm font-semibold text-[#1a4a2e]">Seller Center Login Credentials</p>
+          <p className="text-xs text-gray-500 mt-0.5">These will be used to log into your seller account once approved.</p>
+        </div>
+
+        <Field label="Password" id="password">
+          <div className="relative">
+            <input id="password" type={showPassword ? "text" : "password"} placeholder="Min 8 characters"
+              className={inputCls}
+              value={data.password} onChange={e => { update({ password: e.target.value }); setPwError(""); }} />
+            <button type="button" onClick={() => setShowPassword(v => !v)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors" aria-label="Toggle password visibility">
+              {showPassword ? (
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13.875 18.825A10.05 10.05 0 0112 19c-5 0-9-4-9-7s4-7 9-7a10.05 10.05 0 011.875.175M15 12a3 3 0 11-6 0 3 3 0 016 0zm6.364-4.364l-14.728 14.728" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+              )}
+            </button>
+          </div>
+        </Field>
+
+        <Field label="Confirm Password" id="confirmPassword">
+          <div className="relative">
+            <input id="confirmPassword" type={showConfirmPassword ? "text" : "password"} placeholder="Re-enter your password"
+              className={inputCls}
+              value={data.confirmPassword} onChange={e => { update({ confirmPassword: e.target.value }); setPwError(""); }} />
+            <button type="button" onClick={() => setShowConfirmPassword(v => !v)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors" aria-label="Toggle confirm password visibility">
+              {showConfirmPassword ? (
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13.875 18.825A10.05 10.05 0 0112 19c-5 0-9-4-9-7s4-7 9-7a10.05 10.05 0 011.875.175M15 12a3 3 0 11-6 0 3 3 0 016 0zm6.364-4.364l-14.728 14.728" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+              )}
+            </button>
+          </div>
+        </Field>
+
+        {pwError && <p className="text-xs text-red-600 font-medium">{pwError}</p>}
+      </div>
+
       <Field label="Phone Number" id="phone">
         <input id="phone" type="tel" placeholder="+1 (555) 000-0000" className={inputCls}
           value={data.phone} onChange={e => update({ phone: e.target.value })} />
@@ -241,7 +306,7 @@ function Step1({ data, update, onNext }: {
       </div>
 
       <div className="pt-2">
-        <button onClick={onNext}
+        <button onClick={validateAndNext}
           className="w-full bg-[#1a4a2e] hover:bg-[#2d6b47] text-white font-semibold py-2.5 rounded-xl transition-colors">
           Next Step
         </button>
@@ -483,7 +548,18 @@ export default function SellerApplicationForm() {
 
     const referenceNumber = `APP-${Date.now()}`;
 
-    // 10-second hard timeout
+    // Belt-and-suspenders password validation (Step 1 already validates)
+    if (formData.password.length < 8) {
+      setError("Password must be at least 8 characters.");
+      setLoading(false);
+      return;
+    }
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match.");
+      setLoading(false);
+      return;
+    }
+
     const timeoutId = setTimeout(() => {
       setLoading(false);
       setError(
@@ -494,38 +570,37 @@ export default function SellerApplicationForm() {
     }, 10000);
 
     try {
-      // ── STEP 1: log what we are about to send ──────────────────────────
-      console.log("[SellerApply] STEP 1 — starting insert to seller_applications");
-      console.log("[SellerApply] Reference number:", referenceNumber);
-      console.log("[SellerApply] farm_name:", formData.farmName);
-      console.log("[SellerApply] email:", formData.email);
-      console.log("[SellerApply] product_types:", formData.productTypes);
-      console.log("[SellerApply] fulfillment_methods:", formData.fulfillmentMethods);
+      // ── STEP 1: Create Supabase auth account ────────────────────────────
+      console.log("[SellerApply] STEP 1 — creating auth account for:", formData.email);
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: { data: { first_name: formData.ownerName } },
+      });
 
-      // ── STEP 2: run a quick SELECT first to confirm connection is alive ─
-      console.log("[SellerApply] STEP 2 — pre-insert connectivity check…");
-      const { error: pingError } = await supabase
-        .from("seller_applications")
-        .select("id")
-        .limit(1);
-      if (pingError) {
-        console.error("[SellerApply] Pre-insert ping FAILED ❌ — aborting.", pingError);
+      if (signUpError) {
         clearTimeout(timeoutId);
-        setError(
-          `Cannot reach Supabase: ${pingError.message}. ` +
-          "Check that NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local are correct."
-        );
+        console.error("[SellerApply] auth.signUp FAILED ❌", signUpError.message);
+        const msg = signUpError.message.toLowerCase();
+        if (msg.includes("already registered") || msg.includes("already been registered")) {
+          setError("An account with this email already exists. Please use a different email address.");
+        } else {
+          setError(`Account creation failed: ${signUpError.message}`);
+        }
         setLoading(false);
         return;
       }
-      console.log("[SellerApply] STEP 2 — ping OK ✅");
 
-      // ── STEP 3: run the insert ─────────────────────────────────────────
-      console.log("[SellerApply] STEP 3 — running insert…");
+      const applicantUserId = authData.user?.id ?? null;
+      console.log("[SellerApply] STEP 1 ✅ — user_id:", applicantUserId);
+
+      // ── STEP 2: Insert application record ───────────────────────────────
+      console.log("[SellerApply] STEP 2 — inserting application…");
       const { data: insertedRow, error: dbError } = await supabase
         .from("seller_applications")
         .insert({
           reference_number:          referenceNumber,
+          applicant_user_id:         applicantUserId,
           farm_name:                 formData.farmName,
           owner_name:                formData.ownerName,
           email:                     formData.email,
@@ -553,11 +628,7 @@ export default function SellerApplicationForm() {
       clearTimeout(timeoutId);
 
       if (dbError) {
-        console.error("[SellerApply] STEP 3 — insert FAILED ❌");
-        console.error("[SellerApply] Error code:", dbError.code);
-        console.error("[SellerApply] Error message:", dbError.message);
-        console.error("[SellerApply] Error details:", dbError.details);
-        console.error("[SellerApply] Error hint:", dbError.hint);
+        console.error("[SellerApply] STEP 2 FAILED ❌", dbError.code, dbError.message, dbError.hint);
         setError(
           `Submission failed: ${dbError.message}` +
           (dbError.hint ? ` — ${dbError.hint}` : "") +
@@ -567,12 +638,15 @@ export default function SellerApplicationForm() {
         return;
       }
 
-      console.log("[SellerApply] STEP 3 — insert SUCCEEDED ✅", insertedRow);
-      console.log("[SellerApply] Redirecting to submitted page…");
+      console.log("[SellerApply] STEP 2 ✅ — inserted:", insertedRow);
+
+      // Sign out — account exists but needs admin approval before seller access
+      await supabase.auth.signOut().catch(() => {});
+
       window.location.href = `/seller/apply/submitted?ref=${referenceNumber}`;
     } catch (err: unknown) {
       clearTimeout(timeoutId);
-      console.error("[SellerApply] Unexpected exception thrown:", err);
+      console.error("[SellerApply] Unexpected exception:", err);
       const message = err instanceof Error ? err.message : "An unexpected error occurred. Please try again.";
       setError(message);
       setLoading(false);
