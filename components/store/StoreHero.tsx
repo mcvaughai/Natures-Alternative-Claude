@@ -1,10 +1,16 @@
 import Link from "next/link";
 
-interface StoreHeroProps {
-  storeId: string;
+interface Seller {
+  farm_name: string;
+  description: string;
 }
 
-export default function StoreHero({ storeId }: StoreHeroProps) {
+interface StoreHeroProps {
+  storeId: string;
+  seller?: Seller | null;
+}
+
+export default function StoreHero({ storeId, seller }: StoreHeroProps) {
   return (
     <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       <div className="relative bg-gray-300 rounded-2xl overflow-hidden h-64 sm:h-80 lg:h-96 w-full">
@@ -19,9 +25,11 @@ export default function StoreHero({ storeId }: StoreHeroProps) {
         {/* Overlay text card — bottom left */}
         <div className="absolute bottom-0 left-0 m-5 sm:m-7 max-w-xs">
           <div className="bg-black/65 backdrop-blur-sm rounded-xl p-5">
+            {seller && (
+              <h2 className="text-white font-bold text-lg mb-2">{seller.farm_name}</h2>
+            )}
             <p className="text-white/90 text-sm leading-relaxed mb-4">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor
-              incididunt ut labore et dolore magna aliqua, ut enim veniam quis nostrud.
+              {seller?.description ?? "Fresh natural products from our farm to your table."}
             </p>
             <Link
               href={`/store/${storeId}/shop`}
