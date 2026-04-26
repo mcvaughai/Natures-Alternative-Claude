@@ -24,18 +24,31 @@ function SearchResults() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(true);
-    const req = supabase
-      .from("products")
-      .select("id, name, description, price, images")
-      .eq("status", "active")
-      .order("created_at", { ascending: false });
+    async function fetchProducts() {
+      setLoading(true);
+      try {
+        const req = supabase
+          .from("products")
+          .select("id, name, description, price, images")
+          .eq("status", "active")
+          .order("created_at", { ascending: false });
 
-    const finalReq = query ? req.ilike("name", `%${query}%`) : req;
-    finalReq.then(({ data }) => {
-      if (data) setProducts(data);
-      setLoading(false);
-    });
+        const { data, error } = await (query ? req.ilike("name", `%${query}%`) : req);
+
+        if (error) {
+          console.error("Error fetching products:", error.message);
+          return;
+        }
+
+        setProducts(data ?? []);
+      } catch (err) {
+        console.error("Unexpected error:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchProducts();
   }, [query]);
 
   return (
@@ -63,6 +76,12 @@ function SearchResults() {
               {loading ? (
                 <div className="flex items-center justify-center py-16">
                   <div className="w-6 h-6 rounded-full border-2 border-[#1a4a2e] border-t-transparent animate-spin" />
+                </div>
+              ) : products.length === 0 ? (
+                <div className="text-center py-16 text-gray-500 text-sm">
+                  {query
+                    ? `No products found for "${query}". Try a different search.`
+                    : "No products available yet. Check back soon!"}
                 </div>
               ) : (
                 <>

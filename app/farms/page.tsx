@@ -31,28 +31,39 @@ export default function FarmsPage() {
   const [loading, setLoading]       = useState(true);
 
   useEffect(() => {
-    supabase
-      .from("sellers")
-      .select("slug, farm_name, city, state, description, fulfillment")
-      .eq("status", "approved")
-      .then(({ data }) => {
-        if (data) {
-          setFarms(
-            data.map((s) => ({
-              id:           s.slug,
-              name:         s.farm_name,
-              location:     [s.city, s.state].filter(Boolean).join(", "),
-              description:  s.description ?? "",
-              categories:   [],
-              fulfillment:  mapFulfillment(s.fulfillment),
-              rating:       0,
-              reviewCount:  0,
-              productCount: 0,
-            }))
-          );
+    async function fetchFarms() {
+      try {
+        const { data, error } = await supabase
+          .from("sellers")
+          .select("slug, farm_name, city, state, description, fulfillment")
+          .eq("status", "approved");
+
+        if (error) {
+          console.error("Error fetching sellers:", error.message);
+          return;
         }
+
+        setFarms(
+          (data ?? []).map((s) => ({
+            id:           s.slug,
+            name:         s.farm_name,
+            location:     [s.city, s.state].filter(Boolean).join(", "),
+            description:  s.description ?? "",
+            categories:   [],
+            fulfillment:  mapFulfillment(s.fulfillment),
+            rating:       0,
+            reviewCount:  0,
+            productCount: 0,
+          }))
+        );
+      } catch (err) {
+        console.error("Unexpected error:", err);
+      } finally {
         setLoading(false);
-      });
+      }
+    }
+
+    fetchFarms();
   }, []);
 
   const handleHeroSearch = (e: React.FormEvent) => {
@@ -151,6 +162,10 @@ export default function FarmsPage() {
                 {loading ? (
                   <div className="flex items-center justify-center py-16">
                     <div className="w-6 h-6 rounded-full border-2 border-[#1a4a2e] border-t-transparent animate-spin" />
+                  </div>
+                ) : farms.length === 0 ? (
+                  <div className="text-center py-16 text-gray-500 text-sm">
+                    No farms available yet. Check back soon!
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
