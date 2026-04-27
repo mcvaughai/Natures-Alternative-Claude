@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
+
+const SUPABASE_URL = "https://ezryfycxfmtffobyfjfa.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6cnlmeWN4Zm10ZmZvYnlmamZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MjQ1MDEsImV4cCI6MjA5MjQwMDUwMX0.woObRrj3MMUf6eAFVbkvDNUsQfQ-elmlDqPADBT9aZs";
 
 // ── Shared primitives ─────────────────────────────────────────────────────────
 const inputCls =
@@ -513,35 +515,6 @@ export default function SellerApplicationForm() {
   const update = (fields: Partial<FormData>) =>
     setFormData(prev => ({ ...prev, ...fields }));
 
-  // ── Connection test on mount — shows immediately in DevTools console ─────
-  // Open browser DevTools → Console to see results.
-  // If you see "FAILED" here the anon key or URL in .env.local is wrong.
-  useState(() => {
-    async function testConnection() {
-      console.log("=== [SellerApply] SUPABASE CONNECTION TEST ===");
-      console.log("[SellerApply] URL:", process.env.NEXT_PUBLIC_SUPABASE_URL ?? "NOT SET");
-      console.log("[SellerApply] Key (first 20 chars):",
-        (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "NOT SET").slice(0, 20) + "…"
-      );
-      try {
-        const { data, error: selErr } = await supabase
-          .from("seller_applications")
-          .select("id")
-          .limit(1);
-        if (selErr) {
-          console.error("[SellerApply] SELECT test FAILED ❌", selErr.code, selErr.message);
-          console.error("[SellerApply] This means the key/URL is wrong OR the table does not exist OR RLS is blocking reads.");
-        } else {
-          console.log("[SellerApply] SELECT test PASSED ✅ — Supabase is reachable. Rows returned:", data?.length ?? 0);
-        }
-      } catch (e) {
-        console.error("[SellerApply] SELECT test threw an exception ❌", e);
-      }
-      console.log("=== [SellerApply] END CONNECTION TEST ===");
-    }
-    testConnection();
-  });
-
   const handleSubmit = async () => {
     setLoading(true);
     setError("");
@@ -560,45 +533,44 @@ export default function SellerApplicationForm() {
       return;
     }
 
-    const timeoutId = setTimeout(() => {
-      setLoading(false);
-      setError(
-        "Submission timed out after 10 seconds. " +
-        "Check the browser console (DevTools → Console) for the exact error. " +
-        "The most likely cause is an invalid Supabase anon key in .env.local."
-      );
-    }, 10000);
-
     try {
-      // ── STEP 1: Create Supabase auth account ────────────────────────────
-      console.log("[SellerApply] STEP 1 — creating auth account for:", formData.email);
-      const { data: authData, error: signUpError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: { data: { first_name: formData.ownerName } },
+      // ── STEP 1: Create auth account via REST ────────────────────────────
+      const signUpRes = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+        method: "POST",
+        headers: { apikey: SUPABASE_ANON_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          data: { first_name: formData.ownerName },
+        }),
       });
 
-      if (signUpError) {
-        clearTimeout(timeoutId);
-        console.error("[SellerApply] auth.signUp FAILED ❌", signUpError.message);
-        const msg = signUpError.message.toLowerCase();
+      const signUpData = await signUpRes.json();
+
+      if (!signUpRes.ok) {
+        const msg = (signUpData?.msg ?? signUpData?.message ?? "").toLowerCase();
         if (msg.includes("already registered") || msg.includes("already been registered")) {
           setError("An account with this email already exists. Please use a different email address.");
         } else {
-          setError(`Account creation failed: ${signUpError.message}`);
+          setError(`Account creation failed: ${signUpData?.msg ?? signUpData?.message ?? "Unknown error"}`);
         }
         setLoading(false);
         return;
       }
 
-      const applicantUserId = authData.user?.id ?? null;
-      console.log("[SellerApply] STEP 1 ✅ — user_id:", applicantUserId);
+      const applicantUserId = signUpData.user?.id ?? signUpData.id ?? null;
+      const accessToken = signUpData.access_token ?? null;
 
-      // ── STEP 2: Insert application record ───────────────────────────────
-      console.log("[SellerApply] STEP 2 — inserting application…");
-      const { data: insertedRow, error: dbError } = await supabase
-        .from("seller_applications")
-        .insert({
+      // ── STEP 2: Insert application record via REST ───────────────────────
+      const insertRes = await fetch(`${SUPABASE_URL}/rest/v1/seller_applications`, {
+        method: "POST",
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: accessToken ? `Bearer ${accessToken}` : `Bearer ${SUPABASE_ANON_KEY}`,
+          "Content-Type": "application/json",
+          Prefer: "return=minimal",
+        },
+        body: JSON.stringify({
           reference_number:          referenceNumber,
           applicant_user_id:         applicantUserId,
           farm_name:                 formData.farmName,
@@ -622,30 +594,26 @@ export default function SellerApplicationForm() {
           unique_description:        formData.uniqueDescription || null,
           agreed_to_terms:           true,
           status:                    "pending",
-        })
-        .select("id");
+        }),
+      });
 
-      clearTimeout(timeoutId);
-
-      if (dbError) {
-        console.error("[SellerApply] STEP 2 FAILED ❌", dbError.code, dbError.message, dbError.hint);
-        setError(
-          `Submission failed: ${dbError.message}` +
-          (dbError.hint ? ` — ${dbError.hint}` : "") +
-          (dbError.details ? ` (${dbError.details})` : "")
-        );
+      if (!insertRes.ok) {
+        const errText = await insertRes.text();
+        setError(`Submission failed: ${errText}`);
         setLoading(false);
         return;
       }
 
-      console.log("[SellerApply] STEP 2 ✅ — inserted:", insertedRow);
-
       // Sign out — account exists but needs admin approval before seller access
-      await supabase.auth.signOut().catch(() => {});
+      if (accessToken) {
+        await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
+          method: "POST",
+          headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${accessToken}` },
+        }).catch(() => {});
+      }
 
       window.location.href = `/seller/apply/submitted?ref=${referenceNumber}`;
     } catch (err: unknown) {
-      clearTimeout(timeoutId);
       console.error("[SellerApply] Unexpected exception:", err);
       const message = err instanceof Error ? err.message : "An unexpected error occurred. Please try again.";
       setError(message);

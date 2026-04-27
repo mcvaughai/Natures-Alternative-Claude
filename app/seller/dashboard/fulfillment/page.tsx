@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import SellerLayout from "@/components/seller/SellerLayout";
-import { supabase } from "@/lib/supabase";
+import { getSellerSession } from "@/lib/sessionHelper";
 
 const inputCls = "w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a4a2e]/30 focus:border-[#1a4a2e] transition";
 
@@ -17,16 +17,8 @@ function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
 
 export default function FulfillmentPage() {
   useEffect(() => {
-    async function checkAuth() {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) { window.location.href = "/seller/login"; return; }
-        const { data: seller } = await supabase
-          .from("sellers").select("id, status").eq("user_id", session.user.id).single();
-        if (!seller || seller.status !== "approved") { window.location.href = "/seller/login"; }
-      } catch { window.location.href = "/seller/login"; }
-    }
-    checkAuth();
+    const session = getSellerSession();
+    if (!session?.access_token) window.location.href = "/seller/login";
   }, []);
 
   const [pickup, setPickup]         = useState(true);

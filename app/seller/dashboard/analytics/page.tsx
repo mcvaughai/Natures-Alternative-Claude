@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import SellerLayout from "@/components/seller/SellerLayout";
-import { supabase } from "@/lib/supabase";
+import { getSellerSession } from "@/lib/sessionHelper";
 
 type Range = "7d" | "30d" | "90d";
 
@@ -77,16 +77,8 @@ const BAR_COLORS = ["bg-[#1a4a2e]", "bg-[#2d6b47]", "bg-[#4a8c64]"];
 
 export default function AnalyticsPage() {
   useEffect(() => {
-    async function checkAuth() {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) { window.location.href = "/seller/login"; return; }
-        const { data: seller } = await supabase
-          .from("sellers").select("id, status").eq("user_id", session.user.id).single();
-        if (!seller || seller.status !== "approved") { window.location.href = "/seller/login"; }
-      } catch { window.location.href = "/seller/login"; }
-    }
-    checkAuth();
+    const session = getSellerSession();
+    if (!session?.access_token) window.location.href = "/seller/login";
   }, []);
 
   const [range, setRange] = useState<Range>("30d");

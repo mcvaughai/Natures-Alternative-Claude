@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import SellerLayout from "@/components/seller/SellerLayout";
 import { supabase } from "@/lib/supabase";
 import { SUPABASE_URL, supabaseHeaders } from "@/lib/api";
+import { getSellerSession, getAuthHeaders } from "@/lib/sessionHelper";
 
 const FILTER_TABS = ["All Products", "Active", "Draft", "Out of Stock"] as const;
 type FilterTab = typeof FILTER_TABS[number];
@@ -81,25 +82,14 @@ export default function ProductsPage() {
     }
   }, []);
 
-  // ── Init: check auth (Supabase JS for session), then REST for data ─────────
+  // ── Init: check auth from localStorage, then REST for data ───────────────
   useEffect(() => {
     async function init() {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) { window.location.href = "/seller/login"; return; }
+        const session = getSellerSession();
+        if (!session?.access_token) { window.location.href = "/seller/login"; return; }
 
-        const { data: seller } = await supabase
-          .from("sellers")
-          .select("id, status")
-          .eq("user_id", session.user.id)
-          .single();
-
-        if (!seller || seller.status !== "approved") {
-          window.location.href = "/seller/login";
-          return;
-        }
-
-        setSellerId(seller.id);
+        setSellerId(session.seller_id);
 
         // Fetch categories via REST
         const catRes = await fetch(
@@ -111,7 +101,7 @@ export default function ProductsPage() {
           if (cats) setCategories(cats);
         }
 
-        await fetchProducts(seller.id);
+        await fetchProducts(session.seller_id);
       } catch (err) {
         console.error("Products page init error:", err);
         window.location.href = "/seller/login";
@@ -187,8 +177,8 @@ export default function ProductsPage() {
 
     setSaving(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { alert("Not logged in. Please log in again."); window.location.href = "/seller/login"; return; }
+      const session = getSellerSession();
+      if (!session?.access_token) { alert("Not logged in. Please log in again."); window.location.href = "/seller/login"; return; }
 
       let imageUrl: string | null = null;
       if (selectedImageFile) imageUrl = await uploadImage(selectedImageFile);
@@ -197,12 +187,7 @@ export default function ProductsPage() {
         productForm.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") +
         "-" + Date.now().toString(36);
 
-      const authHeaders = {
-        apikey:         SUPABASE_URL.includes("ezryfycxfmtffobyfjfa") ? "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6cnlmeWN4Zm10ZmZvYnlmamZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MjQ1MDEsImV4cCI6MjA5MjQwMDUwMX0.woObRrj3MMUf6eAFVbkvDNUsQfQ-elmlDqPADBT9aZs" : "",
-        Authorization:  `Bearer ${session.access_token}`,
-        "Content-Type": "application/json",
-        Prefer:         "return=representation",
-      };
+      const authHeaders = { ...getAuthHeaders(session.access_token), Prefer: "return=representation" };
 
       console.log("Saving product for seller:", sellerId);
 
@@ -254,15 +239,10 @@ export default function ProductsPage() {
 
     setSaving(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { alert("Not logged in. Please log in again."); window.location.href = "/seller/login"; return; }
+      const session = getSellerSession();
+      if (!session?.access_token) { alert("Not logged in. Please log in again."); window.location.href = "/seller/login"; return; }
 
-      const authHeaders = {
-        apikey:         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6cnlmeWN4Zm10ZmZvYnlmamZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MjQ1MDEsImV4cCI6MjA5MjQwMDUwMX0.woObRrj3MMUf6eAFVbkvDNUsQfQ-elmlDqPADBT9aZs",
-        Authorization:  `Bearer ${session.access_token}`,
-        "Content-Type": "application/json",
-        Prefer:         "return=representation",
-      };
+      const authHeaders = { ...getAuthHeaders(session.access_token), Prefer: "return=representation" };
 
       // Keep existing images unless a new file is selected
       let images = editingProduct.images ?? [];
@@ -317,14 +297,10 @@ export default function ProductsPage() {
   const deleteProduct = async (id: string) => {
     if (!confirm("Delete this product?")) return;
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { alert("Not logged in. Please log in again."); window.location.href = "/seller/login"; return; }
+      const session = getSellerSession();
+      if (!session?.access_token) { alert("Not logged in. Please log in again."); window.location.href = "/seller/login"; return; }
 
-      const authHeaders = {
-        apikey:         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6cnlmeWN4Zm10ZmZvYnlmamZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MjQ1MDEsImV4cCI6MjA5MjQwMDUwMX0.woObRrj3MMUf6eAFVbkvDNUsQfQ-elmlDqPADBT9aZs",
-        Authorization:  `Bearer ${session.access_token}`,
-        "Content-Type": "application/json",
-      };
+      const authHeaders = getAuthHeaders(session.access_token);
 
       console.log("Deleting product:", id);
       const response = await fetch(
@@ -348,14 +324,10 @@ export default function ProductsPage() {
   const toggleStatus = async (p: DbProduct) => {
     const newStatus = p.status === "active" ? "draft" : "active";
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      const session = getSellerSession();
+      if (!session?.access_token) return;
 
-      const authHeaders = {
-        apikey:         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6cnlmeWN4Zm10ZmZvYnlmamZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MjQ1MDEsImV4cCI6MjA5MjQwMDUwMX0.woObRrj3MMUf6eAFVbkvDNUsQfQ-elmlDqPADBT9aZs",
-        Authorization:  `Bearer ${session.access_token}`,
-        "Content-Type": "application/json",
-      };
+      const authHeaders = getAuthHeaders(session.access_token);
 
       await fetch(
         `${SUPABASE_URL}/rest/v1/products?id=eq.${p.id}`,
