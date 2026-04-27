@@ -41,8 +41,8 @@ function getCategoryName(slug: string): string {
 export default function CategoryPage() {
   const params = useParams();
   const slug = params?.slug as string;
-  const categoryName = getCategoryName(slug ?? "");
 
+  const [categoryName, setCategoryName] = useState(getCategoryName(slug ?? ""));
   const [products, setProducts] = useState<Product[]>([]);
   const [sellers, setSellers]   = useState<SellerCard[]>([]);
   const [loading, setLoading]   = useState(true);
@@ -70,34 +70,45 @@ export default function CategoryPage() {
   }, [slug]);
 
   async function fetchCategoryProducts() {
-    console.log("fetchCategoryProducts called with slug:", slug);
     setLoading(true);
     setError("");
     try {
+      console.log("Step 1: Fetching category with slug:", slug);
+
       const { data: category, error: catError } = await supabase
         .from("categories")
-        .select("id, name")
+        .select("id, name, slug")
         .eq("slug", slug)
         .single();
 
+      console.log("Step 2: Category result:", category, "Error:", catError);
+
       if (catError || !category) {
-        setError("Category not found.");
+        console.error("Category not found");
+        setError("Category not found");
         return;
       }
 
+      setCategoryName(category.name);
+      console.log("Step 3: Fetching products for category ID:", category.id);
+
+      // Correct column names: status (not is_active), images TEXT[] (not product_images table)
       const { data: productsData, error: prodError } = await supabase
         .from("products")
-        .select("id, name, description, price, images, seller_id")
+        .select("id, name, description, price, images, seller_id, stock_qty, unit")
         .eq("category_id", category.id)
         .eq("status", "active")
         .order("created_at", { ascending: false });
 
+      console.log("Step 4: Products result:", productsData, "Error:", prodError);
+
       if (prodError) {
-        setError("Error loading products.");
+        setError("Error loading products: " + prodError.message);
         return;
       }
 
       setProducts(productsData ?? []);
+      console.log("Step 5: Done! Found", productsData?.length ?? 0, "products");
 
       if (productsData && productsData.length > 0) {
         const sellerIds = Array.from(new Set(productsData.map((p) => p.seller_id)));
@@ -115,10 +126,16 @@ export default function CategoryPage() {
           }))
         );
       }
-    } catch (err) {
-      console.error("Unexpected error:", err);
-      setError("Something went wrong. Please try again.");
+    } catch (err: unknown) {
+      const e = err as { name?: string; message?: string };
+      console.error("Catch error:", e?.message || err);
+      if (e?.name === "AbortError") {
+        setError("Request timed out. Please check your connection.");
+      } else {
+        setError("Something went wrong: " + (e?.message ?? "unknown error"));
+      }
     } finally {
+      console.log("Finally block - setting loading to false");
       setLoading(false);
     }
   }
@@ -148,7 +165,16 @@ export default function CategoryPage() {
                     <div className="w-6 h-6 rounded-full border-2 border-[#1a4a2e] border-t-transparent animate-spin" />
                   </div>
                 ) : error ? (
-                  <div className="text-center py-16 text-red-500 text-sm">{error}</div>
+                  <div className="text-center py-16">
+                    <h3 className="text-base font-semibold text-gray-800 mb-2">Error loading products</h3>
+                    <p className="text-sm text-red-500 mb-4">{error}</p>
+                    <button
+                      onClick={fetchCategoryProducts}
+                      className="bg-[#1a4a2e] hover:bg-[#2d6b47] text-white text-sm font-semibold px-5 py-2 rounded-xl transition-colors"
+                    >
+                      Try Again
+                    </button>
+                  </div>
                 ) : products.length === 0 ? (
                   <div className="text-center py-16 text-gray-500 text-sm">
                     No products in this category yet. Check back soon!
