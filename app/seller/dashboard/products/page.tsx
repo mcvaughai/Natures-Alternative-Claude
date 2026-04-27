@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import SellerLayout from "@/components/seller/SellerLayout";
 import { supabase } from "@/lib/supabase";
+import { SUPABASE_URL, supabaseHeaders } from "@/lib/api";
 
 const FILTER_TABS = ["All Products", "Active", "Draft", "Out of Stock"] as const;
 type FilterTab = typeof FILTER_TABS[number];
@@ -12,11 +13,14 @@ interface Category { id: string; name: string; }
 interface DbProduct {
   id: string;
   name: string;
+  description: string | null;
   price: number;
   stock_qty: number | null;
+  unit: string | null;
   in_stock: boolean;
   status: string;
   images: string[];
+  category_id: string | null;
   categories: { name: string } | null;
 }
 
@@ -42,33 +46,42 @@ const Spinner = () => (
 );
 
 export default function ProductsPage() {
-  const [tab, setTab]           = useState<FilterTab>("All Products");
-  const [search, setSearch]     = useState("");
-  const [showForm, setShowForm] = useState(false);
-  const [products, setProducts] = useState<DbProduct[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loadingPage, setLoadingPage] = useState(true);
-  const [saving, setSaving]     = useState(false);
-  const [sellerId, setSellerId] = useState<string | null>(null);
+  const [tab, setTab]                   = useState<FilterTab>("All Products");
+  const [search, setSearch]             = useState("");
+  const [showForm, setShowForm]         = useState(false);
+  const [editingProduct, setEditingProduct] = useState<DbProduct | null>(null);
+  const [products, setProducts]         = useState<DbProduct[]>([]);
+  const [categories, setCategories]     = useState<Category[]>([]);
+  const [loadingPage, setLoadingPage]   = useState(true);
+  const [saving, setSaving]             = useState(false);
+  const [sellerId, setSellerId]         = useState<string | null>(null);
 
   // Form state
-  const [productForm, setProductForm] = useState({ name: "", description: "", price: "", stock: "" });
+  const [productForm, setProductForm] = useState({
+    name: "", description: "", price: "", stock: "", unit: "each",
+  });
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
   const [selectedImageFile, setSelectedImageFile]   = useState<File | null>(null);
   const [imagePreview, setImagePreview]             = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // ── Fetch products for this seller ─────────────────────────────────────────
+  // ── Fetch products via REST API ────────────────────────────────────────────
   const fetchProducts = useCallback(async (sid: string) => {
-    const { data } = await supabase
-      .from("products")
-      .select("id, name, price, stock_qty, in_stock, status, images, categories (name)")
-      .eq("seller_id", sid)
-      .order("created_at", { ascending: false });
-    if (data) setProducts(data as unknown as DbProduct[]);
+    try {
+      const response = await fetch(
+        `${SUPABASE_URL}/rest/v1/products?seller_id=eq.${sid}&select=id,name,description,price,stock_qty,unit,in_stock,status,images,category_id,categories(name)&order=created_at.desc`,
+        { headers: supabaseHeaders }
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setProducts(data ?? []);
+      }
+    } catch (err) {
+      console.error("Error fetching products:", err);
+    }
   }, []);
 
-  // ── Init: check auth, get seller ID, categories, products ──────────────────
+  // ── Init: check auth (Supabase JS for session), then REST for data ─────────
   useEffect(() => {
     async function init() {
       try {
@@ -88,11 +101,15 @@ export default function ProductsPage() {
 
         setSellerId(seller.id);
 
-        const { data: cats } = await supabase
-          .from("categories")
-          .select("id, name")
-          .order("sort_order");
-        if (cats) setCategories(cats);
+        // Fetch categories via REST
+        const catRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/categories?select=id,name&order=sort_order`,
+          { headers: supabaseHeaders }
+        );
+        if (catRes.ok) {
+          const cats = await catRes.json();
+          if (cats) setCategories(cats);
+        }
 
         await fetchProducts(seller.id);
       } catch (err) {
@@ -105,7 +122,7 @@ export default function ProductsPage() {
     init();
   }, [fetchProducts]);
 
-  // ── Upload image to Supabase Storage ───────────────────────────────────────
+  // ── Upload image to Supabase Storage (requires JS client) ─────────────────
   const uploadImage = async (file: File): Promise<string | null> => {
     const fileExt = file.name.split(".").pop();
     const fileName = `${Date.now()}.${fileExt}`;
@@ -113,10 +130,7 @@ export default function ProductsPage() {
       .from("product-images")
       .upload(fileName, file);
 
-    if (error) {
-      console.error("Upload error:", error);
-      return null;
-    }
+    if (error) { console.error("Upload error:", error); return null; }
 
     const { data: { publicUrl } } = supabase.storage
       .from("product-images")
@@ -125,7 +139,7 @@ export default function ProductsPage() {
     return publicUrl;
   };
 
-  // ── Handle file selection & preview ────────────────────────────────────────
+  // ── Image helpers ──────────────────────────────────────────────────────────
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -140,26 +154,42 @@ export default function ProductsPage() {
   };
 
   const resetForm = () => {
-    setProductForm({ name: "", description: "", price: "", stock: "" });
+    setProductForm({ name: "", description: "", price: "", stock: "", unit: "each" });
     setSelectedCategoryId("");
+    setEditingProduct(null);
     clearImage();
   };
 
-  // ── Save product (publish or draft) ────────────────────────────────────────
+  // ── Open form in edit mode ─────────────────────────────────────────────────
+  const handleEditClick = (product: DbProduct) => {
+    setEditingProduct(product);
+    setShowForm(true);
+    setProductForm({
+      name:        product.name,
+      description: product.description ?? "",
+      price:       product.price.toString(),
+      stock:       product.stock_qty?.toString() ?? "",
+      unit:        product.unit ?? "each",
+    });
+    setSelectedCategoryId(product.category_id ?? "");
+    setImagePreview(product.images?.[0] ?? null);
+    setSelectedImageFile(null);
+    setTimeout(() => {
+      document.getElementById("product-form")?.scrollIntoView({ behavior: "smooth" });
+    }, 100);
+  };
+
+  // ── Add product (uses Supabase JS — works fine) ────────────────────────────
   const saveProduct = async (isActive: boolean) => {
-    if (!sellerId)             { alert("Seller profile not found. Please log in again."); return; }
+    if (!sellerId)               { alert("Seller profile not found. Please log in again."); return; }
     if (!productForm.name.trim()) { alert("Please enter a product name."); return; }
-    if (!productForm.price)    { alert("Please enter a price."); return; }
+    if (!productForm.price)      { alert("Please enter a price."); return; }
 
     setSaving(true);
     try {
-      // Upload image first if one was selected
       let imageUrl: string | null = null;
-      if (selectedImageFile) {
-        imageUrl = await uploadImage(selectedImageFile);
-      }
+      if (selectedImageFile) imageUrl = await uploadImage(selectedImageFile);
 
-      // Generate a unique slug
       const slug =
         productForm.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") +
         "-" + Date.now().toString(36);
@@ -172,6 +202,7 @@ export default function ProductsPage() {
         price:       parseFloat(productForm.price),
         stock_qty:   productForm.stock ? parseInt(productForm.stock) : null,
         in_stock:    productForm.stock ? parseInt(productForm.stock) > 0 : true,
+        unit:        productForm.unit || null,
         category_id: selectedCategoryId || null,
         images:      imageUrl ? [imageUrl] : [],
         status:      isActive ? "active" : "draft",
@@ -190,18 +221,88 @@ export default function ProductsPage() {
     }
   };
 
-  // ── Delete product ──────────────────────────────────────────────────────────
-  const deleteProduct = async (id: string) => {
-    if (!confirm("Delete this product?")) return;
-    await supabase.from("products").delete().eq("id", id);
-    setProducts(prev => prev.filter(p => p.id !== id));
+  // ── Update product via REST PATCH ──────────────────────────────────────────
+  const updateProduct = async () => {
+    if (!editingProduct)          { return; }
+    if (!productForm.name.trim()) { alert("Please enter a product name."); return; }
+    if (!productForm.price)       { alert("Please enter a price."); return; }
+
+    setSaving(true);
+    try {
+      // Keep existing images unless a new file is selected
+      let images = editingProduct.images ?? [];
+      if (selectedImageFile) {
+        const url = await uploadImage(selectedImageFile);
+        if (url) images = [url];
+      }
+
+      const response = await fetch(
+        `${SUPABASE_URL}/rest/v1/products?id=eq.${editingProduct.id}`,
+        {
+          method: "PATCH",
+          headers: { ...supabaseHeaders, Prefer: "return=representation" },
+          body: JSON.stringify({
+            name:        productForm.name.trim(),
+            description: productForm.description.trim() || null,
+            price:       parseFloat(productForm.price),
+            stock_qty:   productForm.stock ? parseInt(productForm.stock) : null,
+            in_stock:    productForm.stock ? parseInt(productForm.stock) > 0 : true,
+            unit:        productForm.unit || null,
+            category_id: selectedCategoryId || null,
+            images,
+            updated_at:  new Date().toISOString(),
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        alert("Error updating product: " + JSON.stringify(errData));
+        return;
+      }
+
+      alert("Product updated successfully!");
+      resetForm();
+      setShowForm(false);
+      if (sellerId) await fetchProducts(sellerId);
+    } catch (err) {
+      alert("Error: " + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setSaving(false);
+    }
   };
 
-  // ── Toggle active / draft ───────────────────────────────────────────────────
+  // ── Delete product via REST DELETE ─────────────────────────────────────────
+  const deleteProduct = async (id: string) => {
+    if (!confirm("Delete this product?")) return;
+    try {
+      const response = await fetch(
+        `${SUPABASE_URL}/rest/v1/products?id=eq.${id}`,
+        { method: "DELETE", headers: supabaseHeaders }
+      );
+      if (!response.ok) { alert("Error deleting product."); return; }
+      setProducts(prev => prev.filter(p => p.id !== id));
+    } catch (err) {
+      alert("Error: " + (err instanceof Error ? err.message : String(err)));
+    }
+  };
+
+  // ── Toggle active / draft via REST PATCH ───────────────────────────────────
   const toggleStatus = async (p: DbProduct) => {
     const newStatus = p.status === "active" ? "draft" : "active";
-    await supabase.from("products").update({ status: newStatus }).eq("id", p.id);
-    setProducts(prev => prev.map(x => x.id === p.id ? { ...x, status: newStatus } : x));
+    try {
+      await fetch(
+        `${SUPABASE_URL}/rest/v1/products?id=eq.${p.id}`,
+        {
+          method: "PATCH",
+          headers: supabaseHeaders,
+          body: JSON.stringify({ status: newStatus }),
+        }
+      );
+      setProducts(prev => prev.map(x => x.id === p.id ? { ...x, status: newStatus } : x));
+    } catch (err) {
+      alert("Error toggling status: " + (err instanceof Error ? err.message : String(err)));
+    }
   };
 
   // ── Filter ──────────────────────────────────────────────────────────────────
@@ -212,13 +313,19 @@ export default function ProductsPage() {
     return matchTab && matchSearch;
   });
 
+  const isEditing = !!editingProduct;
+
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <SellerLayout>
       <div className="space-y-5 max-w-5xl">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-gray-900">My Products</h1>
-          <button onClick={() => { setShowForm(v => !v); resetForm(); }}
+          <button
+            onClick={() => {
+              if (showForm) { setShowForm(false); resetForm(); }
+              else { resetForm(); setShowForm(true); }
+            }}
             className="flex items-center gap-1.5 bg-[#1a4a2e] hover:bg-[#2d6b47] text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/>
@@ -227,10 +334,12 @@ export default function ProductsPage() {
           </button>
         </div>
 
-        {/* ── Add Product Form ── */}
+        {/* ── Add / Edit Product Form ── */}
         {showForm && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <h2 className="text-base font-bold text-gray-900 mb-4">Add New Product</h2>
+          <div id="product-form" className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <h2 className="text-base font-bold text-gray-900 mb-4">
+              {isEditing ? "Edit Product" : "Add New Product"}
+            </h2>
             <div className="space-y-4">
 
               {/* Name + Category */}
@@ -257,8 +366,8 @@ export default function ProductsPage() {
                 </div>
               </div>
 
-              {/* Price + Stock */}
-              <div className="grid grid-cols-2 gap-4">
+              {/* Price + Stock + Unit */}
+              <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Price</label>
                   <div className="relative">
@@ -271,6 +380,11 @@ export default function ProductsPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Stock Quantity</label>
                   <input type="number" placeholder="0" min="0" className={inputCls}
                     value={productForm.stock} onChange={e => setProductForm(f => ({ ...f, stock: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Unit</label>
+                  <input type="text" placeholder="e.g. lb, each, dozen" className={inputCls}
+                    value={productForm.unit} onChange={e => setProductForm(f => ({ ...f, unit: e.target.value }))} />
                 </div>
               </div>
 
@@ -312,16 +426,33 @@ export default function ProductsPage() {
 
               {/* Action buttons */}
               <div className="flex gap-3 pt-2">
-                <button onClick={() => saveProduct(false)} disabled={saving}
-                  className="flex-1 border border-gray-300 text-gray-600 font-semibold py-2.5 rounded-xl hover:bg-gray-50 transition-colors text-sm disabled:opacity-50 flex items-center justify-center gap-2">
-                  {saving && <Spinner />}
-                  Save as Draft
-                </button>
-                <button onClick={() => saveProduct(true)} disabled={saving}
-                  className="flex-1 bg-[#1a4a2e] hover:bg-[#2d6b47] disabled:opacity-50 text-white font-semibold py-2.5 rounded-xl transition-colors text-sm flex items-center justify-center gap-2">
-                  {saving && <Spinner />}
-                  Publish Product
-                </button>
+                {isEditing ? (
+                  <>
+                    <button
+                      onClick={() => { setShowForm(false); resetForm(); }}
+                      className="flex-1 border border-gray-300 text-gray-600 font-semibold py-2.5 rounded-xl hover:bg-gray-50 transition-colors text-sm">
+                      Cancel
+                    </button>
+                    <button onClick={updateProduct} disabled={saving}
+                      className="flex-1 bg-[#1a4a2e] hover:bg-[#2d6b47] disabled:opacity-50 text-white font-semibold py-2.5 rounded-xl transition-colors text-sm flex items-center justify-center gap-2">
+                      {saving && <Spinner />}
+                      Update Product
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button onClick={() => saveProduct(false)} disabled={saving}
+                      className="flex-1 border border-gray-300 text-gray-600 font-semibold py-2.5 rounded-xl hover:bg-gray-50 transition-colors text-sm disabled:opacity-50 flex items-center justify-center gap-2">
+                      {saving && <Spinner />}
+                      Save as Draft
+                    </button>
+                    <button onClick={() => saveProduct(true)} disabled={saving}
+                      className="flex-1 bg-[#1a4a2e] hover:bg-[#2d6b47] disabled:opacity-50 text-white font-semibold py-2.5 rounded-xl transition-colors text-sm flex items-center justify-center gap-2">
+                      {saving && <Spinner />}
+                      Publish Product
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -372,7 +503,7 @@ export default function ProductsPage() {
                   {filtered.map(p => {
                     const ds = getDisplayStatus(p);
                     return (
-                      <tr key={p.id} className="hover:bg-gray-50/50 transition-colors">
+                      <tr key={p.id} className={`hover:bg-gray-50/50 transition-colors ${editingProduct?.id === p.id ? "bg-amber-50/50" : ""}`}>
                         <td className="px-4 py-3">
                           {p.images?.[0] ? (
                             // eslint-disable-next-line @next/next/no-img-element
@@ -395,10 +526,18 @@ export default function ProductsPage() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
-                            <button className="text-xs font-semibold text-[#1a4a2e] border border-[#1a4a2e] px-3 py-1.5 rounded-lg hover:bg-[#1a4a2e]/5 transition-colors">Edit</button>
-                            <button onClick={() => deleteProduct(p.id)}
-                              className="text-xs font-semibold text-red-500 border border-red-200 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors">Delete</button>
-                            <button onClick={() => toggleStatus(p)}
+                            <button
+                              onClick={() => handleEditClick(p)}
+                              className="text-xs font-semibold text-[#1a4a2e] border border-[#1a4a2e] px-3 py-1.5 rounded-lg hover:bg-[#1a4a2e]/5 transition-colors">
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => deleteProduct(p.id)}
+                              className="text-xs font-semibold text-red-500 border border-red-200 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors">
+                              Delete
+                            </button>
+                            <button
+                              onClick={() => toggleStatus(p)}
                               className={`relative w-9 h-5 rounded-full transition-colors ${p.status === "active" ? "bg-[#1a4a2e]" : "bg-gray-300"}`}
                               aria-label="Toggle status">
                               <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${p.status === "active" ? "translate-x-4" : "translate-x-0"}`}/>
