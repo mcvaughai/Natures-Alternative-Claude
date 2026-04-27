@@ -10,7 +10,7 @@ import AboutSection from "@/components/store/AboutSection";
 import WhoWeAre from "@/components/store/WhoWeAre";
 import StoreReviews from "@/components/store/StoreReviews";
 import DiscoverMore from "@/components/store/DiscoverMore";
-import { supabase } from "@/lib/supabase";
+import { fetchFromSupabase } from "@/lib/api";
 
 interface Seller {
   id: string;
@@ -35,31 +35,46 @@ interface StorePageProps {
 
 export default function StorePage({ params }: StorePageProps) {
   const { id } = params;
-  const [seller, setSeller] = useState<Seller | null>(null);
+  const [seller, setSeller]   = useState<Seller | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
-      const { data: sellerData } = await supabase
-        .from("sellers")
-        .select("id, farm_name, description, city, state, slug")
-        .eq("slug", id)
-        .single();
+      try {
+        const sellers = await fetchFromSupabase<Seller[]>(
+          `sellers?slug=eq.${id}&status=eq.approved&select=id,farm_name,description,city,state,slug`
+        );
 
-      if (!sellerData) return;
-      setSeller(sellerData);
+        if (!sellers?.length) return;
+        const sellerData = sellers[0];
+        setSeller(sellerData);
 
-      const { data: productsData } = await supabase
-        .from("products")
-        .select("id, name, description, price, images")
-        .eq("seller_id", sellerData.id)
-        .eq("status", "active")
-        .limit(8);
+        const productsData = await fetchFromSupabase<Product[]>(
+          `products?seller_id=eq.${sellerData.id}&status=eq.active&select=id,name,description,price,images&limit=8`
+        );
 
-      if (productsData) setProducts(productsData);
+        if (productsData?.length) setProducts(productsData);
+      } catch (err) {
+        console.error("StorePage load error:", err);
+      } finally {
+        setLoading(false);
+      }
     }
     load();
   }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#f5f0e8] flex flex-col">
+        <Navbar />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-full border-2 border-[#1a4a2e] border-t-transparent animate-spin" />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#f5f0e8] flex flex-col">

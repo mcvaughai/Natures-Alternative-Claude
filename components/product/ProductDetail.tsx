@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import ProductCard from "@/components/shared/ProductCard";
 import { useCart } from "@/lib/context/CartContext";
-import { supabase } from "@/lib/supabase";
+import { fetchFromSupabase } from "@/lib/api";
 
 interface Seller {
   slug: string;
@@ -18,7 +18,6 @@ interface Product {
   price: number;
   images: string[];
   seller_id: string;
-  sellers: Seller | Seller[];
 }
 
 interface RelatedProduct {
@@ -43,30 +42,36 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
   const [qty, setQty]                   = useState(1);
   const [added, setAdded]               = useState(false);
   const [product, setProduct]           = useState<Product | null>(null);
+  const [seller, setSeller]             = useState<Seller | null>(null);
   const [moreProducts, setMoreProducts] = useState<RelatedProduct[]>([]);
   const router = useRouter();
   const { addToCart } = useCart();
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase
-        .from("products")
-        .select("id, name, description, price, images, seller_id, sellers(slug, farm_name, description)")
-        .eq("id", productId)
-        .single();
+      try {
+        // Step 1: fetch product
+        const products = await fetchFromSupabase<Product[]>(
+          `products?id=eq.${productId}&select=id,name,description,price,images,seller_id`
+        );
+        if (!products?.length) return;
+        const productData = products[0];
+        setProduct(productData);
 
-      if (!data) return;
-      setProduct(data as unknown as Product);
+        // Step 2: fetch seller
+        const sellers = await fetchFromSupabase<Seller[]>(
+          `sellers?id=eq.${productData.seller_id}&select=slug,farm_name,description`
+        );
+        if (sellers?.length) setSeller(sellers[0]);
 
-      const { data: more } = await supabase
-        .from("products")
-        .select("id, name, description, price, images")
-        .eq("seller_id", data.seller_id)
-        .eq("status", "active")
-        .neq("id", productId)
-        .limit(4);
-
-      if (more) setMoreProducts(more);
+        // Step 3: fetch more products from same seller
+        const more = await fetchFromSupabase<RelatedProduct[]>(
+          `products?seller_id=eq.${productData.seller_id}&status=eq.active&id=neq.${productId}&select=id,name,description,price,images&limit=4`
+        );
+        if (more?.length) setMoreProducts(more);
+      } catch (err) {
+        console.error("ProductDetail load error:", err);
+      }
     }
     load();
   }, [productId]);
@@ -84,11 +89,6 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
     setTimeout(() => setAdded(false), 1000);
   }
 
-  // Supabase returns foreign-key joins as arrays; normalise to a single object
-  const seller: Seller | undefined = product
-    ? (Array.isArray(product.sellers) ? product.sellers[0] : product.sellers)
-    : undefined;
-
   const mainImage = product?.images?.[0];
 
   return (
@@ -97,14 +97,12 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
 
         {/* ── LEFT: Images ──────────────────────────────────────── */}
         <div>
-          {/* Main image */}
           <div className="bg-gray-200 aspect-square rounded-2xl flex items-center justify-center text-gray-400 mb-3 overflow-hidden">
             {mainImage ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={mainImage} alt={product?.name} className="w-full h-full object-cover" />
             ) : IMAGE_PLACEHOLDER}
           </div>
-          {/* Thumbnails */}
           <div className="grid grid-cols-3 gap-2">
             {[0, 1, 2].map((i) => {
               const img = product?.images?.[i + 1];

@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import SectionHeader from "@/components/shared/SectionHeader";
 import ProductCard from "@/components/shared/ProductCard";
-import { supabase } from "@/lib/supabase";
+import { fetchFromSupabase } from "@/lib/api";
 
 interface Product {
   id: string;
@@ -16,13 +16,11 @@ export default function PopularProducts() {
   const [products, setProducts] = useState<Product[]>([]);
 
   useEffect(() => {
-    supabase
-      .from("products")
-      .select("id, name, description, price, images")
-      .eq("status", "active")
-      .eq("featured", true)
-      .limit(6)
-      .then(({ data }) => { if (data) setProducts(data); });
+    fetchFromSupabase<Product[]>(
+      "products?status=eq.active&featured=eq.true&select=id,name,description,price,images&limit=6"
+    )
+      .then((data) => { if (data?.length) setProducts(data); })
+      .catch((err) => console.error("PopularProducts fetch error:", err));
   }, []);
 
   if (products.length === 0) return null;

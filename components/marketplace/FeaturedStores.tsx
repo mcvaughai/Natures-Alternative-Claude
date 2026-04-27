@@ -3,13 +3,22 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import SectionHeader from "@/components/shared/SectionHeader";
 import FarmCard, { FarmCardData } from "@/components/shared/FarmCard";
-import { supabase } from "@/lib/supabase";
+import { fetchFromSupabase } from "@/lib/api";
+
+interface SellerRow {
+  slug: string;
+  farm_name: string;
+  city: string;
+  state: string;
+  description: string;
+  fulfillment: string[] | null;
+}
 
 function mapFulfillment(raw: string[] | null): string[] {
   return (raw ?? []).map((f) => {
     if (f === "Local Delivery") return "Delivery";
-    if (f === "Farm Pickup") return "Pickup";
-    if (f === "Shipping") return "Ships";
+    if (f === "Farm Pickup")   return "Pickup";
+    if (f === "Shipping")      return "Ships";
     return f;
   });
 }
@@ -18,13 +27,11 @@ export default function FeaturedStores() {
   const [farms, setFarms] = useState<FarmCardData[]>([]);
 
   useEffect(() => {
-    supabase
-      .from("sellers")
-      .select("slug, farm_name, city, state, description, fulfillment")
-      .eq("status", "approved")
-      .limit(4)
-      .then(({ data }) => {
-        if (!data) return;
+    fetchFromSupabase<SellerRow[]>(
+      "sellers?status=eq.approved&select=slug,farm_name,city,state,description,fulfillment&limit=4"
+    )
+      .then((data) => {
+        if (!data?.length) return;
         setFarms(
           data.map((s) => ({
             id:           s.slug,
@@ -38,7 +45,8 @@ export default function FeaturedStores() {
             productCount: 0,
           }))
         );
-      });
+      })
+      .catch((err) => console.error("FeaturedStores fetch error:", err));
   }, []);
 
   if (farms.length === 0) return null;

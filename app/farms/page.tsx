@@ -7,18 +7,27 @@ import Footer from "@/components/layout/Footer";
 import FarmCard, { FarmCardData } from "@/components/shared/FarmCard";
 import FarmFilterSidebar, { FarmFilterProvider, FarmActiveFiltersBar } from "@/components/FarmFilterSidebar";
 import SectionHeader from "@/components/shared/SectionHeader";
-import { supabase } from "@/lib/supabase";
+import { fetchFromSupabase } from "@/lib/api";
 
 const SORT_OPTIONS = [
   "Featured", "Nearest First", "Highest Rated",
   "Most Products", "Newest to Platform", "A-Z",
 ];
 
+interface SellerRow {
+  slug: string;
+  farm_name: string;
+  city: string;
+  state: string;
+  description: string;
+  fulfillment: string[] | null;
+}
+
 function mapFulfillment(raw: string[] | null): string[] {
   return (raw ?? []).map((f) => {
     if (f === "Local Delivery") return "Delivery";
-    if (f === "Farm Pickup") return "Pickup";
-    if (f === "Shipping") return "Ships";
+    if (f === "Farm Pickup")    return "Pickup";
+    if (f === "Shipping")       return "Ships";
     return f;
   });
 }
@@ -29,42 +38,39 @@ export default function FarmsPage() {
   const [sort, setSort]             = useState("Featured");
   const [farms, setFarms]           = useState<FarmCardData[]>([]);
   const [loading, setLoading]       = useState(true);
+  const [error, setError]           = useState("");
 
   useEffect(() => {
-    async function fetchFarms() {
-      try {
-        const { data, error } = await supabase
-          .from("sellers")
-          .select("slug, farm_name, city, state, description, fulfillment")
-          .eq("status", "approved");
-
-        if (error) {
-          console.error("Error fetching sellers:", error.message);
-          return;
-        }
-
-        setFarms(
-          (data ?? []).map((s) => ({
-            id:           s.slug,
-            name:         s.farm_name,
-            location:     [s.city, s.state].filter(Boolean).join(", "),
-            description:  s.description ?? "",
-            categories:   [],
-            fulfillment:  mapFulfillment(s.fulfillment),
-            rating:       0,
-            reviewCount:  0,
-            productCount: 0,
-          }))
-        );
-      } catch (err) {
-        console.error("Unexpected error:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-
     fetchFarms();
   }, []);
+
+  async function fetchFarms() {
+    setLoading(true);
+    setError("");
+    try {
+      const data = await fetchFromSupabase<SellerRow[]>(
+        "sellers?status=eq.approved&select=slug,farm_name,city,state,description,fulfillment&order=created_at.desc"
+      );
+      setFarms(
+        (data ?? []).map((s) => ({
+          id:           s.slug,
+          name:         s.farm_name,
+          location:     [s.city, s.state].filter(Boolean).join(", "),
+          description:  s.description ?? "",
+          categories:   [],
+          fulfillment:  mapFulfillment(s.fulfillment),
+          rating:       0,
+          reviewCount:  0,
+          productCount: 0,
+        }))
+      );
+    } catch (err) {
+      console.error("Farms fetch error:", err);
+      setError("Failed to load farms.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const handleHeroSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -129,15 +135,10 @@ export default function FarmsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <FarmFilterProvider>
             <div className="flex flex-col lg:flex-row gap-8 items-start">
-
-              {/* Sidebar */}
               <FarmFilterSidebar />
-
-              {/* Grid */}
               <div className="flex-1 min-w-0">
                 <FarmActiveFiltersBar />
 
-                {/* Grid header */}
                 <div className="flex items-center justify-between mb-5">
                   <p className="text-sm text-gray-500">
                     Showing <span className="font-semibold text-gray-700">{farms.length} farms</span>
@@ -162,6 +163,16 @@ export default function FarmsPage() {
                 {loading ? (
                   <div className="flex items-center justify-center py-16">
                     <div className="w-6 h-6 rounded-full border-2 border-[#1a4a2e] border-t-transparent animate-spin" />
+                  </div>
+                ) : error ? (
+                  <div className="text-center py-16">
+                    <p className="text-sm text-red-500 mb-3">{error}</p>
+                    <button
+                      onClick={fetchFarms}
+                      className="bg-[#1a4a2e] hover:bg-[#2d6b47] text-white text-sm font-semibold px-5 py-2 rounded-xl transition-colors"
+                    >
+                      Try Again
+                    </button>
                   </div>
                 ) : farms.length === 0 ? (
                   <div className="text-center py-16 text-gray-500 text-sm">
