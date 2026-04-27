@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import SellerLayout from "@/components/seller/SellerLayout";
+import { supabase } from "@/lib/supabase";
 
 type OrderStatus = "Pending"|"Confirmed"|"Ready"|"Completed"|"Cancelled";
 
@@ -33,6 +34,19 @@ export default function SellerOrdersPage() {
   const [tab, setTab] = useState<string>("All");
   const [selected, setSelected] = useState<Order|null>(null);
   const [note, setNote] = useState("");
+
+  useEffect(() => {
+    async function checkAuth() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) { window.location.href = "/seller/login"; return; }
+        const { data: seller } = await supabase
+          .from("sellers").select("id, status").eq("user_id", session.user.id).single();
+        if (!seller || seller.status !== "approved") { window.location.href = "/seller/login"; }
+      } catch { window.location.href = "/seller/login"; }
+    }
+    checkAuth();
+  }, []);
 
   const counts = {
     all: ALL_ORDERS.length,

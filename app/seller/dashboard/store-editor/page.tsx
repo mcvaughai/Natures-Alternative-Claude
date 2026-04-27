@@ -1,11 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import SellerLayout from "@/components/seller/SellerLayout";
+import { supabase } from "@/lib/supabase";
 
 const inputCls = "w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a4a2e]/30 focus:border-[#1a4a2e] transition";
 
 export default function StoreEditorPage() {
+  useEffect(() => {
+    async function checkAuth() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) { window.location.href = "/seller/login"; return; }
+        const { data: seller } = await supabase
+          .from("sellers").select("id, status").eq("user_id", session.user.id).single();
+        if (!seller || seller.status !== "approved") { window.location.href = "/seller/login"; }
+      } catch { window.location.href = "/seller/login"; }
+    }
+    checkAuth();
+  }, []);
+
   const [storeName, setStoreName]     = useState("Example Farms");
   const [tagline, setTagline]         = useState("Fresh from the field to your table");
   const [about, setAbout]             = useState("We are a family-run farm nestled in the rolling hills of the countryside. Our mission is to grow the freshest, most nutritious produce using sustainable farming practices that respect the land and the communities we serve.");

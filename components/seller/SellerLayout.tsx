@@ -1,23 +1,45 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import SellerNavbar from "./SellerNavbar";
 import SellerSidebar from "./SellerSidebar";
-import { useAuth } from "@/lib/authContext";
+import { supabase } from "@/lib/supabase";
 
 export default function SellerLayout({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
-  const { user, sellerProfile, loading } = useAuth();
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    if (loading) return;
-    if (!user || !sellerProfile || sellerProfile.status !== "approved") {
-      router.replace("/seller/login");
-    }
-  }, [loading, user, sellerProfile, router]);
+    async function checkAuth() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
 
-  if (loading || !user || !sellerProfile) {
+        if (!session) {
+          window.location.href = "/seller/login";
+          return;
+        }
+
+        const { data: sellerProfile } = await supabase
+          .from("sellers")
+          .select("id, status")
+          .eq("user_id", session.user.id)
+          .single();
+
+        if (!sellerProfile || sellerProfile.status !== "approved") {
+          window.location.href = "/seller/login";
+          return;
+        }
+
+        setChecking(false);
+      } catch (err) {
+        console.error("SellerLayout auth error:", err);
+        window.location.href = "/seller/login";
+      }
+    }
+
+    checkAuth();
+  }, []);
+
+  if (checking) {
     return (
       <div className="min-h-screen bg-[#f5f0e8] flex items-center justify-center">
         <div className="w-8 h-8 rounded-full border-2 border-[#1a4a2e] border-t-transparent animate-spin" />

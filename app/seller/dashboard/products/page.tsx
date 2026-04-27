@@ -68,29 +68,39 @@ export default function ProductsPage() {
     if (data) setProducts(data as unknown as DbProduct[]);
   }, []);
 
-  // ── Init: get seller ID, categories, products ───────────────────────────────
+  // ── Init: check auth, get seller ID, categories, products ──────────────────
   useEffect(() => {
     async function init() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setLoadingPage(false); return; }
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) { window.location.href = "/seller/login"; return; }
 
-      const { data: seller } = await supabase
-        .from("sellers")
-        .select("id")
-        .eq("user_id", user.id)
-        .single();
+        const { data: seller } = await supabase
+          .from("sellers")
+          .select("id, status")
+          .eq("user_id", session.user.id)
+          .single();
 
-      if (!seller) { setLoadingPage(false); return; }
-      setSellerId(seller.id);
+        if (!seller || seller.status !== "approved") {
+          window.location.href = "/seller/login";
+          return;
+        }
 
-      const { data: cats } = await supabase
-        .from("categories")
-        .select("id, name")
-        .order("sort_order");
-      if (cats) setCategories(cats);
+        setSellerId(seller.id);
 
-      await fetchProducts(seller.id);
-      setLoadingPage(false);
+        const { data: cats } = await supabase
+          .from("categories")
+          .select("id, name")
+          .order("sort_order");
+        if (cats) setCategories(cats);
+
+        await fetchProducts(seller.id);
+      } catch (err) {
+        console.error("Products page init error:", err);
+        window.location.href = "/seller/login";
+      } finally {
+        setLoadingPage(false);
+      }
     }
     init();
   }, [fetchProducts]);
