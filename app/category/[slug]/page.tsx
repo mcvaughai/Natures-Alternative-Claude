@@ -40,71 +40,73 @@ function getCategoryName(slug: string): string {
 
 export default function CategoryPage() {
   const params = useParams();
-  const slug = params.slug as string;
-  const categoryName = getCategoryName(slug);
+  const slug = params?.slug as string;
+  const categoryName = getCategoryName(slug ?? "");
 
   const [products, setProducts] = useState<Product[]>([]);
   const [sellers, setSellers]   = useState<SellerCard[]>([]);
   const [loading, setLoading]   = useState(true);
+  const [error, setError]       = useState("");
 
   useEffect(() => {
-    if (!slug) return;
-
-    async function fetchProducts() {
-      try {
-        // Get category id from slug
-        const { data: category, error: catError } = await supabase
-          .from("categories")
-          .select("id, name")
-          .eq("slug", slug)
-          .single();
-
-        if (catError || !category) {
-          console.error("Category not found:", catError?.message);
-          return;
-        }
-
-        // Fetch active products in this category
-        const { data: productsData, error: prodError } = await supabase
-          .from("products")
-          .select("id, name, description, price, images, seller_id")
-          .eq("category_id", category.id)
-          .eq("status", "active")
-          .order("created_at", { ascending: false });
-
-        if (prodError) {
-          console.error("Error fetching products:", prodError.message);
-          return;
-        }
-
-        setProducts(productsData ?? []);
-
-        // Build seller list from unique seller IDs
-        if (productsData && productsData.length > 0) {
-          const sellerIds = Array.from(new Set(productsData.map((p) => p.seller_id)));
-          const { data: sellersData } = await supabase
-            .from("sellers")
-            .select("slug, farm_name, description")
-            .in("id", sellerIds)
-            .eq("status", "approved");
-
-          setSellers(
-            (sellersData ?? []).map((s) => ({
-              id:      s.slug,
-              name:    s.farm_name,
-              tagline: s.description ?? "",
-            }))
-          );
-        }
-      } catch (err) {
-        console.error("Unexpected error:", err);
-      } finally {
-        setLoading(false);
-      }
+    if (slug) {
+      fetchCategoryProducts();
     }
-
-    fetchProducts();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
+
+  async function fetchCategoryProducts() {
+    setLoading(true);
+    setError("");
+    try {
+      const { data: category, error: catError } = await supabase
+        .from("categories")
+        .select("id, name")
+        .eq("slug", slug)
+        .single();
+
+      if (catError || !category) {
+        setError("Category not found.");
+        return;
+      }
+
+      const { data: productsData, error: prodError } = await supabase
+        .from("products")
+        .select("id, name, description, price, images, seller_id")
+        .eq("category_id", category.id)
+        .eq("status", "active")
+        .order("created_at", { ascending: false });
+
+      if (prodError) {
+        setError("Error loading products.");
+        return;
+      }
+
+      setProducts(productsData ?? []);
+
+      if (productsData && productsData.length > 0) {
+        const sellerIds = Array.from(new Set(productsData.map((p) => p.seller_id)));
+        const { data: sellersData } = await supabase
+          .from("sellers")
+          .select("slug, farm_name, description")
+          .in("id", sellerIds)
+          .eq("status", "approved");
+
+        setSellers(
+          (sellersData ?? []).map((s) => ({
+            id:      s.slug,
+            name:    s.farm_name,
+            tagline: s.description ?? "",
+          }))
+        );
+      }
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-[#f5f0e8] flex flex-col">
@@ -130,6 +132,8 @@ export default function CategoryPage() {
                   <div className="flex items-center justify-center py-16">
                     <div className="w-6 h-6 rounded-full border-2 border-[#1a4a2e] border-t-transparent animate-spin" />
                   </div>
+                ) : error ? (
+                  <div className="text-center py-16 text-red-500 text-sm">{error}</div>
                 ) : products.length === 0 ? (
                   <div className="text-center py-16 text-gray-500 text-sm">
                     No products in this category yet. Check back soon!
