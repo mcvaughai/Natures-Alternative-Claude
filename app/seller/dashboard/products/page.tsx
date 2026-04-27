@@ -179,14 +179,17 @@ export default function ProductsPage() {
     }, 100);
   };
 
-  // ── Add product (uses Supabase JS — works fine) ────────────────────────────
+  // ── Add product ───────────────────────────────────────────────────────────
   const saveProduct = async (isActive: boolean) => {
-    if (!sellerId)               { alert("Seller profile not found. Please log in again."); return; }
+    if (!sellerId)                { alert("Seller profile not found. Please log in again."); return; }
     if (!productForm.name.trim()) { alert("Please enter a product name."); return; }
-    if (!productForm.price)      { alert("Please enter a price."); return; }
+    if (!productForm.price)       { alert("Please enter a price."); return; }
 
     setSaving(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { alert("Not logged in. Please log in again."); window.location.href = "/seller/login"; return; }
+
       let imageUrl: string | null = null;
       if (selectedImageFile) imageUrl = await uploadImage(selectedImageFile);
 
@@ -194,21 +197,43 @@ export default function ProductsPage() {
         productForm.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") +
         "-" + Date.now().toString(36);
 
-      const { error } = await supabase.from("products").insert({
-        seller_id:   sellerId,
-        name:        productForm.name.trim(),
-        slug,
-        description: productForm.description.trim() || null,
-        price:       parseFloat(productForm.price),
-        stock_qty:   productForm.stock ? parseInt(productForm.stock) : null,
-        in_stock:    productForm.stock ? parseInt(productForm.stock) > 0 : true,
-        unit:        productForm.unit || null,
-        category_id: selectedCategoryId || null,
-        images:      imageUrl ? [imageUrl] : [],
-        status:      isActive ? "active" : "draft",
-      });
+      const authHeaders = {
+        apikey:         SUPABASE_URL.includes("ezryfycxfmtffobyfjfa") ? "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6cnlmeWN4Zm10ZmZvYnlmamZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MjQ1MDEsImV4cCI6MjA5MjQwMDUwMX0.woObRrj3MMUf6eAFVbkvDNUsQfQ-elmlDqPADBT9aZs" : "",
+        Authorization:  `Bearer ${session.access_token}`,
+        "Content-Type": "application/json",
+        Prefer:         "return=representation",
+      };
 
-      if (error) { alert("Error saving product: " + error.message); return; }
+      console.log("Saving product for seller:", sellerId);
+
+      const response = await fetch(
+        `${SUPABASE_URL}/rest/v1/products`,
+        {
+          method:  "POST",
+          headers: authHeaders,
+          body: JSON.stringify({
+            seller_id:   sellerId,
+            name:        productForm.name.trim(),
+            slug,
+            description: productForm.description.trim() || null,
+            price:       parseFloat(productForm.price),
+            stock_qty:   productForm.stock ? parseInt(productForm.stock) : null,
+            in_stock:    productForm.stock ? parseInt(productForm.stock) > 0 : true,
+            unit:        productForm.unit || null,
+            category_id: selectedCategoryId || null,
+            images:      imageUrl ? [imageUrl] : [],
+            status:      isActive ? "active" : "draft",
+          }),
+        }
+      );
+
+      console.log("Save response status:", response.status);
+      if (!response.ok) {
+        const errText = await response.text();
+        console.error("Save error:", errText);
+        alert("Error saving product: " + errText);
+        return;
+      }
 
       alert(isActive ? "Product published successfully!" : "Product saved as draft!");
       resetForm();
@@ -229,6 +254,16 @@ export default function ProductsPage() {
 
     setSaving(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { alert("Not logged in. Please log in again."); window.location.href = "/seller/login"; return; }
+
+      const authHeaders = {
+        apikey:         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6cnlmeWN4Zm10ZmZvYnlmamZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MjQ1MDEsImV4cCI6MjA5MjQwMDUwMX0.woObRrj3MMUf6eAFVbkvDNUsQfQ-elmlDqPADBT9aZs",
+        Authorization:  `Bearer ${session.access_token}`,
+        "Content-Type": "application/json",
+        Prefer:         "return=representation",
+      };
+
       // Keep existing images unless a new file is selected
       let images = editingProduct.images ?? [];
       if (selectedImageFile) {
@@ -236,11 +271,14 @@ export default function ProductsPage() {
         if (url) images = [url];
       }
 
+      console.log("Updating product:", editingProduct.id);
+      console.log("With data:", productForm);
+
       const response = await fetch(
         `${SUPABASE_URL}/rest/v1/products?id=eq.${editingProduct.id}`,
         {
           method: "PATCH",
-          headers: { ...supabaseHeaders, Prefer: "return=representation" },
+          headers: authHeaders,
           body: JSON.stringify({
             name:        productForm.name.trim(),
             description: productForm.description.trim() || null,
@@ -255,9 +293,11 @@ export default function ProductsPage() {
         }
       );
 
+      console.log("Update response status:", response.status);
       if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        alert("Error updating product: " + JSON.stringify(errData));
+        const errText = await response.text();
+        console.error("Update error:", errText);
+        alert("Error updating product: " + errText);
         return;
       }
 
@@ -266,6 +306,7 @@ export default function ProductsPage() {
       setShowForm(false);
       if (sellerId) await fetchProducts(sellerId);
     } catch (err) {
+      console.error("Catch error:", err);
       alert("Error: " + (err instanceof Error ? err.message : String(err)));
     } finally {
       setSaving(false);
@@ -276,11 +317,27 @@ export default function ProductsPage() {
   const deleteProduct = async (id: string) => {
     if (!confirm("Delete this product?")) return;
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { alert("Not logged in. Please log in again."); window.location.href = "/seller/login"; return; }
+
+      const authHeaders = {
+        apikey:         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6cnlmeWN4Zm10ZmZvYnlmamZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MjQ1MDEsImV4cCI6MjA5MjQwMDUwMX0.woObRrj3MMUf6eAFVbkvDNUsQfQ-elmlDqPADBT9aZs",
+        Authorization:  `Bearer ${session.access_token}`,
+        "Content-Type": "application/json",
+      };
+
+      console.log("Deleting product:", id);
       const response = await fetch(
         `${SUPABASE_URL}/rest/v1/products?id=eq.${id}`,
-        { method: "DELETE", headers: supabaseHeaders }
+        { method: "DELETE", headers: authHeaders }
       );
-      if (!response.ok) { alert("Error deleting product."); return; }
+      console.log("Delete response status:", response.status);
+      if (!response.ok) {
+        const errText = await response.text();
+        console.error("Delete error:", errText);
+        alert("Error deleting product: " + errText);
+        return;
+      }
       setProducts(prev => prev.filter(p => p.id !== id));
     } catch (err) {
       alert("Error: " + (err instanceof Error ? err.message : String(err)));
@@ -291,11 +348,20 @@ export default function ProductsPage() {
   const toggleStatus = async (p: DbProduct) => {
     const newStatus = p.status === "active" ? "draft" : "active";
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const authHeaders = {
+        apikey:         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6cnlmeWN4Zm10ZmZvYnlmamZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MjQ1MDEsImV4cCI6MjA5MjQwMDUwMX0.woObRrj3MMUf6eAFVbkvDNUsQfQ-elmlDqPADBT9aZs",
+        Authorization:  `Bearer ${session.access_token}`,
+        "Content-Type": "application/json",
+      };
+
       await fetch(
         `${SUPABASE_URL}/rest/v1/products?id=eq.${p.id}`,
         {
           method: "PATCH",
-          headers: supabaseHeaders,
+          headers: authHeaders,
           body: JSON.stringify({ status: newStatus }),
         }
       );
