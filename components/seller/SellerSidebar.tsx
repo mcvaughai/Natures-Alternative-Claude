@@ -1,9 +1,10 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useAuth } from "@/lib/authContext";
-import { supabase } from "@/lib/supabase";
+import { logoutSeller } from "@/lib/logout";
+import { getSellerSession } from "@/lib/sessionHelper";
 
 const NAV_ITEMS = [
   {
@@ -74,20 +75,18 @@ const NAV_ITEMS = [
 
 export default function SellerSidebar() {
   const pathname = usePathname();
-  const { sellerProfile } = useAuth();
+  const [farmName, setFarmName] = useState("My Farm");
 
-  const sellerName = sellerProfile?.farm_name ?? "My Farm";
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    window.location.href = "/seller/login";
-  };
+  useEffect(() => {
+    const session = getSellerSession();
+    if (session?.farm_name) setFarmName(session.farm_name);
+  }, []);
 
   return (
     <aside className="w-56 bg-white border-r border-gray-100 flex flex-col shrink-0 shadow-sm">
       {/* Farm info */}
       <div className="p-4 border-b border-gray-100">
-        <p className="font-bold text-[#1a4a2e] text-sm leading-tight truncate">{sellerName}</p>
+        <p className="font-bold text-[#1a4a2e] text-sm leading-tight truncate">{farmName}</p>
         <span className="inline-flex items-center mt-1.5 px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full tracking-wide">
           ✓ Approved Seller
         </span>
@@ -131,7 +130,7 @@ export default function SellerSidebar() {
           Visit Marketplace
         </Link>
         <button
-          onClick={handleLogout}
+          onClick={logoutSeller}
           className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import SellerLayout from "@/components/seller/SellerLayout";
-import { supabase } from "@/lib/supabase";
+import { getSellerSession, getAuthHeaders } from "@/lib/sessionHelper";
+
+const SUPABASE_URL = "https://ezryfycxfmtffobyfjfa.supabase.co";
 
 interface SellerData {
   id: string;
@@ -12,7 +14,6 @@ interface SellerData {
   slug: string;
   status: string;
 }
-
 
 function StatCard({ label, value, sub, subColor = "text-gray-400", trend }: {
   label: string; value: string; sub: string; subColor?: string; trend?: string;
@@ -29,52 +30,40 @@ function StatCard({ label, value, sub, subColor = "text-gray-400", trend }: {
 
 export default function SellerDashboardPage() {
   const router = useRouter();
-  const [seller, setSeller]           = useState<SellerData | null>(null);
+  const [seller, setSeller]             = useState<SellerData | null>(null);
   const [productCount, setProductCount] = useState(0);
-  const [loading, setLoading]         = useState(true);
+  const [loading, setLoading]           = useState(true);
   const today = new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
 
   useEffect(() => {
-    async function checkAuth() {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-
-        if (!session) {
-          window.location.href = "/seller/login";
-          return;
-        }
-
-        const { data: sellerData } = await supabase
-          .from("sellers")
-          .select("id, farm_name, slug, status")
-          .eq("user_id", session.user.id)
-          .single();
-
-        if (!sellerData || sellerData.status !== "approved") {
-          window.location.href = "/seller/login";
-          return;
-        }
-
-        setSeller(sellerData);
-
-        // Fetch real product count
-        const { count } = await supabase
-          .from("products")
-          .select("id", { count: "exact", head: true })
-          .eq("seller_id", sellerData.id)
-          .eq("status", "active");
-
-        setProductCount(count ?? 0);
-        setLoading(false);
-
-      } catch (err) {
-        console.error(err);
-        window.location.href = "/seller/login";
-      }
-    }
-
-    checkAuth();
+    const session = getSellerSession();
+    if (!session) { window.location.href = "/seller/login"; return; }
+    fetchData(session);
   }, []);
+
+  async function fetchData(session: { seller_id: string; farm_name: string; slug?: string; access_token: string }) {
+    try {
+      const headers = getAuthHeaders(session.access_token);
+
+      const sellerRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/sellers?id=eq.${session.seller_id}&select=id,farm_name,slug,status`,
+        { headers }
+      );
+      const sellers = await sellerRes.json();
+      setSeller(sellers?.[0] ?? null);
+
+      const productsRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/products?seller_id=eq.${session.seller_id}&status=eq.active&select=id`,
+        { headers }
+      );
+      const products = await productsRes.json();
+      setProductCount(Array.isArray(products) ? products.length : 0);
+    } catch (err) {
+      console.error("Dashboard error:", err);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   if (loading) return null; // SellerLayout shows its own spinner
 

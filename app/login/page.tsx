@@ -3,13 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import { signIn } from "@/lib/auth";
+
+const SUPABASE_URL = 'https://ezryfycxfmtffobyfjfa.supabase.co'
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6cnlmeWN4Zm10ZmZvYnlmamZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MjQ1MDEsImV4cCI6MjA5MjQwMDUwMX0.woObRrj3MMUf6eAFVbkvDNUsQfQ-elmlDqPADBT9aZs'
 
 export default function LoginPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -17,22 +17,33 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-
+    e.preventDefault()
+    setLoading(true)
+    setError('')
     try {
-      await signIn({ email: email.trim(), password });
-      router.push("/account");
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), password })
+      })
+      const data = await res.json()
+      if (!res.ok || data.error) { setError('Invalid email or password'); return }
+      localStorage.setItem('customer_session', JSON.stringify({
+        access_token: data.access_token,
+        user_id: data.user.id,
+        email: data.user.email,
+        name: data.user.user_metadata?.first_name || 'User'
+      }))
+      window.location.href = '/account'
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Invalid email or password. Please try again.";
-      setError(message);
-      setLoading(false);
+      setError('Something went wrong: ' + (err instanceof Error ? err.message : String(err)))
+    } finally {
+      setLoading(false)
     }
   };
 
   const handleGuest = () => {
-    router.push("/");
+    window.location.href = "/";
   };
 
   return (

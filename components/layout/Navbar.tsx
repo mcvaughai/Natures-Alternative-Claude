@@ -4,8 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useCart } from "@/lib/context/CartContext";
-import { useAuth } from "@/lib/authContext";
-import { supabase } from "@/lib/supabase";
+import { logoutCustomer } from "@/lib/logout";
 
 const TABS = [
   { label: "All Products",         key: "all",               href: "/explore" },
@@ -113,11 +112,18 @@ function TabsRow({ activeKey }: { activeKey: string }) {
 
 export default function Navbar() {
   const { totalItems } = useCart();
-  const { user, userProfile } = useAuth();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [session, setSession] = useState<{ name: string; email: string } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("customer_session");
+      if (raw) setSession(JSON.parse(raw));
+    } catch { /* ignore */ }
+  }, []);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -137,14 +143,7 @@ export default function Navbar() {
     }
   };
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    window.location.href = "/";
-  };
-
-  const displayName = userProfile
-    ? `${userProfile.first_name ?? ""} ${userProfile.last_name ?? ""}`.trim() || userProfile.email
-    : user?.email ?? "";
+  const displayName = session?.name || session?.email || "";
   const initial = displayName.charAt(0).toUpperCase();
 
   return (
@@ -207,7 +206,7 @@ export default function Navbar() {
             </Link>
 
             {/* Profile / User menu */}
-            {user ? (
+            {session ? (
               <div className="relative" ref={menuRef}>
                 <button
                   onClick={() => setMenuOpen((v) => !v)}
@@ -230,7 +229,7 @@ export default function Navbar() {
                   <div className="absolute right-0 top-full mt-2 bg-white rounded-xl shadow-lg border border-gray-100 py-1 w-52 z-50">
                     <div className="px-4 py-3 border-b border-gray-100">
                       <p className="text-sm font-semibold text-gray-800 truncate">{displayName}</p>
-                      <p className="text-xs text-gray-500 truncate mt-0.5">{user.email}</p>
+                      <p className="text-xs text-gray-500 truncate mt-0.5">{session.email}</p>
                     </div>
                     <Link href="/account" onClick={() => setMenuOpen(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                       <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -245,7 +244,7 @@ export default function Navbar() {
                       My Orders
                     </Link>
                     <div className="border-t border-gray-100 mt-1 pt-1">
-                      <button onClick={handleSignOut} className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors">
+                      <button onClick={logoutCustomer} className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                         </svg>

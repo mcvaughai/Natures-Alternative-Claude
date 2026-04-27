@@ -1,10 +1,10 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
-import { useAuth } from "@/lib/authContext";
-import { supabase } from "@/lib/supabase";
+import { usePathname } from "next/navigation";
+import { logoutCustomer } from "@/lib/logout";
+import { getCustomerSession } from "@/lib/sessionHelper";
 
 const NAV_ITEMS = [
   {
@@ -65,22 +65,15 @@ const NAV_ITEMS = [
 
 export default function AccountSidebar() {
   const pathname = usePathname();
-  const router = useRouter();
-  const { user, userProfile, loading } = useAuth();
+  const [session, setSession] = useState<{ name: string; email: string } | null>(null);
 
   useEffect(() => {
-    if (loading) return;
-    if (!user) router.replace("/login");
-  }, [loading, user, router]);
+    const s = getCustomerSession();
+    if (!s) { window.location.href = "/login"; return; }
+    setSession(s);
+  }, []);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    window.location.href = "/login";
-  };
-
-  const displayName = userProfile
-    ? `${userProfile.first_name ?? ""} ${userProfile.last_name ?? ""}`.trim() || userProfile.email
-    : user?.email ?? "—";
+  const displayName = session?.name || session?.email || "—";
   const initial = displayName.charAt(0).toUpperCase();
 
   return (
@@ -90,15 +83,14 @@ export default function AccountSidebar() {
         <div className="flex flex-col items-center text-center">
           {/* Avatar circle */}
           <div className="w-16 h-16 rounded-full bg-[#1a4a2e]/10 flex items-center justify-center text-[#1a4a2e] text-2xl font-bold mb-3">
-            {user ? initial : (
+            {session ? initial : (
               <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
             )}
           </div>
           <p className="font-bold text-gray-900 text-sm">{displayName}</p>
-          <p className="text-xs text-gray-500 mt-0.5">{userProfile?.email ?? user?.email ?? "—"}</p>
-          <p className="text-xs text-[#1a4a2e] font-medium mt-1">Member since {userProfile ? new Date(userProfile.created_at).getFullYear() : "—"}</p>
+          <p className="text-xs text-gray-500 mt-0.5">{session?.email ?? "—"}</p>
         </div>
       </div>
 
@@ -129,7 +121,7 @@ export default function AccountSidebar() {
       {/* Logout */}
       <div className="p-3 pt-0 border-t border-gray-100 mt-1">
         <button
-          onClick={handleLogout}
+          onClick={logoutCustomer}
           className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors mt-3"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -3,7 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { supabase } from "@/lib/supabase";
+
+const SUPABASE_URL = 'https://ezryfycxfmtffobyfjfa.supabase.co'
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6cnlmeWN4Zm10ZmZvYnlmamZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MjQ1MDEsImV4cCI6MjA5MjQwMDUwMX0.woObRrj3MMUf6eAFVbkvDNUsQfQ-elmlDqPADBT9aZs'
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState("");
@@ -13,50 +15,33 @@ export default function AdminLoginPage() {
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-
+    e.preventDefault()
+    setLoading(true)
+    setError('')
     try {
-      // Step 1: Sign in with Supabase directly
-      const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      });
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), password })
+      })
+      const data = await res.json()
+      if (!res.ok || data.error) { setError('Invalid email or password'); return }
+      const accessToken = data.access_token
+      const userId = data.user.id
 
-      if (signInError || !authData.user) {
-        setError(signInError?.message ?? "Invalid credentials. Access denied.");
-        setLoading(false);
-        return;
-      }
+      const profileRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=role`,
+        { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${accessToken}` } }
+      )
+      const profiles = await profileRes.json()
+      if (!profiles?.[0] || profiles[0].role !== 'admin') { setError('Unauthorized access'); return }
 
-      // Step 2: Query profiles table directly to verify admin role
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", authData.user.id)
-        .single();
-
-      if (profileError || !profile) {
-        await supabase.auth.signOut();
-        setError("Could not verify admin status. Please contact support.");
-        setLoading(false);
-        return;
-      }
-
-      if (profile.role !== "admin") {
-        await supabase.auth.signOut();
-        setError("Unauthorized access. Admin accounts only.");
-        setLoading(false);
-        return;
-      }
-
-      // Step 3: Force a hard redirect so the new session is fully loaded
-      window.location.href = "/admin/dashboard";
+      localStorage.setItem('admin_session', JSON.stringify({ access_token: accessToken, user_id: userId, role: 'admin' }))
+      window.location.href = '/admin/dashboard'
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "An unexpected error occurred.";
-      setError(message);
-      setLoading(false);
+      setError('Something went wrong: ' + (err instanceof Error ? err.message : String(err)))
+    } finally {
+      setLoading(false)
     }
   };
 

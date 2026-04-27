@@ -3,7 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { supabase } from "@/lib/supabase";
+
+const SUPABASE_URL = 'https://ezryfycxfmtffobyfjfa.supabase.co'
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6cnlmeWN4Zm10ZmZvYnlmamZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MjQ1MDEsImV4cCI6MjA5MjQwMDUwMX0.woObRrj3MMUf6eAFVbkvDNUsQfQ-elmlDqPADBT9aZs'
 
 export default function SellerLoginPage() {
   const [email, setEmail]               = useState("");
@@ -13,49 +15,39 @@ export default function SellerLoginPage() {
   const [loading, setLoading]           = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-
+    e.preventDefault()
+    setLoading(true)
+    setError('')
     try {
-      // Sign in with Supabase directly
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email:    email.trim(),
-        password,
-      });
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), password })
+      })
+      const data = await res.json()
+      if (!res.ok || data.error) { setError('Invalid email or password'); return }
+      const accessToken = data.access_token
+      const userId = data.user.id
 
-      if (signInError || !data.user) {
-        setError("Invalid email or password. Please try again.");
-        return;
-      }
+      const sellerRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/sellers?user_id=eq.${userId}&select=id,farm_name,status`,
+        { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${accessToken}` } }
+      )
+      const sellers = await sellerRes.json()
+      if (!sellers || sellers.length === 0) { setError('No seller account found. Please apply at /seller/apply'); return }
+      if (sellers[0].status !== 'approved') { setError('Your application is still under review.'); return }
 
-      // Check if user has an approved seller profile
-      const { data: sellerProfile } = await supabase
-        .from("sellers")
-        .select("id, farm_name, status")
-        .eq("user_id", data.user.id)
-        .single();
-
-      if (!sellerProfile) {
-        await supabase.auth.signOut();
-        setError("No seller account found for this email. Please apply at /seller/apply");
-        return;
-      }
-
-      if (sellerProfile.status !== "approved") {
-        await supabase.auth.signOut();
-        setError("Your seller application is still under review. You will receive an email when approved.");
-        return;
-      }
-
-      // Success — redirect to seller dashboard
-      window.location.href = "/seller/dashboard";
-
-    } catch (err) {
-      console.error(err);
-      setError("Something went wrong. Please try again.");
+      localStorage.setItem('seller_session', JSON.stringify({
+        access_token: accessToken,
+        user_id: userId,
+        seller_id: sellers[0].id,
+        farm_name: sellers[0].farm_name
+      }))
+      window.location.href = '/seller/dashboard'
+    } catch (err: unknown) {
+      setError('Something went wrong: ' + (err instanceof Error ? err.message : String(err)))
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
   };
 

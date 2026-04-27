@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
-import { supabase } from "@/lib/supabase";
+import { getAdminSession, getAuthHeaders } from "@/lib/sessionHelper";
+
+const SUPABASE_URL = "https://ezryfycxfmtffobyfjfa.supabase.co";
 
 type AppStatus = "Pending" | "Approved" | "Rejected";
 const FILTER_TABS: AppStatus[] = ["Pending", "Approved", "Rejected"];
@@ -78,17 +80,23 @@ export default function ApplicationsPage() {
   const fetchApplications = useCallback(async () => {
     setLoading(true);
     setFetchError("");
-    const { data, error } = await supabase
-      .from("seller_applications")
-      .select("*")
-      .order("created_at", { ascending: false });
+    try {
+      const session = getAdminSession();
+      if (!session) { window.location.href = "/admin/login"; return; }
+      const headers = getAuthHeaders(session.access_token);
 
-    if (error) {
-      setFetchError(error.message);
-    } else {
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/seller_applications?select=*&order=created_at.desc`,
+        { headers }
+      );
+      if (!res.ok) { setFetchError(`Error ${res.status}`); return; }
+      const data = await res.json();
       setApps((data ?? []).map(mapRow));
+    } catch (err) {
+      setFetchError(err instanceof Error ? err.message : "Failed to load");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -98,61 +106,62 @@ export default function ApplicationsPage() {
   const handleApprove = async (app: Application) => {
     setActionLoading(true);
     setSuccessMessage("");
+    try {
+      const session = getAdminSession();
+      if (!session) return;
+      const headers = { ...getAuthHeaders(session.access_token), Prefer: "return=representation" };
 
-    // 1. Mark application approved
-    const { error: appError } = await supabase
-      .from("seller_applications")
-      .update({ status: "approved" })
-      .eq("id", app.id);
+      // 1. Mark application approved
+      const appRes = await fetch(`${SUPABASE_URL}/rest/v1/seller_applications?id=eq.${app.id}`,
+        { method: "PATCH", headers, body: JSON.stringify({ status: "approved" }) });
+      if (!appRes.ok) return;
 
-    if (appError) { setActionLoading(false); return; }
+      if (app.applicant_user_id) {
+        // 2. Promote user role to seller
+        await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${app.applicant_user_id}`,
+          { method: "PATCH", headers, body: JSON.stringify({ role: "seller" }) });
 
-    // NOTE: Applications approved before this flow was added (e.g. Blessings Ranch)
-    // will have applicant_user_id = null — their profiles/sellers records must be
-    // created manually in the Supabase dashboard.
-    if (app.applicant_user_id) {
-      // 2. Promote user role to seller
-      await supabase
-        .from("profiles")
-        .update({ role: "seller" })
-        .eq("id", app.applicant_user_id);
+        // 3. Create sellers record
+        const baseSlug = app.farm.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+        const slug = `${baseSlug}-${Date.now().toString(36)}`;
+        await fetch(`${SUPABASE_URL}/rest/v1/sellers`,
+          { method: "POST", headers, body: JSON.stringify({
+            user_id: app.applicant_user_id,
+            farm_name: app.farm,
+            owner_name: app.owner,
+            slug,
+            status: "approved",
+            city: app.city || null,
+            state: app.state || null,
+            email: app.email,
+            phone: app.phone || null,
+          }) });
+      }
 
-      // 3. Create sellers record
-      const baseSlug = app.farm.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-      const slug = `${baseSlug}-${Date.now().toString(36)}`;
-      await supabase.from("sellers").insert({
-        user_id:    app.applicant_user_id,
-        farm_name:  app.farm,
-        owner_name: app.owner,
-        slug,
-        status:     "approved",
-        city:       app.city || null,
-        state:      app.state || null,
-        email:      app.email,
-        phone:      app.phone || null,
-      });
+      setSuccessMessage("Seller approved! Their account is now active.");
+      await fetchApplications();
+      setSelected(null);
+    } finally {
+      setActionLoading(false);
     }
-
-    setActionLoading(false);
-    setSuccessMessage("Seller approved! Their account is now active.");
-    await fetchApplications();
-    setSelected(null);
   };
 
   const handleReject = async (app: Application) => {
     setActionLoading(true);
     setSuccessMessage("");
+    try {
+      const session = getAdminSession();
+      if (!session) return;
+      const headers = { ...getAuthHeaders(session.access_token), Prefer: "return=representation" };
 
-    await supabase
-      .from("seller_applications")
-      .update({ status: "rejected" })
-      .eq("id", app.id);
+      await fetch(`${SUPABASE_URL}/rest/v1/seller_applications?id=eq.${app.id}`,
+        { method: "PATCH", headers, body: JSON.stringify({ status: "rejected" }) });
 
-    // Application status is checked on login; no profile update needed for rejections.
-
-    setActionLoading(false);
-    await fetchApplications();
-    setSelected(null);
+      await fetchApplications();
+      setSelected(null);
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const filtered = tab === "All" ? apps : apps.filter(a => a.status === tab);

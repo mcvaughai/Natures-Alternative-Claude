@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { logoutAdmin } from "@/lib/logout";
 
 const NAV = [
   {
@@ -93,10 +93,7 @@ const NAV = [
 export default function AdminSidebar() {
   const pathname = usePathname();
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    window.location.href = "/admin/login";
-  };
+  const handleLogout = () => { logoutAdmin(); };
 
   const isActive = (href: string) =>
     href === "/admin/dashboard" ? pathname === href : pathname.startsWith(href);

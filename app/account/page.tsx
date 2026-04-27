@@ -1,20 +1,17 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import AccountSidebar from "@/components/account/AccountSidebar";
 import DashboardSection from "@/components/account/DashboardSection";
-import { useAuth } from "@/lib/authContext";
+import { getCustomerSession } from "@/lib/sessionHelper";
 
 export default function AccountPage() {
-  const router = useRouter();
-  const { user, loading } = useAuth();
-
   useEffect(() => {
-    if (!loading && !user) router.replace("/login");
-  }, [loading, user, router]);
+    const session = getCustomerSession();
+    if (!session) window.location.href = "/login";
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#f5f0e8] flex flex-col">

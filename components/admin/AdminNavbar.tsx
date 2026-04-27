@@ -1,21 +1,18 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useAuth } from "@/lib/authContext";
-import { supabase } from "@/lib/supabase";
+import { logoutAdmin } from "@/lib/logout";
+import { getAdminSession } from "@/lib/sessionHelper";
 
 export default function AdminNavbar() {
-  const { userProfile } = useAuth();
+  const [name, setName] = useState("Admin");
 
-  const name = userProfile
-    ? `${userProfile.first_name ?? ""} ${userProfile.last_name ?? ""}`.trim() || userProfile.email
-    : "Admin";
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    window.location.href = "/admin/login";
-  };
+  useEffect(() => {
+    const session = getAdminSession();
+    if (session?.email) setName(session.email.split("@")[0]);
+  }, []);
 
   return (
     <header className="h-14 bg-[#1a4a2e] flex items-center px-5 gap-4 shrink-0 z-30">
@@ -60,7 +57,7 @@ export default function AdminNavbar() {
         </div>
 
         {/* Logout */}
-        <button onClick={handleLogout} className="text-white/60 hover:text-red-300 transition-colors" aria-label="Logout">
+        <button onClick={logoutAdmin} className="text-white/60 hover:text-red-300 transition-colors" aria-label="Logout">
           <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
           </svg>

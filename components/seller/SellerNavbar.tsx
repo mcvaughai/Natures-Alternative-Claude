@@ -1,19 +1,18 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useAuth } from "@/lib/authContext";
-import { supabase } from "@/lib/supabase";
+import { logoutSeller } from "@/lib/logout";
+import { getSellerSession } from "@/lib/sessionHelper";
 
 export default function SellerNavbar() {
-  const { sellerProfile } = useAuth();
+  const [farmName, setFarmName] = useState("Seller");
 
-  const sellerName = sellerProfile?.farm_name ?? "Seller";
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    window.location.href = "/seller/login";
-  };
+  useEffect(() => {
+    const session = getSellerSession();
+    if (session?.farm_name) setFarmName(session.farm_name);
+  }, []);
 
   return (
     <header className="bg-[#1a4a2e] h-14 flex items-center px-4 sm:px-6 shrink-0 z-40 shadow-sm">
@@ -55,15 +54,15 @@ export default function SellerNavbar() {
         {/* Avatar + name */}
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-full bg-white/20 border border-white/30 flex items-center justify-center text-white text-xs font-bold shrink-0">
-            {sellerName.charAt(0).toUpperCase()}
+            {farmName.charAt(0).toUpperCase()}
           </div>
           <span className="hidden sm:block text-white text-sm font-medium max-w-[130px] truncate">
-            {sellerName}
+            {farmName}
           </span>
         </div>
 
         {/* Logout */}
-        <button onClick={handleLogout} className="text-white/70 hover:text-white transition-colors" aria-label="Logout">
+        <button onClick={logoutSeller} className="text-white/70 hover:text-white transition-colors" aria-label="Logout">
           <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
           </svg>
