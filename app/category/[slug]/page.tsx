@@ -48,6 +48,20 @@ export default function CategoryPage() {
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState("");
 
+  // Debug: verify Supabase env vars are available in the browser
+  console.log("Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
+
+  // Debug: direct connectivity test — runs once on mount
+  useEffect(() => {
+    const test = async () => {
+      const { data, error } = await supabase
+        .from("categories")
+        .select("name, slug");
+      console.log("Direct test - categories:", data, "error:", error);
+    };
+    test();
+  }, []);
+
   useEffect(() => {
     if (slug) {
       fetchCategoryProducts();
@@ -56,6 +70,7 @@ export default function CategoryPage() {
   }, [slug]);
 
   async function fetchCategoryProducts() {
+    console.log("fetchCategoryProducts called with slug:", slug);
     setLoading(true);
     setError("");
     try {
