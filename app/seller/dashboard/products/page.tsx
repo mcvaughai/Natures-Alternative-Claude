@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import SellerLayout from "@/components/seller/SellerLayout";
-import { supabase } from "@/lib/supabase";
 import { SUPABASE_URL, supabaseHeaders } from "@/lib/api";
 import { getSellerSession, getAuthHeaders } from "@/lib/sessionHelper";
 
@@ -23,6 +22,7 @@ interface DbProduct {
   images: string[];
   category_id: string | null;
   categories: { name: string } | null;
+  primaryImage: string | null;
 }
 
 const STATUS_STYLES: Record<string, string> = {
@@ -78,17 +78,41 @@ export default function ProductsPage() {
   const [imagePreview, setImagePreview]             = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // ── Fetch products via REST API ────────────────────────────────────────────
+  // ── Fetch products + images via REST API ──────────────────────────────────
   const fetchProducts = useCallback(async (sid: string) => {
     try {
+      const session = getValidSession();
+      const headers = session?.access_token ? getAuthHeaders(session.access_token) : supabaseHeaders;
+
       const response = await fetch(
         `${SUPABASE_URL}/rest/v1/products?seller_id=eq.${sid}&select=id,name,description,price,stock_qty,unit,in_stock,status,images,category_id,categories(name)&order=created_at.desc`,
-        { headers: supabaseHeaders }
+        { headers }
       );
-      if (response.ok) {
-        const data = await response.json();
-        setProducts(data ?? []);
+      if (!response.ok) return;
+      const rawProducts: (Omit<DbProduct, "primaryImage">)[] = await response.json() ?? [];
+      if (rawProducts.length === 0) { setProducts([]); return; }
+
+      // Batch-fetch all product_images for this seller's products
+      const ids = rawProducts.map(p => p.id).join(",");
+      const imgRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/product_images?product_id=in.(${ids})&select=product_id,url,is_primary&order=display_order.asc`,
+        { headers }
+      );
+      const imageRows: { product_id: string; url: string; is_primary: boolean }[] =
+        imgRes.ok ? (await imgRes.json() ?? []) : [];
+
+      // Map productId → best image URL (prefer is_primary, else first)
+      const imageMap = new Map<string, string>();
+      for (const row of imageRows) {
+        if (!imageMap.has(row.product_id) || row.is_primary) {
+          imageMap.set(row.product_id, row.url);
+        }
       }
+
+      setProducts(rawProducts.map(p => ({
+        ...p,
+        primaryImage: imageMap.get(p.id) ?? p.images?.[0] ?? null,
+      })));
     } catch (err) {
       console.error("Error fetching products:", err);
     }
@@ -124,19 +148,60 @@ export default function ProductsPage() {
     init();
   }, [fetchProducts]);
 
-  // ── Upload image to Supabase Storage (requires JS client) ─────────────────
-  const uploadImage = async (file: File): Promise<string | null> => {
+  // ── Upload image via Storage REST API + save to product_images table ────────
+  const uploadProductImage = async (file: File, productId: string): Promise<string | null> => {
+    const session = getValidSession();
+    if (!session?.access_token) return null;
+    const authHeaders = getAuthHeaders(session.access_token);
+
+    // Step 1: Upload file to storage bucket
     const fileExt = file.name.split(".").pop();
-    const fileName = `${Date.now()}.${fileExt}`;
-    const { error } = await supabase.storage
-      .from("product-images")
-      .upload(fileName, file);
+    const fileName = `${productId}-${Date.now()}.${fileExt}`;
+    const uploadRes = await fetch(
+      `${SUPABASE_URL}/storage/v1/object/product-images/${fileName}`,
+      {
+        method: "POST",
+        headers: { ...authHeaders, "Content-Type": file.type, "x-upsert": "true" },
+        body: file,
+      }
+    );
+    console.log("Storage upload status:", uploadRes.status);
+    if (!uploadRes.ok) {
+      const err = await uploadRes.text();
+      console.error("Upload error:", err);
+      alert("Image upload failed: " + err);
+      return null;
+    }
 
-    if (error) { console.error("Upload error:", error); return null; }
+    const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/product-images/${fileName}`;
+    console.log("Public URL:", publicUrl);
 
-    const { data: { publicUrl } } = supabase.storage
-      .from("product-images")
-      .getPublicUrl(fileName);
+    // Step 2: Clear existing product_images rows for this product
+    await fetch(
+      `${SUPABASE_URL}/rest/v1/product_images?product_id=eq.${productId}`,
+      { method: "DELETE", headers: { ...authHeaders, "Content-Type": "application/json" } }
+    ).catch(() => {});
+
+    // Step 3: Insert new product_images row
+    const saveRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/product_images`,
+      {
+        method: "POST",
+        headers: { ...authHeaders, "Content-Type": "application/json", Prefer: "return=minimal" },
+        body: JSON.stringify({ product_id: productId, url: publicUrl, is_primary: true, display_order: 0 }),
+      }
+    );
+    console.log("Save image record status:", saveRes.status);
+
+    // Step 4: Keep products.images column in sync
+    await fetch(
+      `${SUPABASE_URL}/rest/v1/products?id=eq.${productId}`,
+      {
+        method: "PATCH",
+        headers: { ...authHeaders, "Content-Type": "application/json" },
+        body: JSON.stringify({ images: [publicUrl] }),
+      }
+    ).catch(() => {});
 
     return publicUrl;
   };
@@ -174,7 +239,7 @@ export default function ProductsPage() {
       unit:        product.unit ?? "each",
     });
     setSelectedCategoryId(product.category_id ?? "");
-    setImagePreview(product.images?.[0] ?? null);
+    setImagePreview(product.primaryImage ?? product.images?.[0] ?? null);
     setSelectedImageFile(null);
     setTimeout(() => {
       document.getElementById("product-form")?.scrollIntoView({ behavior: "smooth" });
@@ -191,9 +256,6 @@ export default function ProductsPage() {
     try {
       const session = getValidSession();
       if (!session?.access_token) return;
-
-      let imageUrl: string | null = null;
-      if (selectedImageFile) imageUrl = await uploadImage(selectedImageFile);
 
       const slug =
         productForm.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") +
@@ -224,7 +286,7 @@ export default function ProductsPage() {
               in_stock:    productForm.stock ? parseInt(productForm.stock) > 0 : true,
               unit:        productForm.unit || null,
               category_id: selectedCategoryId || null,
-              images:      imageUrl ? [imageUrl] : [],
+              images:      [],
               status:      isActive ? "active" : "draft",
             }),
           }
@@ -239,6 +301,12 @@ export default function ProductsPage() {
         console.error("Save error:", errText);
         alert("Error saving product: " + errText);
         return;
+      }
+
+      // Get the new product's ID and upload image if selected
+      const [newProduct] = await response.json();
+      if (selectedImageFile && newProduct?.id) {
+        await uploadProductImage(selectedImageFile, newProduct.id);
       }
 
       alert(isActive ? "Product published successfully!" : "Product saved as draft!");
@@ -269,11 +337,9 @@ export default function ProductsPage() {
 
       const authHeaders = { ...getAuthHeaders(session.access_token), Prefer: "return=representation" };
 
-      // Keep existing images unless a new file is selected
-      let images = editingProduct.images ?? [];
+      // If a new image file was chosen, upload it (handles product_images table + images column)
       if (selectedImageFile) {
-        const url = await uploadImage(selectedImageFile);
-        if (url) images = [url];
+        await uploadProductImage(selectedImageFile, editingProduct.id);
       }
 
       console.log("Updating product:", editingProduct.id);
@@ -297,7 +363,6 @@ export default function ProductsPage() {
               in_stock:    productForm.stock ? parseInt(productForm.stock) > 0 : true,
               unit:        productForm.unit || null,
               category_id: selectedCategoryId || null,
-              images,
               updated_at:  new Date().toISOString(),
             }),
           }
@@ -603,12 +668,12 @@ export default function ProductsPage() {
                     return (
                       <tr key={p.id} className={`hover:bg-gray-50/50 transition-colors ${editingProduct?.id === p.id ? "bg-amber-50/50" : ""}`}>
                         <td className="px-4 py-3">
-                          {p.images?.[0] ? (
+                          {(p.primaryImage || p.images?.[0]) ? (
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img src={p.images[0]} alt={p.name}
-                              className="w-10 h-10 rounded-lg object-cover bg-gray-100" />
+                            <img src={p.primaryImage || p.images[0]} alt={p.name}
+                              className="w-14 h-14 rounded-lg object-cover bg-gray-100" />
                           ) : (
-                            <div className="w-10 h-10 rounded-lg bg-gray-200 flex items-center justify-center text-gray-400">
+                            <div className="w-14 h-14 rounded-lg bg-gray-200 flex items-center justify-center text-gray-400">
                               <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                               </svg>
