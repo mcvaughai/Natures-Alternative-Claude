@@ -46,6 +46,18 @@ const Spinner = () => (
   </svg>
 );
 
+// Always read a fresh copy from localStorage so a token refresh is picked up
+function getValidSession() {
+  try {
+    const sessionStr = localStorage.getItem('seller_session');
+    if (!sessionStr) { window.location.href = '/seller/login'; return null; }
+    return JSON.parse(sessionStr);
+  } catch {
+    window.location.href = '/seller/login';
+    return null;
+  }
+}
+
 export default function ProductsPage() {
   const [tab, setTab]                   = useState<FilterTab>("All Products");
   const [search, setSearch]             = useState("");
@@ -177,8 +189,8 @@ export default function ProductsPage() {
 
     setSaving(true);
     try {
-      const session = getSellerSession();
-      if (!session?.access_token) { alert("Not logged in. Please log in again."); window.location.href = "/seller/login"; return; }
+      const session = getValidSession();
+      if (!session?.access_token) return;
 
       let imageUrl: string | null = null;
       if (selectedImageFile) imageUrl = await uploadImage(selectedImageFile);
@@ -191,26 +203,35 @@ export default function ProductsPage() {
 
       console.log("Saving product for seller:", sellerId);
 
-      const response = await fetch(
-        `${SUPABASE_URL}/rest/v1/products`,
-        {
-          method:  "POST",
-          headers: authHeaders,
-          body: JSON.stringify({
-            seller_id:   sellerId,
-            name:        productForm.name.trim(),
-            slug,
-            description: productForm.description.trim() || null,
-            price:       parseFloat(productForm.price),
-            stock_qty:   productForm.stock ? parseInt(productForm.stock) : null,
-            in_stock:    productForm.stock ? parseInt(productForm.stock) > 0 : true,
-            unit:        productForm.unit || null,
-            category_id: selectedCategoryId || null,
-            images:      imageUrl ? [imageUrl] : [],
-            status:      isActive ? "active" : "draft",
-          }),
-        }
-      );
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+      let response: Response;
+      try {
+        response = await fetch(
+          `${SUPABASE_URL}/rest/v1/products`,
+          {
+            method:  "POST",
+            headers: authHeaders,
+            signal:  controller.signal,
+            body: JSON.stringify({
+              seller_id:   sellerId,
+              name:        productForm.name.trim(),
+              slug,
+              description: productForm.description.trim() || null,
+              price:       parseFloat(productForm.price),
+              stock_qty:   productForm.stock ? parseInt(productForm.stock) : null,
+              in_stock:    productForm.stock ? parseInt(productForm.stock) > 0 : true,
+              unit:        productForm.unit || null,
+              category_id: selectedCategoryId || null,
+              images:      imageUrl ? [imageUrl] : [],
+              status:      isActive ? "active" : "draft",
+            }),
+          }
+        );
+      } finally {
+        clearTimeout(timeoutId);
+      }
 
       console.log("Save response status:", response.status);
       if (!response.ok) {
@@ -225,7 +246,11 @@ export default function ProductsPage() {
       setShowForm(false);
       await fetchProducts(sellerId);
     } catch (err) {
-      alert("Error: " + (err instanceof Error ? err.message : String(err)));
+      if (err instanceof Error && err.name === "AbortError") {
+        alert("Request timed out. Please try again.");
+      } else {
+        alert("Error: " + (err instanceof Error ? err.message : String(err)));
+      }
     } finally {
       setSaving(false);
     }
@@ -239,8 +264,8 @@ export default function ProductsPage() {
 
     setSaving(true);
     try {
-      const session = getSellerSession();
-      if (!session?.access_token) { alert("Not logged in. Please log in again."); window.location.href = "/seller/login"; return; }
+      const session = getValidSession();
+      if (!session?.access_token) return;
 
       const authHeaders = { ...getAuthHeaders(session.access_token), Prefer: "return=representation" };
 
@@ -252,26 +277,34 @@ export default function ProductsPage() {
       }
 
       console.log("Updating product:", editingProduct.id);
-      console.log("With data:", productForm);
 
-      const response = await fetch(
-        `${SUPABASE_URL}/rest/v1/products?id=eq.${editingProduct.id}`,
-        {
-          method: "PATCH",
-          headers: authHeaders,
-          body: JSON.stringify({
-            name:        productForm.name.trim(),
-            description: productForm.description.trim() || null,
-            price:       parseFloat(productForm.price),
-            stock_qty:   productForm.stock ? parseInt(productForm.stock) : null,
-            in_stock:    productForm.stock ? parseInt(productForm.stock) > 0 : true,
-            unit:        productForm.unit || null,
-            category_id: selectedCategoryId || null,
-            images,
-            updated_at:  new Date().toISOString(),
-          }),
-        }
-      );
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+      let response: Response;
+      try {
+        response = await fetch(
+          `${SUPABASE_URL}/rest/v1/products?id=eq.${editingProduct.id}`,
+          {
+            method: "PATCH",
+            headers: authHeaders,
+            signal: controller.signal,
+            body: JSON.stringify({
+              name:        productForm.name.trim(),
+              description: productForm.description.trim() || null,
+              price:       parseFloat(productForm.price),
+              stock_qty:   productForm.stock ? parseInt(productForm.stock) : null,
+              in_stock:    productForm.stock ? parseInt(productForm.stock) > 0 : true,
+              unit:        productForm.unit || null,
+              category_id: selectedCategoryId || null,
+              images,
+              updated_at:  new Date().toISOString(),
+            }),
+          }
+        );
+      } finally {
+        clearTimeout(timeoutId);
+      }
 
       console.log("Update response status:", response.status);
       if (!response.ok) {
@@ -287,7 +320,11 @@ export default function ProductsPage() {
       if (sellerId) await fetchProducts(sellerId);
     } catch (err) {
       console.error("Catch error:", err);
-      alert("Error: " + (err instanceof Error ? err.message : String(err)));
+      if (err instanceof Error && err.name === "AbortError") {
+        alert("Update timed out. Please try again.");
+      } else {
+        alert("Error: " + (err instanceof Error ? err.message : String(err)));
+      }
     } finally {
       setSaving(false);
     }
@@ -297,16 +334,23 @@ export default function ProductsPage() {
   const deleteProduct = async (id: string) => {
     if (!confirm("Delete this product?")) return;
     try {
-      const session = getSellerSession();
-      if (!session?.access_token) { alert("Not logged in. Please log in again."); window.location.href = "/seller/login"; return; }
+      const session = getValidSession();
+      if (!session?.access_token) return;
 
       const authHeaders = getAuthHeaders(session.access_token);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-      console.log("Deleting product:", id);
-      const response = await fetch(
-        `${SUPABASE_URL}/rest/v1/products?id=eq.${id}`,
-        { method: "DELETE", headers: authHeaders }
-      );
+      let response: Response;
+      try {
+        response = await fetch(
+          `${SUPABASE_URL}/rest/v1/products?id=eq.${id}`,
+          { method: "DELETE", headers: authHeaders, signal: controller.signal }
+        );
+      } finally {
+        clearTimeout(timeoutId);
+      }
+
       console.log("Delete response status:", response.status);
       if (!response.ok) {
         const errText = await response.text();
@@ -316,7 +360,11 @@ export default function ProductsPage() {
       }
       setProducts(prev => prev.filter(p => p.id !== id));
     } catch (err) {
-      alert("Error: " + (err instanceof Error ? err.message : String(err)));
+      if (err instanceof Error && err.name === "AbortError") {
+        alert("Request timed out. Please try again.");
+      } else {
+        alert("Error: " + (err instanceof Error ? err.message : String(err)));
+      }
     }
   };
 
@@ -324,22 +372,34 @@ export default function ProductsPage() {
   const toggleStatus = async (p: DbProduct) => {
     const newStatus = p.status === "active" ? "draft" : "active";
     try {
-      const session = getSellerSession();
+      const session = getValidSession();
       if (!session?.access_token) return;
 
       const authHeaders = getAuthHeaders(session.access_token);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-      await fetch(
-        `${SUPABASE_URL}/rest/v1/products?id=eq.${p.id}`,
-        {
-          method: "PATCH",
-          headers: authHeaders,
-          body: JSON.stringify({ status: newStatus }),
-        }
-      );
+      try {
+        await fetch(
+          `${SUPABASE_URL}/rest/v1/products?id=eq.${p.id}`,
+          {
+            method: "PATCH",
+            headers: authHeaders,
+            signal: controller.signal,
+            body: JSON.stringify({ status: newStatus }),
+          }
+        );
+      } finally {
+        clearTimeout(timeoutId);
+      }
+
       setProducts(prev => prev.map(x => x.id === p.id ? { ...x, status: newStatus } : x));
     } catch (err) {
-      alert("Error toggling status: " + (err instanceof Error ? err.message : String(err)));
+      if (err instanceof Error && err.name === "AbortError") {
+        alert("Request timed out. Please try again.");
+      } else {
+        alert("Error toggling status: " + (err instanceof Error ? err.message : String(err)));
+      }
     }
   };
 

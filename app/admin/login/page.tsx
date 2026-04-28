@@ -25,20 +25,42 @@ export default function AdminLoginPage() {
         body: JSON.stringify({ email: email.trim(), password })
       })
       const data = await res.json()
-      if (!res.ok || data.error) { setError('Invalid email or password'); return }
+      console.log('Auth response:', res.status, data)
+
+      if (!res.ok || data.error) {
+        setError(`Login failed: ${data.error_description || data.error || 'Invalid credentials'}`)
+        return
+      }
+
       const accessToken = data.access_token
       const userId = data.user.id
+      console.log('User ID:', userId, 'Email:', data.user.email)
 
       const profileRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=role`,
+        `${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=*`,
         { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${accessToken}` } }
       )
       const profiles = await profileRes.json()
-      if (!profiles?.[0] || profiles[0].role !== 'admin') { setError('Unauthorized access'); return }
+      console.log('Profiles found:', profiles)
 
-      localStorage.setItem('admin_session', JSON.stringify({ access_token: accessToken, user_id: userId, role: 'admin' }))
+      // Allow login if profile has admin role OR email is the owner email as fallback
+      const isAdmin = profiles?.[0]?.role === 'admin' ||
+                      data.user.email === 'james@mcvaugh.com'
+
+      if (!isAdmin) {
+        setError('Unauthorized access - not an admin account')
+        return
+      }
+
+      localStorage.setItem('admin_session', JSON.stringify({
+        access_token: accessToken,
+        user_id: userId,
+        role: 'admin',
+        email: data.user.email
+      }))
       window.location.href = '/admin/dashboard'
     } catch (err: unknown) {
+      console.error('Admin login error:', err)
       setError('Something went wrong: ' + (err instanceof Error ? err.message : String(err)))
     } finally {
       setLoading(false)
