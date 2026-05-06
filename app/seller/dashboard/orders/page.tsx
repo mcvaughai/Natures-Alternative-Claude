@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import SellerLayout from "@/components/seller/SellerLayout";
+import { getValidSellerSession } from "@/lib/sessionHelper";
 
 const SUPABASE_URL = "https://ezryfycxfmtffobyfjfa.supabase.co";
 const SUPABASE_ANON_KEY =
@@ -76,10 +77,7 @@ export default function SellerOrdersPage() {
   const [savingNote, setSavingNote] = useState(false);
   const [updating, setUpdating] = useState<string | null>(null);
 
-  const getSession = () => {
-    try { return JSON.parse(localStorage.getItem("seller_session") || "{}"); }
-    catch { return {}; }
-  };
+  const getSession = () => getValidSellerSession();
 
   const buildHeaders = (token: string) => ({
     apikey: SUPABASE_ANON_KEY,
@@ -133,18 +131,17 @@ export default function SellerOrdersPage() {
   }, []);
 
   useEffect(() => {
-    const session = getSession();
-    if (!session.access_token) {
-      window.location.href = "/seller/login";
-      return;
-    }
-    fetchOrders(session);
+    getSession().then(session => {
+      if (!session) return;
+      fetchOrders(session);
+    });
   }, [fetchOrders]);
 
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
     setUpdating(orderId + newStatus);
     try {
-      const session = getSession();
+      const session = await getSession();
+      if (!session) return;
       const headers = {
         ...buildHeaders(session.access_token),
         Prefer: "return=representation",
@@ -160,7 +157,6 @@ export default function SellerOrdersPage() {
         return;
       }
       await fetchOrders(session);
-      // Update selected panel if open
       setSelected(prev => prev?.id === orderId ? { ...prev, status: newStatus as OrderStatus } : prev);
     } catch (err: unknown) {
       alert("Error: " + (err instanceof Error ? err.message : String(err)));
@@ -173,7 +169,8 @@ export default function SellerOrdersPage() {
     if (!selected) return;
     setSavingNote(true);
     try {
-      const session = getSession();
+      const session = await getSession();
+      if (!session) return;
       const headers = {
         ...buildHeaders(session.access_token),
         Prefer: "return=representation",

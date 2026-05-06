@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getValidAdminSession } from "@/lib/sessionHelper";
 import AdminLayout from "@/components/admin/AdminLayout";
 
 type Range = "7d" | "30d" | "3m" | "year";
@@ -96,6 +97,11 @@ const DATA: Record<Range, {
 };
 
 export default function AdminAnalyticsPage() {
+  useEffect(() => {
+    getValidAdminSession();
+  }, []);
+
+
   const [range, setRange] = useState<Range>("30d");
   const d = DATA[range];
 

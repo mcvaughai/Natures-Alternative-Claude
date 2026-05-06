@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getValidAdminSession } from "@/lib/sessionHelper";
 import AdminLayout from "@/components/admin/AdminLayout";
 
 const inputCls = "w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a4a2e]/30 focus:border-[#1a4a2e] transition";
@@ -22,6 +23,11 @@ function SaveButton({ saved, onClick }: { saved: boolean; onClick: () => void })
 }
 
 export default function AdminSettingsPage() {
+  useEffect(() => {
+    getValidAdminSession();
+  }, []);
+
+
   // General settings
   const [platformName, setPlatformName]     = useState("Natures Alternative Market Place");
   const [tagline, setTagline]               = useState("Farm-fresh produce, delivered with care.");

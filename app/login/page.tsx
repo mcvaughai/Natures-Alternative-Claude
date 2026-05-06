@@ -30,6 +30,7 @@ export default function LoginPage() {
       if (!res.ok || data.error) { setError('Invalid email or password'); return }
       localStorage.setItem('customer_session', JSON.stringify({
         access_token: data.access_token,
+        refresh_token: data.refresh_token,
         user_id: data.user.id,
         email: data.user.email,
         name: data.user.user_metadata?.first_name || 'User'

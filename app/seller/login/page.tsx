@@ -39,6 +39,7 @@ export default function SellerLoginPage() {
 
       localStorage.setItem('seller_session', JSON.stringify({
         access_token: accessToken,
+        refresh_token: data.refresh_token,
         user_id: userId,
         seller_id: sellers[0].id,
         farm_name: sellers[0].farm_name

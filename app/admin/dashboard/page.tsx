@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AdminLayout from "@/components/admin/AdminLayout";
-import { getAdminSession } from "@/lib/sessionHelper";
+import { getValidAdminSession } from "@/lib/sessionHelper";
 
 const PENDING_APPS = [
   { farm: "Green Valley Farm",  owner: "John Smith",    location: "Austin, TX",  date: "Dec 10, 2024" },
@@ -56,10 +56,7 @@ export default function AdminDashboardPage() {
   const today = new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
 
   useEffect(() => {
-    const session = getAdminSession();
-    if (!session?.access_token) {
-      window.location.href = "/admin/login";
-    }
+    getValidAdminSession();
   }, []);
 
   return (

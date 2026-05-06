@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import SellerLayout from "@/components/seller/SellerLayout";
+import { getValidSellerSession } from "@/lib/sessionHelper";
 
 const SUPABASE_URL = "https://ezryfycxfmtffobyfjfa.supabase.co";
 const SUPABASE_ANON_KEY =
@@ -140,17 +141,15 @@ export default function StoreEditorPage() {
   );
 
   useEffect(() => {
-    try {
-      const sess = JSON.parse(localStorage.getItem("seller_session") || "{}");
-      if (!sess.access_token) { window.location.href = "/seller/login"; return; }
+    getValidSellerSession().then(sess => {
+      if (!sess) return;
       setSession(sess);
       fetchStoreData(sess);
-    } catch {
-      window.location.href = "/seller/login";
-    }
+    });
   }, [fetchStoreData]);
 
   const saveStoreData = async () => {
+    const session = await getValidSellerSession();
     if (!session) return;
     setSaving(true);
     try {
@@ -177,6 +176,7 @@ export default function StoreEditorPage() {
   };
 
   const uploadImage = async (file: File, type: "logo" | "banner") => {
+    const session = await getValidSellerSession();
     if (!session) return;
     const isLogo = type === "logo";
     if (isLogo) setUploadingLogo(true); else setUploadingBanner(true);

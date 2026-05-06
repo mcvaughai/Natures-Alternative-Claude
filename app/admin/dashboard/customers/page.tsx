@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getValidAdminSession } from "@/lib/sessionHelper";
 import AdminLayout from "@/components/admin/AdminLayout";
 
 type CustStatus = "Active" | "Suspended";
@@ -27,6 +28,11 @@ const STATUS_STYLES: Record<CustStatus, string> = {
 };
 
 export default function CustomersPage() {
+  useEffect(() => {
+    getValidAdminSession();
+  }, []);
+
+
   const [search, setSearch] = useState("");
 
   const filtered = ALL_CUSTOMERS.filter(c =>

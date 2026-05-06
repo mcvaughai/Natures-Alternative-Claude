@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getValidAdminSession } from "@/lib/sessionHelper";
 import AdminLayout from "@/components/admin/AdminLayout";
 
 type ProdStatus = "Active" | "Pending Review" | "Removed";
@@ -31,6 +32,11 @@ const STATUS_STYLES: Record<ProdStatus, string> = {
 };
 
 export default function AdminProductsPage() {
+  useEffect(() => {
+    getValidAdminSession();
+  }, []);
+
+
   const [search, setSearch]           = useState("");
   const [catFilter, setCatFilter]     = useState("All Categories");
   const [farmFilter, setFarmFilter]   = useState("All Farms");

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import SellerLayout from "@/components/seller/SellerLayout";
-import { getSellerSession } from "@/lib/sessionHelper";
+import { getValidSellerSession } from "@/lib/sessionHelper";
 
 const inputCls = "w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a4a2e]/30 focus:border-[#1a4a2e] transition";
 
@@ -43,8 +43,7 @@ function PasswordInput({ id, placeholder, label }: { id: string; placeholder?: s
 
 export default function SellerSettingsPage() {
   useEffect(() => {
-    const session = getSellerSession();
-    if (!session?.access_token) window.location.href = "/seller/login";
+    getValidSellerSession();
   }, []);
 
   const [saved, setSaved]       = useState(false);

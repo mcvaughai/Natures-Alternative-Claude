@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import SellerLayout from "@/components/seller/SellerLayout";
 import { SUPABASE_URL, supabaseHeaders } from "@/lib/api";
-import { getSellerSession, getAuthHeaders } from "@/lib/sessionHelper";
+import { getValidSellerSession, getAuthHeaders } from "@/lib/sessionHelper";
 
 const FILTER_TABS = ["All Products", "Active", "Draft", "Out of Stock"] as const;
 type FilterTab = typeof FILTER_TABS[number];
@@ -46,17 +46,6 @@ const Spinner = () => (
   </svg>
 );
 
-// Always read a fresh copy from localStorage so a token refresh is picked up
-function getValidSession() {
-  try {
-    const sessionStr = localStorage.getItem('seller_session');
-    if (!sessionStr) { window.location.href = '/seller/login'; return null; }
-    return JSON.parse(sessionStr);
-  } catch {
-    window.location.href = '/seller/login';
-    return null;
-  }
-}
 
 export default function ProductsPage() {
   const [tab, setTab]                   = useState<FilterTab>("All Products");
@@ -81,7 +70,7 @@ export default function ProductsPage() {
   // ── Fetch products + images via REST API ──────────────────────────────────
   const fetchProducts = useCallback(async (sid: string) => {
     try {
-      const session = getValidSession();
+      const session = await getValidSellerSession();
       const headers = session?.access_token ? getAuthHeaders(session.access_token) : supabaseHeaders;
 
       const response = await fetch(
@@ -122,8 +111,8 @@ export default function ProductsPage() {
   useEffect(() => {
     async function init() {
       try {
-        const session = getSellerSession();
-        if (!session?.access_token) { window.location.href = "/seller/login"; return; }
+        const session = await getValidSellerSession();
+        if (!session?.access_token) return;
 
         setSellerId(session.seller_id);
 
@@ -150,7 +139,7 @@ export default function ProductsPage() {
 
   // ── Upload image via Storage REST API + save to product_images table ────────
   const uploadProductImage = async (file: File, productId: string): Promise<string | null> => {
-    const session = getValidSession();
+    const session = await getValidSellerSession();
     if (!session?.access_token) return null;
     const authHeaders = getAuthHeaders(session.access_token);
 
@@ -254,7 +243,7 @@ export default function ProductsPage() {
 
     setSaving(true);
     try {
-      const session = getValidSession();
+      const session = await getValidSellerSession();
       if (!session?.access_token) return;
 
       const slug =
@@ -332,7 +321,7 @@ export default function ProductsPage() {
 
     setSaving(true);
     try {
-      const session = getValidSession();
+      const session = await getValidSellerSession();
       if (!session?.access_token) return;
 
       const authHeaders = { ...getAuthHeaders(session.access_token), Prefer: "return=representation" };
@@ -399,7 +388,7 @@ export default function ProductsPage() {
   const deleteProduct = async (id: string) => {
     if (!confirm("Delete this product?")) return;
     try {
-      const session = getValidSession();
+      const session = await getValidSellerSession();
       if (!session?.access_token) return;
 
       const authHeaders = getAuthHeaders(session.access_token);
@@ -437,7 +426,7 @@ export default function ProductsPage() {
   const toggleStatus = async (p: DbProduct) => {
     const newStatus = p.status === "active" ? "draft" : "active";
     try {
-      const session = getValidSession();
+      const session = await getValidSellerSession();
       if (!session?.access_token) return;
 
       const authHeaders = getAuthHeaders(session.access_token);

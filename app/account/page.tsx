@@ -5,12 +5,11 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import AccountSidebar from "@/components/account/AccountSidebar";
 import DashboardSection from "@/components/account/DashboardSection";
-import { getCustomerSession } from "@/lib/sessionHelper";
+import { getValidCustomerSession } from "@/lib/sessionHelper";
 
 export default function AccountPage() {
   useEffect(() => {
-    const session = getCustomerSession();
-    if (!session) window.location.href = "/login";
+    getValidCustomerSession();
   }, []);
 
   return (

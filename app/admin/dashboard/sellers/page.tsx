@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getValidAdminSession } from "@/lib/sessionHelper";
 import AdminLayout from "@/components/admin/AdminLayout";
 
 type SellerStatus = "Active" | "Suspended";
@@ -26,6 +27,11 @@ const STATUS_STYLES: Record<SellerStatus, string> = {
 };
 
 export default function SellersPage() {
+  useEffect(() => {
+    getValidAdminSession();
+  }, []);
+
+
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"All" | SellerStatus>("All");
   const [selected, setSelected] = useState<Seller | null>(null);

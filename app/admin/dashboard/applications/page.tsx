@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
-import { getAdminSession, getAuthHeaders } from "@/lib/sessionHelper";
+import { getValidAdminSession, getAuthHeaders } from "@/lib/sessionHelper";
 
 const SUPABASE_URL = "https://ezryfycxfmtffobyfjfa.supabase.co";
 
@@ -81,7 +81,7 @@ export default function ApplicationsPage() {
     setLoading(true);
     setFetchError("");
     try {
-      const session = getAdminSession();
+      const session = await getValidAdminSession();
       if (!session) { window.location.href = "/admin/login"; return; }
       const headers = getAuthHeaders(session.access_token);
 
@@ -107,7 +107,7 @@ export default function ApplicationsPage() {
     setActionLoading(true);
     setSuccessMessage("");
     try {
-      const session = getAdminSession();
+      const session = await getValidAdminSession();
       if (!session) return;
       const headers = { ...getAuthHeaders(session.access_token), Prefer: "return=representation" };
 
@@ -150,7 +150,7 @@ export default function ApplicationsPage() {
     setActionLoading(true);
     setSuccessMessage("");
     try {
-      const session = getAdminSession();
+      const session = await getValidAdminSession();
       if (!session) return;
       const headers = { ...getAuthHeaders(session.access_token), Prefer: "return=representation" };
 

@@ -54,6 +54,7 @@ export default function AdminLoginPage() {
 
       localStorage.setItem('admin_session', JSON.stringify({
         access_token: accessToken,
+        refresh_token: data.refresh_token,
         user_id: userId,
         role: 'admin',
         email: data.user.email

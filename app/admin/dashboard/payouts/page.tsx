@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getValidAdminSession } from "@/lib/sessionHelper";
 import AdminLayout from "@/components/admin/AdminLayout";
 
 type PayoutStatus = "Paid" | "Pending" | "Processing";
@@ -26,6 +27,11 @@ const STATUS_STYLES: Record<PayoutStatus, string> = {
 };
 
 export default function PayoutsPage() {
+  useEffect(() => {
+    getValidAdminSession();
+  }, []);
+
+
   const [fee, setFee] = useState("8");
   const [saved, setSaved] = useState(false);
 

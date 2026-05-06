@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import SellerLayout from "@/components/seller/SellerLayout";
-import { getSellerSession, getAuthHeaders } from "@/lib/sessionHelper";
+import { getValidSellerSession, getAuthHeaders } from "@/lib/sessionHelper";
 
 const SUPABASE_URL = "https://ezryfycxfmtffobyfjfa.supabase.co";
 
@@ -36,9 +36,10 @@ export default function SellerDashboardPage() {
   const today = new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
 
   useEffect(() => {
-    const session = getSellerSession();
-    if (!session) { window.location.href = "/seller/login"; return; }
-    fetchData(session);
+    getValidSellerSession().then(session => {
+      if (!session) return;
+      fetchData(session);
+    });
   }, []);
 
   async function fetchData(session: { seller_id: string; farm_name: string; slug?: string; access_token: string }) {

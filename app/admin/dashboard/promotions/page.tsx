@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getValidAdminSession } from "@/lib/sessionHelper";
 import AdminLayout from "@/components/admin/AdminLayout";
 
 const FARM_OPTIONS = ["Example Farms","Green Valley Farm","Sunrise Organics","Heritage Acres","Blue Ridge Honey"];
@@ -18,6 +19,11 @@ const INITIAL_DEALS: Deal[] = [
 const inputCls = "w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a4a2e]/30 focus:border-[#1a4a2e] transition";
 
 export default function PromotionsPage() {
+  useEffect(() => {
+    getValidAdminSession();
+  }, []);
+
+
   const [featuredFarms, setFeaturedFarms]       = useState(["Example Farms","Green Valley Farm","Blue Ridge Honey","Heritage Acres"]);
   const [addFarm, setAddFarm]                   = useState("");
   const [featuredProducts, setFeaturedProducts] = useState(["Pancakes Mix","Raw Honey 16oz","Grass-Fed Beef"]);
