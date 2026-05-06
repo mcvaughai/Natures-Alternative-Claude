@@ -45,7 +45,7 @@ export default function StorePage() {
       console.log('Store fetch status:', storeRes.status)
       console.log('Store fetch result:', JSON.stringify(stores))
 
-      if (!stores || stores.length === 0) {
+      if (!stores || !Array.isArray(stores) || stores.length === 0) {
         setError('Store not found')
         return
       }
@@ -54,26 +54,38 @@ export default function StorePage() {
       setStore(storeData)
 
       const productsRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/products?seller_id=eq.${storeData.id}&is_active=eq.true&select=*&order=created_at.desc`,
+        `${SUPABASE_URL}/rest/v1/products?seller_id=eq.${storeData.id}&is_active=eq.true&select=id,name,price,unit,description&order=created_at.desc`,
         { headers }
       )
       const productsData = await productsRes.json()
+      console.log('Products fetch status:', productsRes.status)
+      console.log('Products data:', productsData)
 
-      const productsWithImages = await Promise.all(
-        (productsData || []).map(async (product: any) => {
-          const imgRes = await fetch(
-            `${SUPABASE_URL}/rest/v1/product_images?product_id=eq.${product.id}&select=url,is_primary&order=display_order.asc`,
-            { headers }
-          )
-          const images = await imgRes.json()
-          return {
-            ...product,
-            primaryImage: images?.find((i: any) => i.is_primary)?.url || images?.[0]?.url || null,
-          }
-        })
-      )
-
-      setProducts(productsWithImages)
+      if (!Array.isArray(productsData)) {
+        console.error('Products data is not an array:', productsData)
+        setProducts([])
+      } else {
+        const productsWithImages = await Promise.all(
+          productsData.map(async (product: any) => {
+            try {
+              const imgRes = await fetch(
+                `${SUPABASE_URL}/rest/v1/product_images?product_id=eq.${product.id}&select=url,is_primary&order=display_order.asc`,
+                { headers }
+              )
+              const images = await imgRes.json()
+              return {
+                ...product,
+                primaryImage: Array.isArray(images)
+                  ? (images.find((i: any) => i.is_primary)?.url || images[0]?.url || null)
+                  : null,
+              }
+            } catch {
+              return { ...product, primaryImage: null }
+            }
+          })
+        )
+        setProducts(productsWithImages)
+      }
     } catch (err: any) {
       console.error('Store error:', err)
       setError('Error loading store')
