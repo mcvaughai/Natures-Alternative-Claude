@@ -25,13 +25,13 @@ const FARM_SIZES = [
 ];
 
 interface StoreForm {
-  store_name: string;
+  farm_name: string;
   tagline: string;
   description: string;
   location_address: string;
-  location_city: string;
-  location_state: string;
-  location_zip: string;
+  city: string;
+  state: string;
+  zip_code: string;
   phone: string;
   email: string;
   website: string;
@@ -43,17 +43,16 @@ interface StoreForm {
   pickup_address: string;
   pickup_hours: string;
   pickup_instructions: string;
-  accepting_orders: boolean;
 }
 
 const EMPTY_FORM: StoreForm = {
-  store_name: "",
+  farm_name: "",
   tagline: "",
   description: "",
   location_address: "",
-  location_city: "",
-  location_state: "",
-  location_zip: "",
+  city: "",
+  state: "",
+  zip_code: "",
   phone: "",
   email: "",
   website: "",
@@ -65,7 +64,6 @@ const EMPTY_FORM: StoreForm = {
   pickup_address: "",
   pickup_hours: "",
   pickup_instructions: "",
-  accepting_orders: true,
 };
 
 export default function StoreEditorPage() {
@@ -108,13 +106,13 @@ export default function StoreEditorPage() {
         const store = Array.isArray(data) ? data[0] : null;
         if (store) {
           setForm({
-            store_name:           store.store_name           ?? "",
+            farm_name:            store.farm_name            ?? "",
             tagline:              store.tagline              ?? "",
             description:          store.description          ?? "",
             location_address:     store.location_address     ?? "",
-            location_city:        store.location_city        ?? "",
-            location_state:       store.location_state       ?? "",
-            location_zip:         store.location_zip         ?? "",
+            city:                 store.city                 ?? "",
+            state:                store.state                ?? "",
+            zip_code:             store.zip_code             ?? "",
             phone:                store.phone                ?? "",
             email:                store.email                ?? "",
             website:              store.website              ?? "",
@@ -126,7 +124,6 @@ export default function StoreEditorPage() {
             pickup_address:       store.pickup_address       ?? "",
             pickup_hours:         store.pickup_hours         ?? "",
             pickup_instructions:  store.pickup_instructions  ?? "",
-            accepting_orders:     store.accepting_orders     ?? true,
           });
           setLogoUrl(store.logo_url     ?? "");
           setBannerUrl(store.banner_url ?? "");
@@ -159,13 +156,13 @@ export default function StoreEditorPage() {
           method: "PATCH",
           headers: { ...getHeaders(session.access_token), Prefer: "return=representation" },
           body: JSON.stringify({
-            store_name:           form.store_name,
+            farm_name:            form.farm_name,
             tagline:              form.tagline,
             description:          form.description,
             location_address:     form.location_address,
-            location_city:        form.location_city,
-            location_state:       form.location_state,
-            location_zip:         form.location_zip,
+            city:                 form.city,
+            state:                form.state,
+            zip_code:             form.zip_code,
             phone:                form.phone,
             email:                form.email,
             website:              form.website,
@@ -242,7 +239,7 @@ export default function StoreEditorPage() {
   const set = (key: keyof StoreForm) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setForm(f => ({ ...f, [key]: e.target.value }));
 
-  const locationDisplay = [form.location_city, form.location_state].filter(Boolean).join(", ");
+  const locationDisplay = [form.city, form.state].filter(Boolean).join(", ");
 
   if (loading) {
     return (
@@ -377,7 +374,7 @@ export default function StoreEditorPage() {
                           <Image src={logoUrl} alt="Store logo" fill className="object-cover"/>
                         ) : (
                           <span className="text-2xl font-bold text-gray-300">
-                            {form.store_name.charAt(0).toUpperCase() || "?"}
+                            {form.farm_name.charAt(0).toUpperCase() || "?"}
                           </span>
                         )}
                       </div>
@@ -401,8 +398,8 @@ export default function StoreEditorPage() {
                   {/* Name / Tagline */}
                   <div className="space-y-4 pt-2 border-t border-gray-100">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1.5">Store Name</label>
-                      <input type="text" value={form.store_name} onChange={set("store_name")} placeholder="Your Farm Name" className={INPUT}/>
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">Farm Name</label>
+                      <input type="text" value={form.farm_name} onChange={set("farm_name")} placeholder="Your Farm Name" className={INPUT}/>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1.5">Tagline</label>
@@ -410,19 +407,6 @@ export default function StoreEditorPage() {
                     </div>
                   </div>
 
-                  {/* Accept orders toggle */}
-                  <div className="pt-2 border-t border-gray-100 flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-800">Accept New Orders</p>
-                      <p className="text-xs text-gray-500 mt-0.5">Toggle off to temporarily pause your store</p>
-                    </div>
-                    <button
-                      onClick={() => setForm(f => ({ ...f, accepting_orders: !f.accepting_orders }))}
-                      className={`relative w-11 h-6 rounded-full transition-colors ${form.accepting_orders ? "bg-[#1a4a2e]" : "bg-gray-300"}`}
-                    >
-                      <span className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white shadow transition-transform ${form.accepting_orders ? "translate-x-5" : "translate-x-0"}`}/>
-                    </button>
-                  </div>
                 </div>
               )}
 
@@ -526,15 +510,15 @@ export default function StoreEditorPage() {
                   <div className="grid grid-cols-3 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1.5">City</label>
-                      <input type="text" value={form.location_city} onChange={set("location_city")} placeholder="Houston" className={INPUT}/>
+                      <input type="text" value={form.city} onChange={set("city")} placeholder="Houston" className={INPUT}/>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1.5">State</label>
-                      <input type="text" value={form.location_state} onChange={set("location_state")} placeholder="TX" className={INPUT}/>
+                      <input type="text" value={form.state} onChange={set("state")} placeholder="TX" className={INPUT}/>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1.5">Zip Code</label>
-                      <input type="text" value={form.location_zip} onChange={set("location_zip")} placeholder="77001" className={INPUT}/>
+                      <input type="text" value={form.zip_code} onChange={set("zip_code")} placeholder="77001" className={INPUT}/>
                     </div>
                   </div>
                 </div>
@@ -580,12 +564,12 @@ export default function StoreEditorPage() {
                     <div className="w-12 h-12 rounded-xl border-2 border-white shadow overflow-hidden shrink-0 relative bg-[#1a4a2e] flex items-center justify-center">
                       {logoUrl
                         ? <Image src={logoUrl} alt="Logo preview" fill className="object-cover"/>
-                        : <span className="text-white font-bold text-lg">{form.store_name.charAt(0).toUpperCase() || "?"}</span>
+                        : <span className="text-white font-bold text-lg">{form.farm_name.charAt(0).toUpperCase() || "?"}</span>
                       }
                     </div>
                   </div>
 
-                  <h3 className="text-base font-bold text-gray-900">{form.store_name || "Store Name"}</h3>
+                  <h3 className="text-base font-bold text-gray-900">{form.farm_name || "Farm Name"}</h3>
                   {form.tagline && <p className="text-xs text-gray-500 mt-0.5 italic">{form.tagline}</p>}
 
                   {form.description && (
@@ -608,12 +592,6 @@ export default function StoreEditorPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
                       </svg>
                       {form.phone}
-                    </div>
-                  )}
-
-                  {!form.accepting_orders && (
-                    <div className="mt-3 bg-orange-50 border border-orange-200 rounded-lg px-3 py-2 text-xs text-orange-700 font-medium">
-                      Currently not accepting new orders
                     </div>
                   )}
 
