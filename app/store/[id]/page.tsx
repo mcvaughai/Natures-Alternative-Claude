@@ -30,11 +30,20 @@ export default function StorePage() {
   async function fetchStoreData() {
     setLoading(true)
     try {
+      console.log('Looking for store with slug:', slug)
       const storeRes = await fetch(
         `${SUPABASE_URL}/rest/v1/sellers?slug=eq.${slug}&select=*`,
-        { headers }
+        {
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+          },
+        }
       )
       const stores = await storeRes.json()
+      console.log('Store fetch status:', storeRes.status)
+      console.log('Store fetch result:', JSON.stringify(stores))
 
       if (!stores || stores.length === 0) {
         setError('Store not found')
