@@ -61,7 +61,7 @@ export default function FarmsPage() {
         farmsData.map(async (s) => {
           try {
             const countRes = await fetch(
-              `${SUPABASE_URL}/rest/v1/products?seller_id=eq.${s.id}&is_active=eq.true&select=id`,
+              `${SUPABASE_URL}/rest/v1/products?seller_id=eq.${s.id}&status=eq.active&select=id`,
               { headers: supabaseHeaders }
             );
             const products = await countRes.json();

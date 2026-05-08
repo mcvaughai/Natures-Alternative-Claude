@@ -46,26 +46,22 @@ export default function StoreShopPage() {
       setStore(storeData)
 
       const productsRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/products?seller_id=eq.${storeData.id}&is_active=eq.true&select=*&order=created_at.desc`,
+        `${SUPABASE_URL}/rest/v1/products?seller_id=eq.${storeData.id}&status=eq.active&select=id,name,price,unit,description,images&order=created_at.desc`,
         { headers }
       )
       const productsData = await productsRes.json()
 
-      const productsWithImages = await Promise.all(
-        (productsData || []).map(async (product: any) => {
-          const imgRes = await fetch(
-            `${SUPABASE_URL}/rest/v1/product_images?product_id=eq.${product.id}&select=url,is_primary&order=display_order.asc`,
-            { headers }
-          )
-          const images = await imgRes.json()
-          return {
+      if (!Array.isArray(productsData)) {
+        console.error('Products data is not an array:', productsData)
+        setProducts([])
+      } else {
+        setProducts(
+          productsData.map((product: any) => ({
             ...product,
-            primaryImage: images?.find((i: any) => i.is_primary)?.url || images?.[0]?.url || null,
-          }
-        })
-      )
-
-      setProducts(productsWithImages)
+            primaryImage: Array.isArray(product.images) ? (product.images[0] ?? null) : null,
+          }))
+        )
+      }
     } catch (err: any) {
       console.error('Shop error:', err)
       setError('Error loading shop')

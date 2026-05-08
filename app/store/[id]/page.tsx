@@ -54,7 +54,7 @@ export default function StorePage() {
       setStore(storeData)
 
       const productsRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/products?seller_id=eq.${storeData.id}&is_active=eq.true&select=id,name,price,unit,description&order=created_at.desc`,
+        `${SUPABASE_URL}/rest/v1/products?seller_id=eq.${storeData.id}&status=eq.active&select=id,name,price,unit,description,images&order=created_at.desc`,
         { headers }
       )
       const productsData = await productsRes.json()
@@ -65,26 +65,12 @@ export default function StorePage() {
         console.error('Products data is not an array:', productsData)
         setProducts([])
       } else {
-        const productsWithImages = await Promise.all(
-          productsData.map(async (product: any) => {
-            try {
-              const imgRes = await fetch(
-                `${SUPABASE_URL}/rest/v1/product_images?product_id=eq.${product.id}&select=url,is_primary&order=display_order.asc`,
-                { headers }
-              )
-              const images = await imgRes.json()
-              return {
-                ...product,
-                primaryImage: Array.isArray(images)
-                  ? (images.find((i: any) => i.is_primary)?.url || images[0]?.url || null)
-                  : null,
-              }
-            } catch {
-              return { ...product, primaryImage: null }
-            }
-          })
+        setProducts(
+          productsData.map((product: any) => ({
+            ...product,
+            primaryImage: Array.isArray(product.images) ? (product.images[0] ?? null) : null,
+          }))
         )
-        setProducts(productsWithImages)
       }
     } catch (err: any) {
       console.error('Store error:', err)
