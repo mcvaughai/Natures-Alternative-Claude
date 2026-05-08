@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
+import { FaInstagram, FaFacebook, FaTwitter } from 'react-icons/fa'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 
@@ -141,12 +142,23 @@ export default function StorePage() {
             <Link href={`/store/${slug}`} className="text-sm text-gray-600 hover:text-green-900">Home</Link>
             <Link href={`/store/${slug}/shop`} className="text-sm text-gray-600 hover:text-green-900">Shop</Link>
             <Link href={`/store/${slug}/about`} className="text-sm text-gray-600 hover:text-green-900">About Us</Link>
-            {store.instagram_url && (
-              <a href={store.instagram_url} target="_blank" rel="noreferrer" className="text-sm text-gray-600 hover:text-green-900">Instagram</a>
-            )}
-            {store.facebook_url && (
-              <a href={store.facebook_url} target="_blank" rel="noreferrer" className="text-sm text-gray-600 hover:text-green-900">Facebook</a>
-            )}
+            <div className="flex items-center gap-3">
+              {store.instagram_url && (
+                <a href={store.instagram_url} target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-pink-500 transition-colors">
+                  <FaInstagram size={22} />
+                </a>
+              )}
+              {store.facebook_url && (
+                <a href={store.facebook_url} target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-blue-600 transition-colors">
+                  <FaFacebook size={22} />
+                </a>
+              )}
+              {store.twitter_url && (
+                <a href={store.twitter_url} target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-sky-500 transition-colors">
+                  <FaTwitter size={22} />
+                </a>
+              )}
+            </div>
           </div>
         </div>
       </div>
