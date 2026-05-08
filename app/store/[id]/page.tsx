@@ -55,7 +55,7 @@ export default function StorePage() {
       setStore(storeData)
 
       const productsRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/products?seller_id=eq.${storeData.id}&status=eq.active&select=id,name,price,unit,description,images&order=created_at.desc`,
+        `${SUPABASE_URL}/rest/v1/products?seller_id=eq.${storeData.id}&status=eq.active&select=*&order=created_at.asc&limit=4`,
         { headers }
       )
       const productsData = await productsRes.json()
@@ -142,7 +142,66 @@ export default function StorePage() {
 
       <div className="max-w-7xl mx-auto px-6 py-10">
 
-        {/* Store Info Card */}
+        {/* Products Section — FIRST */}
+        <div className="mb-10">
+          <h2 className="text-2xl font-bold text-green-900 mb-6">
+            Shop Our Best Sellers
+          </h2>
+
+          {products.length === 0 ? (
+            <div className="text-center py-20 bg-white rounded-xl shadow-sm">
+              <h3 className="text-xl font-bold text-gray-700">No products yet</h3>
+              <p className="text-gray-500 mt-2">Check back soon!</p>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {products.map((product: any) => (
+                  <Link
+                    key={product.id}
+                    href={`/product/${product.id}`}
+                    className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                  >
+                    <div className="h-48 bg-gray-200 overflow-hidden">
+                      {product.primaryImage ? (
+                        <img
+                          src={product.primaryImage}
+                          alt={product.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gray-300 flex items-center justify-center">
+                          <span className="text-gray-400 text-sm">No image</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-3">
+                      <h4 className="font-semibold text-sm text-gray-800">{product.name}</h4>
+                      <p className="text-green-900 font-bold mt-1">
+                        ${product.price}/{product.unit || 'each'}
+                      </p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+
+              {/* View All Products button */}
+              <div className="text-center mt-6">
+                <Link
+                  href={`/store/${slug}/shop`}
+                  className="bg-green-900 text-white px-8 py-3 rounded-full hover:bg-green-800 transition-colors font-medium"
+                >
+                  View All Products
+                </Link>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Divider */}
+        <hr className="border-gray-200 mb-8" />
+
+        {/* Store Info Card — SECOND */}
         {store.description && (
           <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
             <h2 className="text-xl font-bold text-green-900 mb-3">About {store.farm_name}</h2>
@@ -184,50 +243,6 @@ export default function StorePage() {
             )}
           </div>
         )}
-
-        {/* Products Section */}
-        <div>
-          <h2 className="text-2xl font-bold text-green-900 mb-6">
-            Products from {store.farm_name}
-          </h2>
-
-          {products.length === 0 ? (
-            <div className="text-center py-20 bg-white rounded-xl shadow-sm">
-              <h3 className="text-xl font-bold text-gray-700">No products yet</h3>
-              <p className="text-gray-500 mt-2">Check back soon!</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {products.map((product: any) => (
-                <Link
-                  key={product.id}
-                  href={`/product/${product.id}`}
-                  className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
-                >
-                  <div className="h-48 bg-gray-200 overflow-hidden">
-                    {product.primaryImage ? (
-                      <img
-                        src={product.primaryImage}
-                        alt={product.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gray-300 flex items-center justify-center">
-                        <span className="text-gray-400 text-sm">No image</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-3">
-                    <h4 className="font-semibold text-sm text-gray-800">{product.name}</h4>
-                    <p className="text-green-900 font-bold mt-1">
-                      ${product.price}/{product.unit || 'each'}
-                    </p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
 
       </div>
       <Footer />
