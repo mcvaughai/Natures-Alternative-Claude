@@ -1,208 +1,240 @@
-"use client";
+'use client'
 
-import { useState, useEffect } from "react";
-import SellerLayout from "@/components/seller/SellerLayout";
-import { getValidSellerSession } from "@/lib/sessionHelper";
+import { useEffect, useState } from 'react'
+import SellerLayout from '@/components/seller/SellerLayout'
+import { getValidSellerSession } from '@/lib/sessionHelper'
 
-type Range = "7d" | "30d" | "90d";
-
-const RANGES: { label: string; value: Range }[] = [
-  { label: "Last 7 Days",  value: "7d"  },
-  { label: "Last 30 Days", value: "30d" },
-  { label: "Last 90 Days", value: "90d" },
-];
-
-const DATA: Record<Range, {
-  revenue: string; orders: number; customers: number; views: number;
-  revTrend: string; orderTrend: string;
-  bestSellers: { name: string; sold: number; revenue: string; trend: "up"|"down"|"flat" }[];
-  fulfillment: { type: string; count: number; pct: number }[];
-}> = {
-  "7d": {
-    revenue: "$312.00", orders: 8, customers: 6, views: 94,
-    revTrend: "+14%", orderTrend: "+2",
-    bestSellers: [
-      { name: "Pancakes Mix",     sold: 12, revenue: "$72.00",  trend: "up"   },
-      { name: "Fresh Eggs (12)",  sold: 8,  revenue: "$64.00",  trend: "flat" },
-      { name: "Raw Honey 16oz",   sold: 5,  revenue: "$60.00",  trend: "up"   },
-      { name: "Grass-Fed Beef",   sold: 3,  revenue: "$54.00",  trend: "down" },
-    ],
-    fulfillment: [
-      { type: "Pickup",         count: 4, pct: 50 },
-      { type: "Local Delivery", count: 3, pct: 37 },
-      { type: "Shipping",       count: 1, pct: 13 },
-    ],
-  },
-  "30d": {
-    revenue: "$1,240.00", orders: 24, customers: 18, views: 342,
-    revTrend: "+12%", orderTrend: "+8%",
-    bestSellers: [
-      { name: "Pancakes Mix",     sold: 24, revenue: "$144.00", trend: "up"   },
-      { name: "Fresh Eggs (12)",  sold: 18, revenue: "$144.00", trend: "up"   },
-      { name: "Raw Honey 16oz",   sold: 11, revenue: "$132.00", trend: "flat" },
-      { name: "Grass-Fed Beef",   sold: 9,  revenue: "$162.00", trend: "up"   },
-      { name: "Heritage Tomatoes",sold: 7,  revenue: "$38.50",  trend: "down" },
-    ],
-    fulfillment: [
-      { type: "Pickup",         count: 11, pct: 46 },
-      { type: "Local Delivery", count: 9,  pct: 37 },
-      { type: "Shipping",       count: 4,  pct: 17 },
-    ],
-  },
-  "90d": {
-    revenue: "$3,880.00", orders: 71, customers: 44, views: 980,
-    revTrend: "+22%", orderTrend: "+18%",
-    bestSellers: [
-      { name: "Pancakes Mix",     sold: 68, revenue: "$408.00", trend: "up"   },
-      { name: "Fresh Eggs (12)",  sold: 55, revenue: "$440.00", trend: "up"   },
-      { name: "Grass-Fed Beef",   sold: 32, revenue: "$576.00", trend: "up"   },
-      { name: "Raw Honey 16oz",   sold: 29, revenue: "$348.00", trend: "flat" },
-      { name: "Heritage Tomatoes",sold: 18, revenue: "$99.00",  trend: "down" },
-    ],
-    fulfillment: [
-      { type: "Pickup",         count: 33, pct: 46 },
-      { type: "Local Delivery", count: 26, pct: 37 },
-      { type: "Shipping",       count: 12, pct: 17 },
-    ],
-  },
-};
-
-const TREND_ICON = {
-  up:   <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 15l7-7 7 7"/></svg>,
-  down: <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-red-500"   fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7"/></svg>,
-  flat: <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-gray-400"  fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 12h14"/></svg>,
-};
-
-const BAR_COLORS = ["bg-[#1a4a2e]", "bg-[#2d6b47]", "bg-[#4a8c64]"];
+const SUPABASE_URL = 'https://ezryfycxfmtffobyfjfa.supabase.co'
+const SUPABASE_ANON_KEY =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6cnlmeWN4Zm10ZmZvYnlmamZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MjQ1MDEsImV4cCI6MjA5MjQwMDUwMX0.woObRrj3MMUf6eAFVbkvDNUsQfQ-elmlDqPADBT9aZs'
 
 export default function AnalyticsPage() {
-  useEffect(() => {
-    getValidSellerSession();
-  }, []);
+  const [loading, setLoading]   = useState(true)
+  const [orders, setOrders]     = useState<any[]>([])
+  const [products, setProducts] = useState<any[]>([])
 
-  const [range, setRange] = useState<Range>("30d");
-  const d = DATA[range];
+  useEffect(() => {
+    getValidSellerSession().then((sess) => {
+      if (!sess) return
+      fetchAnalyticsData(sess)
+    })
+  }, [])
+
+  async function fetchAnalyticsData(sess: { access_token: string; seller_id: string }) {
+    try {
+      const headers = {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${sess.access_token}`,
+        'Content-Type': 'application/json',
+      }
+
+      const [ordersRes, productsRes] = await Promise.all([
+        fetch(
+          `${SUPABASE_URL}/rest/v1/orders?seller_id=eq.${sess.seller_id}&select=*&order=created_at.desc`,
+          { headers }
+        ),
+        fetch(
+          `${SUPABASE_URL}/rest/v1/products?seller_id=eq.${sess.seller_id}&select=*`,
+          { headers }
+        ),
+      ])
+
+      const [ordersData, productsData] = await Promise.all([
+        ordersRes.json(),
+        productsRes.json(),
+      ])
+
+      setOrders(Array.isArray(ordersData) ? ordersData : [])
+      setProducts(Array.isArray(productsData) ? productsData : [])
+    } catch (err) {
+      console.error('Analytics error:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // ── Derived stats ────────────────────────────────────────────────────────
+  const totalOrders     = orders.length
+  const completedOrders = orders.filter(o => o.status === 'completed')
+  const totalRevenue    = completedOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0)
+  const avgOrderValue   = completedOrders.length > 0 ? totalRevenue / completedOrders.length : 0
+  const activeProducts  = products.filter(p => p.status === 'active')
+  const recentOrders    = orders.slice(0, 5)
+
+  const ordersByStatus = {
+    pending:   orders.filter(o => o.status === 'pending').length,
+    confirmed: orders.filter(o => o.status === 'confirmed').length,
+    completed: orders.filter(o => o.status === 'completed').length,
+    cancelled: orders.filter(o => o.status === 'cancelled').length,
+  }
+
+  if (loading) return (
+    <SellerLayout>
+      <div className="flex items-center justify-center py-24">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a4a2e] mx-auto" />
+          <p className="mt-4 text-gray-500">Loading analytics...</p>
+        </div>
+      </div>
+    </SellerLayout>
+  )
 
   return (
     <SellerLayout>
-      <div className="space-y-5 max-w-5xl">
+      <div className="space-y-6 max-w-6xl">
+
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div>
           <h1 className="text-xl font-bold text-gray-900">Analytics</h1>
-          <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-xl p-1 shadow-sm">
-            {RANGES.map(r => (
-              <button key={r.value} onClick={() => setRange(r.value)}
-                className={`px-3.5 py-1.5 text-sm font-medium rounded-lg transition-colors ${range === r.value ? "bg-[#1a4a2e] text-white shadow-sm" : "text-gray-500 hover:text-gray-800"}`}>
-                {r.label}
-              </button>
-            ))}
-          </div>
+          <p className="text-sm text-gray-500 mt-0.5">Real data from your store</p>
         </div>
 
-        {/* Stats row */}
+        {/* Stats Row */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            { label: "Revenue",         value: d.revenue,          trend: d.revTrend,   trendColor: "text-green-600" },
-            { label: "Total Orders",    value: String(d.orders),   trend: d.orderTrend, trendColor: "text-green-600" },
-            { label: "Unique Customers",value: String(d.customers),trend: null,         trendColor: "" },
-            { label: "Store Views",     value: String(d.views),    trend: null,         trendColor: "" },
-          ].map(s => (
-            <div key={s.label} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-              <p className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-1">{s.label}</p>
-              <p className="text-2xl font-bold text-[#1a4a2e]">{s.value}</p>
-              {s.trend && <p className={`text-xs font-medium mt-1 ${s.trendColor}`}>↑ {s.trend} vs prior period</p>}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+            <p className="text-sm text-gray-500">Total Revenue</p>
+            <p className="text-3xl font-bold text-[#1a4a2e] mt-1">${totalRevenue.toFixed(2)}</p>
+            <p className="text-xs text-gray-400 mt-1">From completed orders</p>
+          </div>
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+            <p className="text-sm text-gray-500">Total Orders</p>
+            <p className="text-3xl font-bold text-[#1a4a2e] mt-1">{totalOrders}</p>
+            <p className="text-xs text-gray-400 mt-1">All time</p>
+          </div>
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+            <p className="text-sm text-gray-500">Avg Order Value</p>
+            <p className="text-3xl font-bold text-[#1a4a2e] mt-1">${avgOrderValue.toFixed(2)}</p>
+            <p className="text-xs text-gray-400 mt-1">Per completed order</p>
+          </div>
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+            <p className="text-sm text-gray-500">Active Products</p>
+            <p className="text-3xl font-bold text-[#1a4a2e] mt-1">{activeProducts.length}</p>
+            <p className="text-xs text-gray-400 mt-1">of {products.length} total</p>
+          </div>
+        </div>
+
+        {/* Orders by Status + Products */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+          {/* Orders by Status */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+            <h2 className="text-base font-bold text-gray-900 mb-4">Orders by Status</h2>
+            {totalOrders === 0 ? (
+              <div className="text-center py-10">
+                <p className="text-gray-400 text-sm">No orders yet</p>
+                <p className="text-gray-400 text-xs mt-1">Orders will appear here once customers start buying</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {[
+                  { label: 'Pending',   count: ordersByStatus.pending,   dot: 'bg-yellow-400' },
+                  { label: 'Confirmed', count: ordersByStatus.confirmed, dot: 'bg-blue-400'   },
+                  { label: 'Completed', count: ordersByStatus.completed, dot: 'bg-green-500'  },
+                  { label: 'Cancelled', count: ordersByStatus.cancelled, dot: 'bg-red-400'    },
+                ].map(({ label, count, dot }) => (
+                  <div key={label} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className={`w-3 h-3 rounded-full ${dot}`} />
+                      <span className="text-sm text-gray-600">{label}</span>
+                    </div>
+                    <span className="font-semibold text-gray-800">{count}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Products */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+            <h2 className="text-base font-bold text-gray-900 mb-4">Your Products</h2>
+            {products.length === 0 ? (
+              <div className="text-center py-10">
+                <p className="text-gray-400 text-sm">No products yet</p>
+              </div>
+            ) : (
+              <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
+                {products.map((product: any) => (
+                  <div key={product.id} className="flex items-center justify-between">
+                    <div className="min-w-0 flex-1 mr-3">
+                      <p className="text-sm font-medium text-gray-700 truncate">{product.name}</p>
+                      <p className="text-xs text-gray-400">${product.price}/{product.unit || 'each'}</p>
+                    </div>
+                    <span className={`text-xs px-2 py-1 rounded-full shrink-0 ${
+                      product.status === 'active'
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-gray-100 text-gray-500'
+                    }`}>
+                      {product.status === 'active' ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Recent Orders */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+          <h2 className="text-base font-bold text-gray-900 mb-4">Recent Orders</h2>
+          {recentOrders.length === 0 ? (
+            <div className="text-center py-10">
+              <div className="text-4xl mb-3">📦</div>
+              <h3 className="text-base font-semibold text-gray-700">No orders yet</h3>
+              <p className="text-gray-400 text-sm mt-1">When customers place orders they will appear here</p>
             </div>
-          ))}
-        </div>
-
-        {/* Chart placeholder */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-bold text-gray-900">Revenue Over Time</h2>
-            <span className="text-xs text-gray-400 border border-gray-200 rounded-lg px-3 py-1">Daily</span>
-          </div>
-          <div className="h-40 flex flex-col items-center justify-center gap-2 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-            </svg>
-            <p className="text-sm font-medium text-gray-400">Chart coming soon</p>
-            <p className="text-xs text-gray-400">Revenue visualization will appear here</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
-          {/* Best sellers */}
-          <div className="lg:col-span-3 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <h2 className="text-base font-bold text-gray-900 mb-4">Best Selling Products</h2>
+          ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-100">
-                    {["Product","Units Sold","Revenue","Trend"].map(h => (
-                      <th key={h} className="text-left pb-3 text-xs font-semibold text-gray-400 uppercase tracking-wide pr-4 last:pr-0">{h}</th>
-                    ))}
+                  <tr className="text-left text-xs text-gray-500 border-b border-gray-100">
+                    <th className="pb-2 font-medium">Order #</th>
+                    <th className="pb-2 font-medium">Date</th>
+                    <th className="pb-2 font-medium">Total</th>
+                    <th className="pb-2 font-medium">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
-                  {d.bestSellers.map((p, i) => (
-                    <tr key={p.name}>
-                      <td className="py-3 pr-4">
-                        <div className="flex items-center gap-2.5">
-                          <span className="text-xs font-bold text-gray-400 w-4">{i + 1}</span>
-                          <div className="w-7 h-7 rounded-lg bg-gray-200 shrink-0"/>
-                          <span className="font-medium text-gray-800 whitespace-nowrap">{p.name}</span>
-                        </div>
+                  {recentOrders.map((order: any) => (
+                    <tr key={order.id}>
+                      <td className="py-3 text-sm font-medium text-gray-900">
+                        #{order.order_number || order.id.slice(0, 8)}
                       </td>
-                      <td className="py-3 pr-4 text-gray-700">{p.sold}</td>
-                      <td className="py-3 pr-4 font-semibold text-gray-800 tabular-nums">{p.revenue}</td>
-                      <td className="py-3">{TREND_ICON[p.trend]}</td>
+                      <td className="py-3 text-sm text-gray-500">
+                        {new Date(order.created_at).toLocaleDateString()}
+                      </td>
+                      <td className="py-3 text-sm font-semibold text-[#1a4a2e]">
+                        ${(order.total_amount ?? 0).toFixed(2)}
+                      </td>
+                      <td className="py-3">
+                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                          order.status === 'completed' ? 'bg-gray-100 text-gray-600'     :
+                          order.status === 'confirmed' ? 'bg-green-100 text-green-700'   :
+                          order.status === 'pending'   ? 'bg-yellow-100 text-yellow-700' :
+                          order.status === 'cancelled' ? 'bg-red-100 text-red-600'       :
+                          'bg-blue-100 text-blue-700'
+                        }`}>
+                          {order.status}
+                        </span>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          </div>
-
-          {/* Right column */}
-          <div className="lg:col-span-2 space-y-5">
-            {/* Fulfillment breakdown */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-              <h2 className="text-base font-bold text-gray-900 mb-4">Fulfillment Breakdown</h2>
-              <div className="space-y-3">
-                {d.fulfillment.map((f, i) => (
-                  <div key={f.type}>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm text-gray-700">{f.type}</span>
-                      <span className="text-sm font-semibold text-gray-800 tabular-nums">{f.count} orders ({f.pct}%)</span>
-                    </div>
-                    <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                      <div className={`h-full rounded-full transition-all ${BAR_COLORS[i]}`} style={{ width: `${f.pct}%` }}/>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Customer insights */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-              <h2 className="text-base font-bold text-gray-900 mb-4">Customer Insights</h2>
-              <div className="space-y-3">
-                {[
-                  { label: "Repeat Customers", value: "62%" },
-                  { label: "Avg Order Value",  value: "$23.40" },
-                  { label: "Customer Rating",  value: "4.8 / 5" },
-                  { label: "Conversion Rate",  value: "4.2%" },
-                ].map(s => (
-                  <div key={s.label} className="flex items-center justify-between py-1.5 border-b border-gray-50 last:border-0">
-                    <span className="text-sm text-gray-600">{s.label}</span>
-                    <span className="text-sm font-bold text-[#1a4a2e]">{s.value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+          )}
         </div>
+
+        {/* Growth note */}
+        <div className="bg-green-50 border border-green-200 rounded-2xl p-5">
+          <h3 className="font-semibold text-[#1a4a2e] mb-1">📊 Analytics Growing With You</h3>
+          <p className="text-sm text-green-700">
+            Your analytics will become more detailed as you receive orders.
+            Charts and graphs for revenue trends, top products and customer
+            insights will be added as your store grows.
+          </p>
+        </div>
+
       </div>
     </SellerLayout>
-  );
+  )
 }
