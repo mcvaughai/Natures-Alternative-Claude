@@ -152,25 +152,24 @@ export default function StorePage() {
       </div>
 
       {/* Banner */}
-      <div className="w-full bg-gray-200 relative overflow-hidden" style={{ height: '1055px' }}>
+      <div className="w-full relative overflow-hidden">
         {store.banner_url ? (
           <>
             <img
               src={store.banner_url}
               alt={`${store.farm_name} banner`}
-              className="w-full h-full object-cover"
+              className="w-full h-auto block"
+              style={{ objectFit: 'contain', maxHeight: '600px', width: '100%' }}
             />
-            <div className="absolute inset-0 bg-black bg-opacity-30 flex items-end p-8">
-              <div>
-                <h1 className="text-4xl font-bold text-white">{store.farm_name}</h1>
-                {store.tagline && (
-                  <p className="text-white text-lg mt-2 opacity-90">{store.tagline}</p>
-                )}
-              </div>
+            <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/40 to-transparent">
+              <h1 className="text-4xl font-bold text-white">{store.farm_name}</h1>
+              {store.tagline && (
+                <p className="text-white text-lg mt-2 opacity-90">{store.tagline}</p>
+              )}
             </div>
           </>
         ) : (
-          <div className="w-full h-full bg-gradient-to-r from-green-900 to-green-700 flex items-center justify-center">
+          <div className="w-full h-64 bg-gradient-to-r from-green-900 to-green-700 flex items-center justify-center">
             <h1 className="text-4xl font-bold text-white">{store.farm_name}</h1>
           </div>
         )}
