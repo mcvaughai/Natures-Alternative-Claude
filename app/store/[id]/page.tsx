@@ -121,10 +121,10 @@ export default function StorePage() {
               <img
                 src={store.logo_url}
                 alt={store.farm_name}
-                className="w-12 h-12 rounded-full object-cover"
+                className="h-12 w-auto object-contain"
               />
             ) : (
-              <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+              <div className="h-12 w-12 bg-transparent flex items-center justify-center">
                 <span className="text-green-900 font-bold text-lg">
                   {store.farm_name?.charAt(0)}
                 </span>
