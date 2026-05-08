@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
+import StoreNavbar from '@/components/store/StoreNavbar'
 
 const SUPABASE_URL = 'https://ezryfycxfmtffobyfjfa.supabase.co'
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6cnlmeWN4Zm10ZmZvYnlmamZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MjQ1MDEsImV4cCI6MjA5MjQwMDUwMX0.woObRrj3MMUf6eAFVbkvDNUsQfQ-elmlDqPADBT9aZs'
@@ -107,41 +108,7 @@ export default function StoreShopPage() {
     <div className="min-h-screen bg-amber-50">
       <Navbar />
 
-      {/* Store Secondary Navbar */}
-      <div className="bg-white border-b border-gray-200 px-6 py-3">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {store.logo_url ? (
-              <img
-                src={store.logo_url}
-                alt={store.farm_name}
-                className="w-12 h-12 rounded-full object-cover"
-              />
-            ) : (
-              <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
-                <span className="text-green-900 font-bold text-lg">{store.farm_name?.charAt(0)}</span>
-              </div>
-            )}
-            <div>
-              <h2 className="font-bold text-green-900">{store.farm_name}</h2>
-              {store.city && store.state && (
-                <p className="text-xs text-gray-500">{store.city}, {store.state}</p>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center gap-6">
-            <Link href={`/store/${slug}`} className="text-sm text-gray-600 hover:text-green-900">Home</Link>
-            <Link href={`/store/${slug}/shop`} className="text-sm font-semibold text-green-900 border-b-2 border-green-900 pb-0.5">Shop</Link>
-            <Link href={`/store/${slug}/about`} className="text-sm text-gray-600 hover:text-green-900">About Us</Link>
-            {store.instagram_url && (
-              <a href={store.instagram_url} target="_blank" rel="noreferrer" className="text-sm text-gray-600 hover:text-green-900">Instagram</a>
-            )}
-            {store.facebook_url && (
-              <a href={store.facebook_url} target="_blank" rel="noreferrer" className="text-sm text-gray-600 hover:text-green-900">Facebook</a>
-            )}
-          </div>
-        </div>
-      </div>
+      <StoreNavbar storeId={slug} activePage="shop" />
 
       {/* Shop Header */}
       <div className="bg-green-900 py-10 px-6">

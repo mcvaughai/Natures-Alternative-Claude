@@ -67,7 +67,7 @@ export default function StoreBlogPage({ params }: StoreBlogPageProps) {
   return (
     <div className="min-h-screen bg-[#f5f0e8] flex flex-col">
       <Navbar />
-      <StoreNavbar storeId={id} />
+      <StoreNavbar storeId={id} activePage="blog" />
       <main className="flex-1">
 
         {/* ── Blog Header ──────────────────────────────────────────── */}

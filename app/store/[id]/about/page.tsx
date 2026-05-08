@@ -22,7 +22,7 @@ export default function StoreAboutPage({ params }: StoreAboutPageProps) {
   return (
     <div className="min-h-screen bg-[#f5f0e8] flex flex-col">
       <Navbar />
-      <StoreNavbar storeId={id} />
+      <StoreNavbar storeId={id} activePage="about" />
       <main className="flex-1">
 
         {/* ── About Hero ────────────────────────────────────────────── */}
