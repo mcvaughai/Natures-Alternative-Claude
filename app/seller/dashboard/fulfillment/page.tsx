@@ -4,74 +4,200 @@ import { useState, useEffect } from "react";
 import SellerLayout from "@/components/seller/SellerLayout";
 import { getValidSellerSession } from "@/lib/sessionHelper";
 
-const inputCls = "w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a4a2e]/30 focus:border-[#1a4a2e] transition";
+const SUPABASE_URL = "https://ezryfycxfmtffobyfjfa.supabase.co";
+const SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6cnlmeWN4Zm10ZmZvYnlmamZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MjQ1MDEsImV4cCI6MjA5MjQwMDUwMX0.woObRrj3MMUf6eAFVbkvDNUsQfQ-elmlDqPADBT9aZs";
+
+const inputCls =
+  "w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a4a2e]/30 focus:border-[#1a4a2e] transition";
 
 function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
   return (
-    <button onClick={onToggle}
-      className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${on ? "bg-[#1a4a2e]" : "bg-gray-300"}`}>
-      <span className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white shadow transition-transform ${on ? "translate-x-5" : "translate-x-0"}`}/>
+    <button
+      onClick={onToggle}
+      className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${on ? "bg-[#1a4a2e]" : "bg-gray-300"}`}
+    >
+      <span
+        className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white shadow transition-transform ${on ? "translate-x-5" : "translate-x-0"}`}
+      />
     </button>
   );
 }
 
 export default function FulfillmentPage() {
+  const [session, setSession]                   = useState<any>(null);
+  const [loading, setLoading]                   = useState(true);
+  const [saving, setSaving]                     = useState(false);
+  const [success, setSuccess]                   = useState("");
+  const [error, setError]                       = useState("");
+
+  // Fulfillment toggles
+  const [offersPickup, setOffersPickup]         = useState(false);
+  const [offersDelivery, setOffersDelivery]     = useState(false);
+  const [offersShipping, setOffersShipping]     = useState(false);
+
+  // Pickup fields (saved to sellers table)
+  const [pickupAddress, setPickupAddress]       = useState("");
+  const [pickupHours, setPickupHours]           = useState("");
+  const [pickupInstructions, setPickupInstructions] = useState("");
+
+  // Delivery UI-only fields (not yet in sellers table)
+  const [deliveryRadius, setDeliveryRadius]     = useState("15");
+  const [deliveryFee, setDeliveryFee]           = useState("5.00");
+  const [deliveryMin, setDeliveryMin]           = useState("25.00");
+  const [deliveryDays, setDeliveryDays]         = useState("Wed, Fri");
+
+  // Shipping UI-only fields (not yet in sellers table)
+  const [carrier, setCarrier]                   = useState("USPS");
+  const [shippingMin, setShippingMin]           = useState("35.00");
+  const [freeThreshold, setFreeThreshold]       = useState("75.00");
+
   useEffect(() => {
-    getValidSellerSession();
+    getValidSellerSession().then((sess) => {
+      if (!sess) return;
+      setSession(sess);
+      fetchFulfillmentData(sess);
+    });
   }, []);
 
-  const [pickup, setPickup]         = useState(true);
-  const [delivery, setDelivery]     = useState(true);
-  const [shipping, setShipping]     = useState(false);
-  const [saved, setSaved]           = useState(false);
+  async function fetchFulfillmentData(sess: { access_token: string; seller_id: string }) {
+    try {
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/sellers?id=eq.${sess.seller_id}&select=fulfillment,pickup_address,pickup_hours,pickup_instructions`,
+        {
+          headers: {
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${sess.access_token}`,
+          },
+        }
+      );
+      const data = await res.json();
+      if (data && data[0]) {
+        const seller = data[0];
+        const arr: string[] = Array.isArray(seller.fulfillment) ? seller.fulfillment : [];
+        setOffersPickup(arr.includes("Farm Pickup"));
+        setOffersDelivery(arr.includes("Local Delivery"));
+        setOffersShipping(arr.includes("Shipping"));
+        setPickupAddress(seller.pickup_address || "");
+        setPickupHours(seller.pickup_hours || "");
+        setPickupInstructions(seller.pickup_instructions || "");
+      }
+    } catch (err) {
+      console.error("Error fetching fulfillment:", err);
+    } finally {
+      setLoading(false);
+    }
+  }
 
-  // Pickup settings
-  const [pickupAddr, setPickupAddr]     = useState("123 Farm Lane, Asheville, NC 28801");
-  const [pickupHours, setPickupHours]   = useState("Tue–Sat, 9am–5pm");
-  const [pickupNote, setPickupNote]     = useState("Please bring a cooler for perishables.");
+  async function saveFulfillmentSettings() {
+    setSaving(true);
+    setError("");
+    setSuccess("");
+    try {
+      const sess = session || (await getValidSellerSession());
+      if (!sess) { setError("Not logged in"); return; }
 
-  // Delivery settings
-  const [deliveryRadius, setDeliveryRadius] = useState("15");
-  const [deliveryFee, setDeliveryFee]       = useState("5.00");
-  const [deliveryMin, setDeliveryMin]       = useState("25.00");
-  const [deliveryDays, setDeliveryDays]     = useState("Wed, Fri");
+      const fulfillmentArray: string[] = [];
+      if (offersPickup) fulfillmentArray.push("Farm Pickup");
+      if (offersDelivery) fulfillmentArray.push("Local Delivery");
+      if (offersShipping) fulfillmentArray.push("Shipping");
 
-  // Shipping settings
-  const [carrier, setCarrier]         = useState("USPS");
-  const [shippingMin, setShippingMin] = useState("35.00");
-  const [freeThreshold, setFreeThreshold] = useState("75.00");
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/sellers?id=eq.${sess.seller_id}`,
+        {
+          method: "PATCH",
+          headers: {
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${sess.access_token}`,
+            "Content-Type": "application/json",
+            Prefer: "return=representation",
+          },
+          body: JSON.stringify({
+            fulfillment:          fulfillmentArray,
+            pickup_address:       pickupAddress,
+            pickup_hours:         pickupHours,
+            pickup_instructions:  pickupInstructions,
+            updated_at:           new Date().toISOString(),
+          }),
+        }
+      );
 
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
-  };
+      if (!res.ok) {
+        const errText = await res.text();
+        setError("Save failed: " + errText);
+        return;
+      }
+
+      setSuccess("Fulfillment settings saved successfully!");
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (err: any) {
+      setError("Error: " + err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <SellerLayout>
+        <div className="flex items-center justify-center py-24">
+          <svg className="w-6 h-6 animate-spin text-[#1a4a2e]" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+          </svg>
+        </div>
+      </SellerLayout>
+    );
+  }
 
   return (
     <SellerLayout>
       <div className="space-y-5 max-w-3xl">
+
+        {/* Header */}
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-gray-900">Fulfillment Settings</h1>
-          <button onClick={handleSave}
-            className={`flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold transition-all ${saved ? "bg-green-600 text-white" : "bg-[#1a4a2e] hover:bg-[#2d6b47] text-white"}`}>
-            {saved ? (
-              <>
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7"/>
-                </svg>
-                Saved!
-              </>
-            ) : "Save Changes"}
+          <button
+            onClick={saveFulfillmentSettings}
+            disabled={saving}
+            className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold transition-all bg-[#1a4a2e] hover:bg-[#2d6b47] disabled:opacity-60 text-white"
+          >
+            {saving && (
+              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+              </svg>
+            )}
+            {saving ? "Saving..." : "Save Fulfillment Settings"}
           </button>
         </div>
 
-        {/* Pickup */}
+        {/* Success / Error toasts */}
+        {success && (
+          <div className="flex items-center gap-2.5 bg-green-50 border border-green-200 text-green-800 text-sm px-4 py-3 rounded-xl">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+            </svg>
+            {success}
+          </div>
+        )}
+        {error && (
+          <div className="flex items-center gap-2.5 bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            {error}
+          </div>
+        )}
+
+        {/* Farm Pickup */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="flex items-center justify-between p-5 border-b border-gray-100">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-[#1a4a2e]/10 flex items-center justify-center">
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-[#1a4a2e]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
               </div>
               <div>
@@ -79,22 +205,39 @@ export default function FulfillmentPage() {
                 <p className="text-xs text-gray-500">Customers pick up orders directly from your farm</p>
               </div>
             </div>
-            <Toggle on={pickup} onToggle={() => setPickup(v => !v)}/>
+            <Toggle on={offersPickup} onToggle={() => setOffersPickup(v => !v)} />
           </div>
-          {pickup && (
+          {offersPickup && (
             <div className="p-5 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Pickup Address</label>
-                <input type="text" value={pickupAddr} onChange={e => setPickupAddr(e.target.value)} className={inputCls}/>
+                <input
+                  type="text"
+                  value={pickupAddress}
+                  onChange={e => setPickupAddress(e.target.value)}
+                  placeholder="123 Farm Lane, City, State 00000"
+                  className={inputCls}
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Pickup Hours</label>
-                <input type="text" value={pickupHours} onChange={e => setPickupHours(e.target.value)} placeholder="e.g. Mon–Fri, 8am–4pm" className={inputCls}/>
+                <input
+                  type="text"
+                  value={pickupHours}
+                  onChange={e => setPickupHours(e.target.value)}
+                  placeholder="e.g. Mon–Fri, 8am–4pm"
+                  className={inputCls}
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Special Instructions</label>
-                <textarea rows={2} value={pickupNote} onChange={e => setPickupNote(e.target.value)}
-                  className={inputCls + " resize-none"} placeholder="Directions, parking tips, etc."/>
+                <textarea
+                  rows={2}
+                  value={pickupInstructions}
+                  onChange={e => setPickupInstructions(e.target.value)}
+                  placeholder="Directions, parking tips, etc."
+                  className={inputCls + " resize-none"}
+                />
               </div>
               <div className="bg-[#f5f0e8] rounded-xl px-4 py-3 text-xs text-gray-600">
                 <span className="font-semibold">Tip:</span> Include directions and a phone number so customers can easily find you.
@@ -109,7 +252,7 @@ export default function FulfillmentPage() {
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                 </svg>
               </div>
               <div>
@@ -117,20 +260,20 @@ export default function FulfillmentPage() {
                 <p className="text-xs text-gray-500">You deliver orders within a set radius</p>
               </div>
             </div>
-            <Toggle on={delivery} onToggle={() => setDelivery(v => !v)}/>
+            <Toggle on={offersDelivery} onToggle={() => setOffersDelivery(v => !v)} />
           </div>
-          {delivery && (
+          {offersDelivery && (
             <div className="p-5 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Delivery Radius (miles)</label>
-                  <input type="number" value={deliveryRadius} onChange={e => setDeliveryRadius(e.target.value)} min="1" className={inputCls}/>
+                  <input type="number" value={deliveryRadius} onChange={e => setDeliveryRadius(e.target.value)} min="1" className={inputCls} />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Delivery Fee ($)</label>
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm">$</span>
-                    <input type="number" value={deliveryFee} onChange={e => setDeliveryFee(e.target.value)} min="0" step="0.50" className={inputCls + " pl-7"}/>
+                    <input type="number" value={deliveryFee} onChange={e => setDeliveryFee(e.target.value)} min="0" step="0.50" className={inputCls + " pl-7"} />
                   </div>
                 </div>
               </div>
@@ -139,12 +282,12 @@ export default function FulfillmentPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Minimum Order ($)</label>
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm">$</span>
-                    <input type="number" value={deliveryMin} onChange={e => setDeliveryMin(e.target.value)} min="0" step="0.50" className={inputCls + " pl-7"}/>
+                    <input type="number" value={deliveryMin} onChange={e => setDeliveryMin(e.target.value)} min="0" step="0.50" className={inputCls + " pl-7"} />
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Delivery Days</label>
-                  <input type="text" value={deliveryDays} onChange={e => setDeliveryDays(e.target.value)} placeholder="e.g. Mon, Wed, Fri" className={inputCls}/>
+                  <input type="text" value={deliveryDays} onChange={e => setDeliveryDays(e.target.value)} placeholder="e.g. Mon, Wed, Fri" className={inputCls} />
                 </div>
               </div>
             </div>
@@ -157,7 +300,7 @@ export default function FulfillmentPage() {
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center">
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                 </svg>
               </div>
               <div>
@@ -165,22 +308,23 @@ export default function FulfillmentPage() {
                 <p className="text-xs text-gray-500">Ship orders nationwide via carrier</p>
               </div>
             </div>
-            <Toggle on={shipping} onToggle={() => setShipping(v => !v)}/>
+            <Toggle on={offersShipping} onToggle={() => setOffersShipping(v => !v)} />
           </div>
-          {shipping && (
+          {offersShipping && (
             <div className="p-5 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Preferred Carrier</label>
                 <div className="relative">
-                  <select value={carrier} onChange={e => setCarrier(e.target.value)}
-                    className={inputCls + " appearance-none"}>
+                  <select value={carrier} onChange={e => setCarrier(e.target.value)} className={inputCls + " appearance-none"}>
                     <option>USPS</option>
                     <option>UPS</option>
                     <option>FedEx</option>
                     <option>DHL</option>
                   </select>
                   <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
                   </span>
                 </div>
               </div>
@@ -189,14 +333,14 @@ export default function FulfillmentPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Minimum Order ($)</label>
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm">$</span>
-                    <input type="number" value={shippingMin} onChange={e => setShippingMin(e.target.value)} min="0" step="0.50" className={inputCls + " pl-7"}/>
+                    <input type="number" value={shippingMin} onChange={e => setShippingMin(e.target.value)} min="0" step="0.50" className={inputCls + " pl-7"} />
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Free Shipping Threshold ($)</label>
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm">$</span>
-                    <input type="number" value={freeThreshold} onChange={e => setFreeThreshold(e.target.value)} min="0" step="0.50" className={inputCls + " pl-7"}/>
+                    <input type="number" value={freeThreshold} onChange={e => setFreeThreshold(e.target.value)} min="0" step="0.50" className={inputCls + " pl-7"} />
                   </div>
                 </div>
               </div>
@@ -205,21 +349,47 @@ export default function FulfillmentPage() {
               </div>
             </div>
           )}
-          {!shipping && (
+          {!offersShipping && (
             <div className="px-5 py-4 text-sm text-gray-400 italic">Enable shipping to configure settings.</div>
           )}
         </div>
 
-        {/* Summary */}
+        {/* Active methods summary */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
           <h2 className="text-sm font-bold text-gray-900 mb-3">Active Fulfillment Methods</h2>
           <div className="flex flex-wrap gap-2">
-            {pickup   && <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-[#1a4a2e]/10 text-[#1a4a2e] px-3 py-1.5 rounded-full"><span className="w-1.5 h-1.5 rounded-full bg-[#1a4a2e]"/>Pickup</span>}
-            {delivery && <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full"><span className="w-1.5 h-1.5 rounded-full bg-blue-600"/>Local Delivery</span>}
-            {shipping && <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-purple-100 text-purple-700 px-3 py-1.5 rounded-full"><span className="w-1.5 h-1.5 rounded-full bg-purple-600"/>Shipping</span>}
-            {!pickup && !delivery && !shipping && <span className="text-xs text-gray-400 italic">No fulfillment methods enabled</span>}
+            {offersPickup && (
+              <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-[#1a4a2e]/10 text-[#1a4a2e] px-3 py-1.5 rounded-full">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#1a4a2e]" />Pickup
+              </span>
+            )}
+            {offersDelivery && (
+              <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />Local Delivery
+              </span>
+            )}
+            {offersShipping && (
+              <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-purple-100 text-purple-700 px-3 py-1.5 rounded-full">
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-600" />Shipping
+              </span>
+            )}
+            {!offersPickup && !offersDelivery && !offersShipping && (
+              <span className="text-xs text-gray-400 italic">No fulfillment methods enabled</span>
+            )}
           </div>
         </div>
+
+        {/* Bottom save button */}
+        <div className="flex justify-end pb-4">
+          <button
+            onClick={saveFulfillmentSettings}
+            disabled={saving}
+            className="bg-[#1a4a2e] hover:bg-[#2d6b47] disabled:opacity-60 text-white px-8 py-3 rounded-xl text-sm font-semibold transition-colors"
+          >
+            {saving ? "Saving..." : "Save Fulfillment Settings"}
+          </button>
+        </div>
+
       </div>
     </SellerLayout>
   );
