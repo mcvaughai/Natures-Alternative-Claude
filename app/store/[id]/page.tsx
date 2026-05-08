@@ -152,7 +152,7 @@ export default function StorePage() {
       </div>
 
       {/* Banner */}
-      <div className="w-full h-64 bg-gray-200 relative overflow-hidden">
+      <div className="w-full bg-gray-200 relative overflow-hidden" style={{ height: '1055px' }}>
         {store.banner_url ? (
           <>
             <img
