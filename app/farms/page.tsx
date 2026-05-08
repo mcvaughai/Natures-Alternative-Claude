@@ -7,7 +7,7 @@ import Footer from "@/components/layout/Footer";
 import FarmCard, { FarmCardData } from "@/components/shared/FarmCard";
 import FarmFilterSidebar, { FarmFilterProvider, FarmActiveFiltersBar } from "@/components/FarmFilterSidebar";
 import SectionHeader from "@/components/shared/SectionHeader";
-import { fetchFromSupabase } from "@/lib/api";
+import { fetchFromSupabase, SUPABASE_URL, supabaseHeaders } from "@/lib/api";
 
 const SORT_OPTIONS = [
   "Featured", "Nearest First", "Highest Rated",
@@ -15,11 +15,14 @@ const SORT_OPTIONS = [
 ];
 
 interface SellerRow {
+  id: string;
   slug: string;
   farm_name: string;
   city: string;
   state: string;
   description: string;
+  banner_url: string | null;
+  logo_url: string | null;
   fulfillment: string[] | null;
 }
 
@@ -49,21 +52,48 @@ export default function FarmsPage() {
     setError("");
     try {
       const data = await fetchFromSupabase<SellerRow[]>(
-        "sellers?status=eq.approved&select=slug,farm_name,city,state,description,fulfillment&order=created_at.desc"
+        "sellers?status=eq.approved&select=id,slug,farm_name,city,state,description,banner_url,logo_url,fulfillment&order=created_at.desc"
       );
-      setFarms(
-        (data ?? []).map((s) => ({
-          id:           s.slug,
-          name:         s.farm_name,
-          location:     [s.city, s.state].filter(Boolean).join(", "),
-          description:  s.description ?? "",
-          categories:   [],
-          fulfillment:  mapFulfillment(s.fulfillment),
-          rating:       0,
-          reviewCount:  0,
-          productCount: 0,
-        }))
+      const farmsData = data ?? [];
+
+      // Fetch real product counts for each farm
+      const farmsWithCounts = await Promise.all(
+        farmsData.map(async (s) => {
+          try {
+            const countRes = await fetch(
+              `${SUPABASE_URL}/rest/v1/products?seller_id=eq.${s.id}&is_active=eq.true&select=id`,
+              { headers: supabaseHeaders }
+            );
+            const products = await countRes.json();
+            return {
+              id:           s.slug,
+              name:         s.farm_name,
+              location:     [s.city, s.state].filter(Boolean).join(", "),
+              description:  s.description ?? "",
+              categories:   [],
+              fulfillment:  mapFulfillment(s.fulfillment),
+              bannerUrl:    s.banner_url ?? undefined,
+              rating:       0,
+              reviewCount:  0,
+              productCount: Array.isArray(products) ? products.length : 0,
+            };
+          } catch {
+            return {
+              id:           s.slug,
+              name:         s.farm_name,
+              location:     [s.city, s.state].filter(Boolean).join(", "),
+              description:  s.description ?? "",
+              categories:   [],
+              fulfillment:  mapFulfillment(s.fulfillment),
+              bannerUrl:    s.banner_url ?? undefined,
+              rating:       0,
+              reviewCount:  0,
+              productCount: 0,
+            };
+          }
+        })
       );
+      setFarms(farmsWithCounts);
     } catch (err) {
       console.error("Farms fetch error:", err);
       setError("Failed to load farms.");

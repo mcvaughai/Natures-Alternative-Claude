@@ -33,20 +33,30 @@ export interface FarmCardData {
   rating: number;
   reviewCount: number;
   productCount: number;
+  bannerUrl?: string;
   featured?: boolean;
 }
 
 export default function FarmCard({
   id, name, location, description, categories, fulfillment,
-  rating, reviewCount, productCount, featured,
+  rating, reviewCount, productCount, bannerUrl, featured,
 }: FarmCardData) {
   return (
     <div className={`bg-white rounded-2xl overflow-hidden shadow-sm border transition-all hover:shadow-md hover:-translate-y-0.5 group ${featured ? "border-[#1a4a2e]" : "border-gray-100"}`}>
       {/* Banner */}
-      <div className="relative bg-gray-200 h-44 flex items-center justify-center text-gray-400">
-        <svg xmlns="http://www.w3.org/2000/svg" className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-        </svg>
+      <div className="relative h-48 overflow-hidden">
+        {bannerUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={bannerUrl}
+            alt={name}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-400">
+            <span className="text-gray-400 text-sm">No image yet</span>
+          </div>
+        )}
         {featured && (
           <span className="absolute top-3 right-3 bg-[#1a4a2e] text-white text-xs font-semibold px-2.5 py-1 rounded-full">
             Featured
