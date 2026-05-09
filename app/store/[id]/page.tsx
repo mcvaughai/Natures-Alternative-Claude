@@ -16,6 +16,67 @@ const headers = {
   'Content-Type': 'application/json',
 }
 
+const PLACEHOLDER_REVIEWS = [
+  {
+    id: 1,
+    text: 'Amazing grass-fed beef! You can really taste the difference from store bought. My family loves the ribeye steaks.',
+    author: 'Sarah M.',
+  },
+  {
+    id: 2,
+    text: 'Best eggs I have ever had. The yolks are so rich and orange. Will never go back to grocery store eggs again!',
+    author: 'Mike R.',
+  },
+]
+
+const PLACEHOLDER_BLOG_POSTS = [
+  { id: 1, title: 'Coming Soon', excerpt: 'Stay tuned for updates from our farm' },
+  { id: 2, title: 'Coming Soon', excerpt: 'Stay tuned for updates from our farm' },
+  { id: 3, title: 'Coming Soon', excerpt: 'Stay tuned for updates from our farm' },
+  { id: 4, title: 'Coming Soon', excerpt: 'Stay tuned for updates from our farm' },
+]
+
+function StarRating({ count = 5 }: { count?: number }) {
+  return (
+    <div className="flex gap-0.5">
+      {Array.from({ length: count }).map((_, i) => (
+        <svg key={i} className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+        </svg>
+      ))}
+    </div>
+  )
+}
+
+function ClickableStars({ rating, setRating }: { rating: number; setRating: (n: number) => void }) {
+  const [hovered, setHovered] = useState(0)
+  return (
+    <div className="flex gap-1">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <button
+          key={star}
+          type="button"
+          onClick={() => setRating(star)}
+          onMouseEnter={() => setHovered(star)}
+          onMouseLeave={() => setHovered(0)}
+          className="focus:outline-none"
+          aria-label={`Rate ${star} star${star !== 1 ? 's' : ''}`}
+        >
+          <svg
+            className={`w-7 h-7 transition-colors ${
+              star <= (hovered || rating) ? 'text-yellow-400' : 'text-gray-300'
+            }`}
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+          </svg>
+        </button>
+      ))}
+    </div>
+  )
+}
+
 export default function StorePage() {
   const params = useParams()
   const slug = params?.id as string
@@ -23,6 +84,8 @@ export default function StorePage() {
   const [products, setProducts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [reviewText, setReviewText] = useState('')
+  const [reviewRating, setReviewRating] = useState(0)
 
   useEffect(() => {
     if (slug) fetchStoreData()
@@ -31,20 +94,11 @@ export default function StorePage() {
   async function fetchStoreData() {
     setLoading(true)
     try {
-      console.log('Looking for store with slug:', slug)
       const storeRes = await fetch(
         `${SUPABASE_URL}/rest/v1/sellers?slug=eq.${slug}&select=*`,
-        {
-          headers: {
-            'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-            'Content-Type': 'application/json',
-          },
-        }
+        { headers }
       )
       const stores = await storeRes.json()
-      console.log('Store fetch status:', storeRes.status)
-      console.log('Store fetch result:', JSON.stringify(stores))
 
       if (!stores || !Array.isArray(stores) || stores.length === 0) {
         setError('Store not found')
@@ -59,11 +113,8 @@ export default function StorePage() {
         { headers }
       )
       const productsData = await productsRes.json()
-      console.log('Products fetch status:', productsRes.status)
-      console.log('Products data:', productsData)
 
       if (!Array.isArray(productsData)) {
-        console.error('Products data is not an array:', productsData)
         setProducts([])
       } else {
         setProducts(
@@ -81,12 +132,13 @@ export default function StorePage() {
     }
   }
 
+  /* ── Loading ── */
   if (loading) return (
-    <div className="min-h-screen bg-amber-50">
+    <div className="min-h-screen bg-[#f5f0e8]">
       <Navbar />
       <div className="flex items-center justify-center py-40">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-900 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-900 mx-auto" />
           <p className="mt-4 text-gray-500">Loading store...</p>
         </div>
       </div>
@@ -94,8 +146,9 @@ export default function StorePage() {
     </div>
   )
 
+  /* ── Error ── */
   if (error) return (
-    <div className="min-h-screen bg-amber-50">
+    <div className="min-h-screen bg-[#f5f0e8]">
       <Navbar />
       <div className="flex items-center justify-center py-40">
         <div className="text-center">
@@ -111,12 +164,13 @@ export default function StorePage() {
   )
 
   return (
-    <div className="min-h-screen bg-amber-50">
+    <div className="min-h-screen bg-[#f5f0e8]">
       <Navbar />
 
+      {/* ── 1. STORE SECONDARY NAVBAR ── */}
       <StoreNavbar storeId={slug} activePage="home" />
 
-      {/* Banner */}
+      {/* ── 2. HERO BANNER ── */}
       <div className="w-full relative overflow-hidden">
         {store.banner_url ? (
           <>
@@ -126,125 +180,234 @@ export default function StorePage() {
               className="w-full h-auto block"
               style={{ objectFit: 'contain', maxHeight: '600px', width: '100%' }}
             />
-            <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/40 to-transparent">
+            <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/60 to-transparent">
               <h1 className="text-4xl font-bold text-white">{store.farm_name}</h1>
               {store.tagline && (
                 <p className="text-white text-lg mt-2 opacity-90">{store.tagline}</p>
               )}
+              <Link
+                href={`/store/${slug}/shop`}
+                className="mt-4 inline-block bg-white text-green-900 px-8 py-3 rounded-full font-bold hover:bg-gray-100 transition-colors"
+              >
+                Shop Now
+              </Link>
             </div>
           </>
         ) : (
-          <div className="w-full h-64 bg-gradient-to-r from-green-900 to-green-700 flex items-center justify-center">
+          <div className="w-full h-80 bg-gradient-to-r from-green-900 to-green-700 flex flex-col items-center justify-center text-center px-6">
             <h1 className="text-4xl font-bold text-white">{store.farm_name}</h1>
+            {store.tagline && (
+              <p className="text-white text-lg mt-2 opacity-90">{store.tagline}</p>
+            )}
+            <Link
+              href={`/store/${slug}/shop`}
+              className="mt-6 inline-block bg-white text-green-900 px-8 py-3 rounded-full font-bold hover:bg-gray-100 transition-colors"
+            >
+              Shop Now
+            </Link>
           </div>
         )}
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-10">
+      {/* ── 3. SHOP OUR BESTSELLERS ── */}
+      <section className="max-w-7xl mx-auto px-6 py-14">
+        <h2 className="text-3xl font-black text-center tracking-widest uppercase text-gray-900 mb-4">
+          Shop Our Bestsellers
+        </h2>
+        <hr className="border-gray-300 mb-10" />
 
-        {/* Products Section — FIRST */}
-        <div className="mb-10">
-          <h2 className="text-2xl font-bold text-green-900 mb-6">
-            Shop Our Best Sellers
-          </h2>
-
-          {products.length === 0 ? (
-            <div className="text-center py-20 bg-white rounded-xl shadow-sm">
-              <h3 className="text-xl font-bold text-gray-700">No products yet</h3>
-              <p className="text-gray-500 mt-2">Check back soon!</p>
-            </div>
-          ) : (
-            <>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {products.map((product: any) => (
-                  <Link
-                    key={product.id}
-                    href={`/product/${product.id}`}
-                    className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
-                  >
-                    <div className="h-48 bg-gray-200 overflow-hidden">
-                      {product.primaryImage ? (
-                        <img
-                          src={product.primaryImage}
-                          alt={product.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gray-300 flex items-center justify-center">
-                          <span className="text-gray-400 text-sm">No image</span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-3">
-                      <h4 className="font-semibold text-sm text-gray-800">{product.name}</h4>
-                      <p className="text-green-900 font-bold mt-1">
-                        ${product.price}/{product.unit || 'each'}
-                      </p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-
-              {/* View All Products button */}
-              <div className="text-center mt-6">
+        {products.length === 0 ? (
+          <div className="text-center py-16 bg-white rounded-xl shadow-sm">
+            <h3 className="text-xl font-bold text-gray-700">No products yet</h3>
+            <p className="text-gray-500 mt-2">Check back soon!</p>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+              {products.map((product: any) => (
                 <Link
-                  href={`/store/${slug}/shop`}
-                  className="bg-green-900 text-white px-8 py-3 rounded-full hover:bg-green-800 transition-colors font-medium"
+                  key={product.id}
+                  href={`/product/${product.id}`}
+                  className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group"
                 >
-                  View All Products
+                  <div className="h-52 bg-gray-100 overflow-hidden">
+                    {product.primaryImage ? (
+                      <img
+                        src={product.primaryImage}
+                        alt={product.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                        <svg className="w-10 h-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-4">
+                    <h4 className="font-semibold text-sm text-gray-800 line-clamp-2">{product.name}</h4>
+                    <p className="text-green-900 font-bold mt-1 text-sm">
+                      ${product.price}/{product.unit || 'each'}
+                    </p>
+                    <div className="mt-3">
+                      <span className="block text-center w-full bg-green-900 text-white text-xs font-semibold py-2 rounded-full hover:bg-green-800 transition-colors">
+                        Add to Cart
+                      </span>
+                    </div>
+                  </div>
                 </Link>
-              </div>
-            </>
+              ))}
+            </div>
+
+            <div className="text-center mt-8">
+              <Link
+                href={`/store/${slug}/shop`}
+                className="inline-block bg-green-900 text-white px-10 py-3 rounded-full font-medium hover:bg-green-800 transition-colors"
+              >
+                View All Products
+              </Link>
+            </div>
+          </>
+        )}
+      </section>
+
+      {/* ── 4. HERO / MISSION SECTION ── */}
+      <section className="bg-[#f0ebe0] border-y border-[#ddd5c5] py-16 px-6">
+        <div className="max-w-2xl mx-auto text-center">
+          <h2 className="text-3xl font-black text-gray-900 mb-5">
+            {store.tagline || store.farm_name}
+          </h2>
+          {store.description && (
+            <p className="text-gray-600 leading-relaxed text-base mb-6">
+              {store.description}
+            </p>
           )}
+          <Link
+            href={`/store/${slug}/about`}
+            className="inline-block bg-black text-white px-8 py-3 rounded-full font-medium hover:bg-gray-800 transition-colors"
+          >
+            Learn More About Us
+          </Link>
+        </div>
+      </section>
+
+      {/* ── 5. WHO WE ARE AND WHAT WE DO ── */}
+      <section className="max-w-7xl mx-auto px-6 py-14">
+        <h2 className="text-3xl font-black text-center tracking-widest uppercase text-gray-900 mb-4">
+          Who We Are And What We Do
+        </h2>
+        <hr className="border-gray-300 mb-10" />
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+          {/* Left: image placeholder */}
+          <div className="bg-gray-200 rounded-2xl aspect-square flex items-center justify-center text-gray-400">
+            <svg className="w-20 h-20 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+
+          {/* Right: text */}
+          <div className="flex flex-col gap-5">
+            <h3 className="text-2xl font-bold text-gray-900">{store.farm_name}</h3>
+            <p className="text-gray-600 leading-relaxed">
+              {store.description || 'We are passionate about providing the highest quality natural products straight from our farm to your table. Every item is grown and raised with care, without synthetic chemicals or shortcuts.'}
+            </p>
+            {store.city && store.state && (
+              <p className="text-sm text-gray-500">📍 {store.city}, {store.state}</p>
+            )}
+            <div>
+              <Link
+                href={`/store/${slug}/about`}
+                className="inline-block bg-gray-900 text-white px-7 py-3 rounded-full font-medium hover:bg-gray-700 transition-colors"
+              >
+                Learn More
+              </Link>
+            </div>
+          </div>
         </div>
 
-        {/* Divider */}
-        <hr className="border-gray-200 mb-8" />
+        <hr className="border-gray-200 mt-14" />
+      </section>
 
-        {/* Store Info Card — SECOND */}
-        {store.description && (
-          <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
-            <h2 className="text-xl font-bold text-green-900 mb-3">About {store.farm_name}</h2>
-            <p className="text-gray-600 leading-relaxed">{store.description}</p>
-            <div className="flex flex-wrap gap-4 mt-4">
-              {store.city && store.state && (
-                <span className="text-sm text-gray-500">📍 {store.city}, {store.state}</span>
-              )}
-              {store.year_established && (
-                <span className="text-sm text-gray-500">📅 Est. {store.year_established}</span>
-              )}
-              {store.phone && (
-                <span className="text-sm text-gray-500">📞 {store.phone}</span>
-              )}
-              {store.email && (
-                <span className="text-sm text-gray-500">✉️ {store.email}</span>
-              )}
-              {store.website && (
-                <a href={store.website} target="_blank" rel="noreferrer" className="text-sm text-green-700 hover:underline">
-                  🌐 Visit Website
-                </a>
-              )}
+      {/* ── 6. WHAT PEOPLE THINK OF US ── */}
+      <section className="max-w-7xl mx-auto px-6 pb-14">
+        <h2 className="text-3xl font-black text-center tracking-widest uppercase text-gray-900 mb-4">
+          What People Think Of Us
+        </h2>
+        <hr className="border-gray-300 mb-10" />
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+          {/* Left: review cards */}
+          <div className="space-y-5">
+            {PLACEHOLDER_REVIEWS.map((review) => (
+              <div key={review.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Review:</p>
+                <p className="text-gray-700 leading-relaxed mb-4">&ldquo;{review.text}&rdquo;</p>
+                <StarRating />
+                <p className="text-sm font-semibold text-gray-500 mt-3">{review.author}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Right: write a review */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col gap-4">
+            <h3 className="text-xl font-bold text-gray-900">Share your thoughts!</h3>
+            <textarea
+              value={reviewText}
+              onChange={(e) => setReviewText(e.target.value)}
+              rows={5}
+              placeholder="Write your review..."
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-900/30 focus:border-green-900 resize-none"
+            />
+            <div>
+              <p className="text-sm text-gray-500 mb-2">Your rating:</p>
+              <ClickableStars rating={reviewRating} setRating={setReviewRating} />
             </div>
+            <button
+              type="button"
+              className="self-start bg-gray-900 text-white px-8 py-3 rounded-full font-medium hover:bg-gray-700 transition-colors"
+            >
+              Submit
+            </button>
           </div>
-        )}
+        </div>
 
-        {/* Fulfillment Info */}
-        {(store.pickup_address || store.pickup_hours) && (
-          <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
-            <h2 className="text-xl font-bold text-green-900 mb-3">Pickup Information</h2>
-            {store.pickup_address && (
-              <p className="text-gray-600">📍 {store.pickup_address}</p>
-            )}
-            {store.pickup_hours && (
-              <p className="text-gray-600 mt-1">🕐 {store.pickup_hours}</p>
-            )}
-            {store.pickup_instructions && (
-              <p className="text-gray-500 text-sm mt-2">{store.pickup_instructions}</p>
-            )}
-          </div>
-        )}
+        <hr className="border-gray-200 mt-14" />
+      </section>
 
-      </div>
+      {/* ── 7. DISCOVER MORE ABOUT US ── */}
+      <section className="max-w-7xl mx-auto px-6 pb-16">
+        <h2 className="text-3xl font-black text-center tracking-widest uppercase text-gray-900 mb-4">
+          Discover More About Us
+        </h2>
+        <hr className="border-gray-300 mb-10" />
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+          {PLACEHOLDER_BLOG_POSTS.map((post) => (
+            <Link
+              key={post.id}
+              href={`/store/${slug}/blog`}
+              className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group"
+            >
+              <div className="bg-gray-200 h-40 flex items-center justify-center text-gray-400">
+                <svg className="w-10 h-10 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <div className="p-4">
+                <h4 className="font-bold text-sm text-gray-800 mb-1">{post.title}</h4>
+                <p className="text-xs text-gray-500 leading-relaxed mb-3">{post.excerpt}</p>
+                <span className="text-[#1a4a2e] text-xs font-semibold group-hover:underline">
+                  Read More →
+                </span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+
       <Footer />
     </div>
   )
