@@ -58,16 +58,24 @@ export default function StoreShopPage() {
 
       // Get unique category IDs from this farm's products
       const categoryIds = [...new Set(prods.map((p: any) => p.category_id).filter(Boolean))]
+      console.log('Category IDs from products:', categoryIds)
 
-      // Fetch only the categories that this farm's products belong to
       if (categoryIds.length > 0) {
-        const categoryFilter = categoryIds.map(id => `id=eq.${id}`).join(',')
+        // Fetch ALL categories then filter to only ones this farm uses
         const categoriesRes = await fetch(
-          `${SUPABASE_URL}/rest/v1/categories?or=(${categoryFilter})&select=id,name,slug&order=display_order.asc`,
+          `${SUPABASE_URL}/rest/v1/categories?select=id,name,slug&order=display_order.asc`,
           { headers }
         )
-        const categoriesData = await categoriesRes.json()
-        setCategories(Array.isArray(categoriesData) ? categoriesData : [])
+        const allCategories = await categoriesRes.json()
+        console.log('All categories fetched:', allCategories)
+
+        // Filter to only categories this farm's products belong to
+        const farmCategories = Array.isArray(allCategories)
+          ? allCategories.filter((cat: any) => categoryIds.includes(cat.id))
+          : []
+
+        console.log('Farm specific categories:', farmCategories)
+        setCategories(farmCategories)
       }
 
       setProducts(prods)
