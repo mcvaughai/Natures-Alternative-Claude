@@ -1,161 +1,250 @@
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
-import StoreNavbar from "@/components/store/StoreNavbar";
-import Link from "next/link";
+'use client'
 
-interface StoreBlogPageProps {
-  params: { id: string };
+import { useEffect, useState } from 'react'
+import { useParams } from 'next/navigation'
+import Link from 'next/link'
+import Navbar from '@/components/layout/Navbar'
+import Footer from '@/components/layout/Footer'
+import StoreNavbar from '@/components/store/StoreNavbar'
+
+const SUPABASE_URL = 'https://ezryfycxfmtffobyfjfa.supabase.co'
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6cnlmeWN4Zm10ZmZvYnlmamZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MjQ1MDEsImV4cCI6MjA5MjQwMDUwMX0.woObRrj3MMUf6eAFVbkvDNUsQfQ-elmlDqPADBT9aZs'
+
+const apiHeaders = {
+  apikey: SUPABASE_ANON_KEY,
+  Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+  'Content-Type': 'application/json',
 }
 
-const FEATURED_POST = {
-  id: "1",
-  title: "A Day in the Life on Our Farm",
-  date: "December 12, 2024",
-  excerpt:
-    "Ever wonder what it looks like behind the scenes on a natural farm? We walk you through a typical Tuesday — from the 5am morning rounds with the animals to the afternoon harvest and the evening prep for the next day's pickup orders.",
-  readTime: "5 min read",
-};
+function formatDate(dateStr: string) {
+  try {
+    return new Date(dateStr).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    })
+  } catch {
+    return dateStr
+  }
+}
 
-const BLOG_POSTS = [
-  {
-    id: "2",
-    title: "Why We Chose Regenerative Farming",
-    date: "November 28, 2024",
-    excerpt: "Regenerative farming is more than a trend — it is a commitment to healing the land for future generations. Here is why we made the switch and what we have learned.",
-    readTime: "4 min read",
-  },
-  {
-    id: "3",
-    title: "The Secret to Our Heirloom Tomatoes",
-    date: "November 15, 2024",
-    excerpt: "Our heirloom tomatoes consistently sell out within hours of listing. We are sharing the full story behind our growing methods, seed selection, and soil regimen.",
-    readTime: "3 min read",
-  },
-  {
-    id: "4",
-    title: "Meet the Animals — Winter Update",
-    date: "November 2, 2024",
-    excerpt: "The herd is growing and the animals are thriving heading into winter. We introduce you to some of our newest additions and share how we prepare our pastures for the cooler months.",
-    readTime: "6 min read",
-  },
-  {
-    id: "5",
-    title: "Seasonal Eating Guide: December Picks",
-    date: "October 22, 2024",
-    excerpt: "What is in season at our farm this December? We break down our top picks, how to store them, and a few of our favorite recipes for each.",
-    readTime: "4 min read",
-  },
-  {
-    id: "6",
-    title: "Behind the Scenes: Our Fulfillment Process",
-    date: "October 10, 2024",
-    excerpt: "From harvest to your doorstep — we walk through exactly how we pick, pack and deliver your orders to ensure everything arrives fresh and intact.",
-    readTime: "3 min read",
-  },
-  {
-    id: "7",
-    title: "Soil Health: The Foundation of Natural Farming",
-    date: "September 28, 2024",
-    excerpt: "Healthy soil is the foundation of everything we do. We share the testing, composting, and cover cropping practices that keep our soil alive and productive year after year.",
-    readTime: "5 min read",
-  },
-];
+export default function StoreBlogPage() {
+  const params = useParams()
+  const slug = params?.id as string
 
-export default function StoreBlogPage({ params }: StoreBlogPageProps) {
-  const { id } = params;
+  const [store, setStore] = useState<any>(null)
+  const [posts, setPosts] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (slug) fetchData()
+  }, [slug])
+
+  async function fetchData() {
+    try {
+      const storeRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/sellers?slug=eq.${slug}&select=id,farm_name,slug`,
+        { headers: apiHeaders }
+      )
+      const storeData = await storeRes.json()
+
+      if (!Array.isArray(storeData) || storeData.length === 0) {
+        setError('Store not found')
+        setLoading(false)
+        return
+      }
+
+      const seller = storeData[0]
+      setStore(seller)
+
+      const postsRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/farm_posts?seller_id=eq.${seller.id}&is_published=eq.true&select=*&order=created_at.desc`,
+        { headers: apiHeaders }
+      )
+      const postsData = await postsRes.json()
+      setPosts(Array.isArray(postsData) ? postsData : [])
+    } catch (err) {
+      console.error('Blog page error:', err)
+      setError('Error loading blog')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) return (
+    <div className="min-h-screen bg-[#f5f0e8]">
+      <Navbar />
+      <div className="flex items-center justify-center py-40">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-900 mx-auto" />
+          <p className="mt-4 text-gray-500">Loading...</p>
+        </div>
+      </div>
+      <Footer />
+    </div>
+  )
+
+  if (error || !store) return (
+    <div className="min-h-screen bg-[#f5f0e8]">
+      <Navbar />
+      <div className="flex items-center justify-center py-40">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-700">Store not found</h2>
+          <Link href="/farms" className="mt-4 inline-block bg-green-900 text-white px-6 py-2 rounded-full">
+            Browse All Farms
+          </Link>
+        </div>
+      </div>
+      <Footer />
+    </div>
+  )
+
+  const featuredPost = posts[0] ?? null
+  const remainingPosts = posts.slice(1)
 
   return (
     <div className="min-h-screen bg-[#f5f0e8] flex flex-col">
       <Navbar />
-      <StoreNavbar storeId={id} activePage="blog" />
+      <StoreNavbar storeId={slug} activePage="blog" />
       <main className="flex-1">
 
-        {/* ── Blog Header ──────────────────────────────────────────── */}
+        {/* ── Blog Header ── */}
         <div className="bg-white border-b border-gray-200 py-8">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-1">Example Farms Blog</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-1">{store.farm_name} Blog</h1>
             <p className="text-gray-500">Stories from the farm</p>
           </div>
         </div>
 
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
 
-          {/* ── Featured Post ─────────────────────────────────────── */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="bg-gray-200 h-56 sm:h-72 flex items-center justify-center text-gray-400 relative">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-14 h-14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          {posts.length === 0 ? (
+            /* ── Empty State ── */
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-16 text-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-14 h-14 text-gray-300 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
               </svg>
-              <div className="absolute top-4 left-4">
-                <span className="bg-[#1a4a2e] text-white text-xs font-semibold px-3 py-1.5 rounded-full">
-                  Featured
-                </span>
-              </div>
+              <h2 className="text-xl font-bold text-gray-700 mb-2">No posts yet</h2>
+              <p className="text-gray-500">Check back soon for stories and updates from the farm.</p>
             </div>
-            <div className="p-6 sm:p-8">
-              <div className="flex items-center gap-3 text-xs text-gray-500 mb-3">
-                <span>{FEATURED_POST.date}</span>
-                <span>·</span>
-                <span>{FEATURED_POST.readTime}</span>
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-3">{FEATURED_POST.title}</h2>
-              <p className="text-gray-600 leading-relaxed mb-5">{FEATURED_POST.excerpt}</p>
-              <Link
-                href={`/store/${id}/blog/${FEATURED_POST.id}`}
-                className="inline-block bg-[#1a4a2e] hover:bg-[#143d24] text-white font-semibold px-6 py-2.5 rounded-full text-sm transition-colors"
-              >
-                Read More
-              </Link>
-            </div>
-          </div>
-
-          {/* ── Blog Grid ─────────────────────────────────────────── */}
-          <div>
-            <h2 className="text-xl font-bold text-gray-900 mb-5">More from the Farm</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {BLOG_POSTS.map((post) => (
-                <div
-                  key={post.id}
-                  className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow"
-                >
-                  <div className="bg-gray-200 h-40 flex items-center justify-center text-gray-400">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                  <div className="p-5">
-                    <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
-                      <span>{post.date}</span>
-                      <span>·</span>
-                      <span>{post.readTime}</span>
+          ) : (
+            <>
+              {/* ── Featured Post ── */}
+              {featuredPost && (() => {
+                const featuredImage = Array.isArray(featuredPost.image_urls) ? featuredPost.image_urls[0] : null
+                return (
+                  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div className="relative h-56 sm:h-72 bg-gray-200 flex items-center justify-center text-gray-400">
+                      {featuredImage ? (
+                        <img
+                          src={featuredImage}
+                          alt={featuredPost.title || 'Featured post'}
+                          className="absolute inset-0 w-full h-full object-cover"
+                        />
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-14 h-14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      )}
+                      <div className="absolute top-4 left-4">
+                        <span className="bg-[#1a4a2e] text-white text-xs font-semibold px-3 py-1.5 rounded-full">
+                          Featured
+                        </span>
+                      </div>
                     </div>
-                    <h3 className="font-bold text-gray-800 mb-2 line-clamp-2">{post.title}</h3>
-                    <p className="text-xs text-gray-500 leading-relaxed mb-4 line-clamp-3">{post.excerpt}</p>
-                    <Link
-                      href={`/store/${id}/blog/${post.id}`}
-                      className="text-[#1a4a2e] hover:text-[#143d24] font-semibold text-sm flex items-center gap-1 group"
-                    >
-                      Read More
-                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </Link>
+                    <div className="p-6 sm:p-8">
+                      <div className="flex items-center gap-3 text-xs text-gray-500 mb-3">
+                        <span>{formatDate(featuredPost.created_at)}</span>
+                        {featuredPost.post_type && (
+                          <>
+                            <span>·</span>
+                            <span className="capitalize">{featuredPost.post_type}</span>
+                          </>
+                        )}
+                      </div>
+                      <h2 className="text-2xl font-bold text-gray-900 mb-3">
+                        {featuredPost.title || 'Farm Update'}
+                      </h2>
+                      <p className="text-gray-600 leading-relaxed mb-5">
+                        {featuredPost.excerpt || featuredPost.content?.substring(0, 200) || ''}
+                        {!featuredPost.excerpt && featuredPost.content?.length > 200 ? '…' : ''}
+                      </p>
+                      <Link
+                        href={`/store/${slug}/blog/${featuredPost.id}`}
+                        className="inline-block bg-[#1a4a2e] hover:bg-[#143d24] text-white font-semibold px-6 py-2.5 rounded-full text-sm transition-colors"
+                      >
+                        Read More
+                      </Link>
+                    </div>
+                  </div>
+                )
+              })()}
+
+              {/* ── Blog Grid ── */}
+              {remainingPosts.length > 0 && (
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900 mb-5">More from the Farm</h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {remainingPosts.map((post: any) => {
+                      const postImage = Array.isArray(post.image_urls) ? post.image_urls[0] : null
+                      return (
+                        <div
+                          key={post.id}
+                          className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow"
+                        >
+                          <div className="relative h-40 bg-gray-200 flex items-center justify-center text-gray-400">
+                            {postImage ? (
+                              <img
+                                src={postImage}
+                                alt={post.title || 'Blog post'}
+                                className="absolute inset-0 w-full h-full object-cover"
+                              />
+                            ) : (
+                              <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                            )}
+                          </div>
+                          <div className="p-5">
+                            <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
+                              <span>{formatDate(post.created_at)}</span>
+                              {post.post_type && (
+                                <>
+                                  <span>·</span>
+                                  <span className="capitalize">{post.post_type}</span>
+                                </>
+                              )}
+                            </div>
+                            <h3 className="font-bold text-gray-800 mb-2 line-clamp-2">
+                              {post.title || 'Farm Update'}
+                            </h3>
+                            <p className="text-xs text-gray-500 leading-relaxed mb-4 line-clamp-3">
+                              {post.excerpt || post.content?.substring(0, 120) || ''}
+                              {!post.excerpt && post.content?.length > 120 ? '…' : ''}
+                            </p>
+                            <Link
+                              href={`/store/${slug}/blog/${post.id}`}
+                              className="text-[#1a4a2e] hover:text-[#143d24] font-semibold text-sm flex items-center gap-1 group"
+                            >
+                              Read More
+                              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                              </svg>
+                            </Link>
+                          </div>
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* ── Load More ─────────────────────────────────────────── */}
-          <div className="text-center pt-2">
-            <button className="border-2 border-[#1a4a2e] text-[#1a4a2e] hover:bg-[#1a4a2e] hover:text-white font-semibold px-8 py-3 rounded-full transition-colors text-sm">
-              Load More Posts
-            </button>
-          </div>
+              )}
+            </>
+          )}
 
         </div>
       </main>
       <Footer />
     </div>
-  );
+  )
 }

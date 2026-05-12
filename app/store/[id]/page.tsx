@@ -29,13 +29,6 @@ const PLACEHOLDER_REVIEWS = [
   },
 ]
 
-const PLACEHOLDER_BLOG_POSTS = [
-  { id: 1, title: 'Coming Soon', excerpt: 'Stay tuned for updates from our farm' },
-  { id: 2, title: 'Coming Soon', excerpt: 'Stay tuned for updates from our farm' },
-  { id: 3, title: 'Coming Soon', excerpt: 'Stay tuned for updates from our farm' },
-  { id: 4, title: 'Coming Soon', excerpt: 'Stay tuned for updates from our farm' },
-]
-
 function StarRating({ count = 5 }: { count?: number }) {
   return (
     <div className="flex gap-0.5">
@@ -82,6 +75,7 @@ export default function StorePage() {
   const slug = params?.id as string
   const [store, setStore] = useState<any>(null)
   const [products, setProducts] = useState<any[]>([])
+  const [blogPosts, setBlogPosts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [reviewText, setReviewText] = useState('')
@@ -108,11 +102,19 @@ export default function StorePage() {
       const storeData = stores[0]
       setStore(storeData)
 
-      const productsRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/products?seller_id=eq.${storeData.id}&status=eq.active&select=*&order=created_at.asc&limit=4`,
-        { headers }
-      )
+      const [productsRes, postsRes] = await Promise.all([
+        fetch(
+          `${SUPABASE_URL}/rest/v1/products?seller_id=eq.${storeData.id}&status=eq.active&select=*&order=created_at.asc&limit=4`,
+          { headers }
+        ),
+        fetch(
+          `${SUPABASE_URL}/rest/v1/farm_posts?seller_id=eq.${storeData.id}&is_published=eq.true&select=*&order=created_at.desc&limit=4`,
+          { headers }
+        ),
+      ])
+
       const productsData = await productsRes.json()
+      const postsData = await postsRes.json()
 
       if (!Array.isArray(productsData)) {
         setProducts([])
@@ -124,6 +126,8 @@ export default function StorePage() {
           }))
         )
       }
+
+      setBlogPosts(Array.isArray(postsData) ? postsData : [])
     } catch (err: any) {
       console.error('Store error:', err)
       setError('Error loading store')
@@ -163,6 +167,14 @@ export default function StorePage() {
     </div>
   )
 
+  const heroTitle = store.hero_text || store.farm_name
+  const heroSubtitle = store.hero_subtext || store.tagline
+  const missionTitle = store.mission_title || store.tagline || store.farm_name
+  const missionText = store.mission_text || store.description
+  const whoWeAreTitle = store.who_we_are_title || store.farm_name
+  const whoWeAreText = store.who_we_are_text || store.description || 'We are passionate about providing the highest quality natural products straight from our farm to your table. Every item is grown and raised with care, without synthetic chemicals or shortcuts.'
+  const whoWeAreImage = store.who_we_are_image_url
+
   return (
     <div className="min-h-screen bg-[#f5f0e8]">
       <Navbar />
@@ -181,9 +193,9 @@ export default function StorePage() {
               style={{ objectFit: 'contain', maxHeight: '600px', width: '100%' }}
             />
             <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/60 to-transparent">
-              <h1 className="text-4xl font-bold text-white">{store.farm_name}</h1>
-              {store.tagline && (
-                <p className="text-white text-lg mt-2 opacity-90">{store.tagline}</p>
+              <h1 className="text-4xl font-bold text-white">{heroTitle}</h1>
+              {heroSubtitle && (
+                <p className="text-white text-lg mt-2 opacity-90">{heroSubtitle}</p>
               )}
               <Link
                 href={`/store/${slug}/shop`}
@@ -195,9 +207,9 @@ export default function StorePage() {
           </>
         ) : (
           <div className="w-full h-80 bg-gradient-to-r from-green-900 to-green-700 flex flex-col items-center justify-center text-center px-6">
-            <h1 className="text-4xl font-bold text-white">{store.farm_name}</h1>
-            {store.tagline && (
-              <p className="text-white text-lg mt-2 opacity-90">{store.tagline}</p>
+            <h1 className="text-4xl font-bold text-white">{heroTitle}</h1>
+            {heroSubtitle && (
+              <p className="text-white text-lg mt-2 opacity-90">{heroSubtitle}</p>
             )}
             <Link
               href={`/store/${slug}/shop`}
@@ -272,15 +284,15 @@ export default function StorePage() {
         )}
       </section>
 
-      {/* ── 4. HERO / MISSION SECTION ── */}
+      {/* ── 4. MISSION SECTION ── */}
       <section className="bg-[#f0ebe0] border-y border-[#ddd5c5] py-16 px-6">
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="text-3xl font-black text-gray-900 mb-5">
-            {store.tagline || store.farm_name}
+            {missionTitle}
           </h2>
-          {store.description && (
+          {missionText && (
             <p className="text-gray-600 leading-relaxed text-base mb-6">
-              {store.description}
+              {missionText}
             </p>
           )}
           <Link
@@ -300,18 +312,26 @@ export default function StorePage() {
         <hr className="border-gray-300 mb-10" />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
-          {/* Left: image placeholder */}
-          <div className="bg-gray-200 rounded-2xl aspect-square flex items-center justify-center text-gray-400">
-            <svg className="w-20 h-20 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
+          {/* Left: image */}
+          <div className="rounded-2xl overflow-hidden aspect-square bg-gray-200 flex items-center justify-center text-gray-400">
+            {whoWeAreImage ? (
+              <img
+                src={whoWeAreImage}
+                alt={`${store.farm_name} farm`}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <svg className="w-20 h-20 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            )}
           </div>
 
           {/* Right: text */}
           <div className="flex flex-col gap-5">
-            <h3 className="text-2xl font-bold text-gray-900">{store.farm_name}</h3>
+            <h3 className="text-2xl font-bold text-gray-900">{whoWeAreTitle}</h3>
             <p className="text-gray-600 leading-relaxed">
-              {store.description || 'We are passionate about providing the highest quality natural products straight from our farm to your table. Every item is grown and raised with care, without synthetic chemicals or shortcuts.'}
+              {whoWeAreText}
             </p>
             {store.city && store.state && (
               <p className="text-sm text-gray-500">📍 {store.city}, {store.state}</p>
@@ -384,28 +404,68 @@ export default function StorePage() {
         </h2>
         <hr className="border-gray-300 mb-10" />
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-          {PLACEHOLDER_BLOG_POSTS.map((post) => (
-            <Link
-              key={post.id}
-              href={`/store/${slug}/blog`}
-              className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group"
-            >
-              <div className="bg-gray-200 h-40 flex items-center justify-center text-gray-400">
-                <svg className="w-10 h-10 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <div className="p-4">
-                <h4 className="font-bold text-sm text-gray-800 mb-1">{post.title}</h4>
-                <p className="text-xs text-gray-500 leading-relaxed mb-3">{post.excerpt}</p>
-                <span className="text-[#1a4a2e] text-xs font-semibold group-hover:underline">
-                  Read More →
-                </span>
-              </div>
-            </Link>
-          ))}
-        </div>
+        {blogPosts.length === 0 ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+            {[1, 2, 3, 4].map((i) => (
+              <Link
+                key={i}
+                href={`/store/${slug}/blog`}
+                className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group"
+              >
+                <div className="bg-gray-200 h-40 flex items-center justify-center text-gray-400">
+                  <svg className="w-10 h-10 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <div className="p-4">
+                  <h4 className="font-bold text-sm text-gray-800 mb-1">Coming Soon</h4>
+                  <p className="text-xs text-gray-500 leading-relaxed mb-3">Stay tuned for updates from our farm</p>
+                  <span className="text-[#1a4a2e] text-xs font-semibold group-hover:underline">
+                    Read More →
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+            {blogPosts.map((post: any) => {
+              const firstImage = Array.isArray(post.image_urls) ? post.image_urls[0] : null
+              return (
+                <Link
+                  key={post.id}
+                  href={`/store/${slug}/blog/${post.id}`}
+                  className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group"
+                >
+                  <div className="h-40 bg-gray-200 overflow-hidden flex items-center justify-center text-gray-400">
+                    {firstImage ? (
+                      <img
+                        src={firstImage}
+                        alt={post.title || 'Blog post'}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <svg className="w-10 h-10 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    )}
+                  </div>
+                  <div className="p-4">
+                    <h4 className="font-bold text-sm text-gray-800 mb-1 line-clamp-2">
+                      {post.title || 'Farm Update'}
+                    </h4>
+                    <p className="text-xs text-gray-500 leading-relaxed mb-3 line-clamp-2">
+                      {post.excerpt || post.content?.substring(0, 80) || 'Read the latest from our farm.'}
+                    </p>
+                    <span className="text-[#1a4a2e] text-xs font-semibold group-hover:underline">
+                      Read More →
+                    </span>
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
+        )}
       </section>
 
       <Footer />
