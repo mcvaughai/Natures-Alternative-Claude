@@ -64,16 +64,17 @@ export default function StoreShopPage() {
 
       if (categoryIds.length > 0) {
         const categoriesRes = await fetch(
-          `${SUPABASE_URL}/rest/v1/categories?select=id,name,slug&order=display_order.asc`,
+          `${SUPABASE_URL}/rest/v1/categories?select=id,name,slug`,
           { headers }
         )
         const allCategories = await categoriesRes.json()
-        console.log('All categories:', allCategories)
+        console.log('All categories response:', allCategories)
+        console.log('Is array?', Array.isArray(allCategories))
 
         const farmCategories = Array.isArray(allCategories)
           ? allCategories.filter((cat: any) => categoryIds.includes(cat.id))
           : []
-        console.log('Farm categories after filter:', farmCategories)
+        console.log('Farm categories:', farmCategories)
         setCategories(farmCategories)
       } else {
         console.log('No category IDs found in products!')
