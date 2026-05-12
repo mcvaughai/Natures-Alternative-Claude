@@ -77,8 +77,10 @@ export default function StoreEditorPage() {
   const [form, setForm] = useState<StoreForm>(EMPTY_FORM);
   const [logoUrl, setLogoUrl] = useState("");
   const [bannerUrl, setBannerUrl] = useState("");
+  const [shopBannerUrl, setShopBannerUrl] = useState("");
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
+  const [uploadingShopBanner, setUploadingShopBanner] = useState(false);
 
   const getHeaders = useCallback(
     (token: string) => ({
@@ -125,8 +127,9 @@ export default function StoreEditorPage() {
             pickup_hours:         store.pickup_hours         ?? "",
             pickup_instructions:  store.pickup_instructions  ?? "",
           });
-          setLogoUrl(store.logo_url     ?? "");
-          setBannerUrl(store.banner_url ?? "");
+          setLogoUrl(store.logo_url             ?? "");
+          setBannerUrl(store.banner_url         ?? "");
+          setShopBannerUrl(store.shop_banner_url ?? "");
         }
       } catch (err) {
         console.error("Fetch store error:", err);
@@ -176,6 +179,7 @@ export default function StoreEditorPage() {
             pickup_instructions:  form.pickup_instructions,
             logo_url:             logoUrl,
             banner_url:           bannerUrl,
+            shop_banner_url:      shopBannerUrl,
             updated_at:           new Date().toISOString(),
           }),
         }
@@ -189,11 +193,26 @@ export default function StoreEditorPage() {
     }
   };
 
-  const uploadImage = async (file: File, type: "logo" | "banner") => {
+  const saveField = async (fields: object) => {
+    const sess = await getValidSellerSession();
+    if (!sess) return;
+    await fetch(`${SUPABASE_URL}/rest/v1/sellers?id=eq.${sess.seller_id}`, {
+      method: "PATCH",
+      headers: { ...getHeaders(sess.access_token), Prefer: "return=representation" },
+      body: JSON.stringify(fields),
+    });
+  };
+
+  const uploadImage = async (file: File, type: "logo" | "banner" | "shop-banner") => {
     const session = await getValidSellerSession();
     if (!session) return;
-    const isLogo = type === "logo";
-    if (isLogo) setUploadingLogo(true); else setUploadingBanner(true);
+    const isLogo       = type === "logo";
+    const isShopBanner = type === "shop-banner";
+
+    if (isLogo) setUploadingLogo(true);
+    else if (isShopBanner) setUploadingShopBanner(true);
+    else setUploadingBanner(true);
+
     try {
       const ext = file.name.split(".").pop();
       const bucket = isLogo ? "seller-logos" : "seller-banners";
@@ -219,20 +238,25 @@ export default function StoreEditorPage() {
       }
 
       const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${fileName}`;
-      if (isLogo) setLogoUrl(publicUrl); else setBannerUrl(publicUrl);
 
-      // Persist immediately
-      await fetch(`${SUPABASE_URL}/rest/v1/sellers?id=eq.${session.seller_id}`, {
-        method: "PATCH",
-        headers: { ...getHeaders(session.access_token), Prefer: "return=representation" },
-        body: JSON.stringify(isLogo ? { logo_url: publicUrl } : { banner_url: publicUrl }),
-      });
+      if (isLogo) {
+        setLogoUrl(publicUrl);
+        await saveField({ logo_url: publicUrl });
+      } else if (isShopBanner) {
+        setShopBannerUrl(publicUrl);
+        await saveField({ shop_banner_url: publicUrl });
+      } else {
+        setBannerUrl(publicUrl);
+        await saveField({ banner_url: publicUrl });
+      }
 
-      flash("success", `${isLogo ? "Logo" : "Banner"} uploaded!`);
+      flash("success", `${isLogo ? "Logo" : isShopBanner ? "Shop banner" : "Banner"} uploaded!`);
     } catch (err: unknown) {
       flash("error", "Upload error: " + (err instanceof Error ? err.message : String(err)));
     } finally {
-      if (isLogo) setUploadingLogo(false); else setUploadingBanner(false);
+      if (isLogo) setUploadingLogo(false);
+      else if (isShopBanner) setUploadingShopBanner(false);
+      else setUploadingBanner(false);
     }
   };
 
@@ -361,6 +385,42 @@ export default function StoreEditorPage() {
                       </label>
                       {bannerUrl && (
                         <button onClick={() => setBannerUrl("")} className="text-sm text-red-500 hover:text-red-700 font-medium">Remove</button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Shop Page Banner */}
+                  <div className="pt-2 border-t border-gray-100">
+                    <p className="text-sm font-semibold text-gray-700 mb-1">Shop Page Banner</p>
+                    <p className="text-xs text-gray-400 mb-2">
+                      Appears at the top of your Shop page. Falls back to your main store banner if not set.
+                    </p>
+                    <div className="w-full h-36 rounded-xl border-2 border-dashed border-gray-300 overflow-hidden bg-gray-50 flex items-center justify-center mb-3 relative">
+                      {shopBannerUrl ? (
+                        <Image src={shopBannerUrl} alt="Shop banner" fill className="object-cover"/>
+                      ) : bannerUrl ? (
+                        <>
+                          <Image src={bannerUrl} alt="Main banner fallback" fill className="object-cover opacity-40"/>
+                          <span className="relative z-10 text-xs text-gray-500 bg-white/80 px-2 py-1 rounded">
+                            Using main store banner as default
+                          </span>
+                        </>
+                      ) : (
+                        <div className="text-center">
+                          <p className="text-xs text-gray-400">No shop banner uploaded</p>
+                          <p className="text-xs text-gray-400 mt-0.5">Will use main banner if available</p>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <label className="cursor-pointer bg-[#1a4a2e] hover:bg-[#2d6b47] text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
+                        {uploadingShopBanner ? "Uploading..." : "Upload Shop Banner"}
+                        <input type="file" accept="image/*" className="hidden"
+                          disabled={uploadingShopBanner}
+                          onChange={e => e.target.files?.[0] && uploadImage(e.target.files[0], "shop-banner")}/>
+                      </label>
+                      {shopBannerUrl && (
+                        <button onClick={() => setShopBannerUrl("")} className="text-sm text-red-500 hover:text-red-700 font-medium">Remove</button>
                       )}
                     </div>
                   </div>

@@ -136,11 +136,28 @@ export default function StoreShopPage() {
       <Navbar />
       <StoreNavbar storeId={slug} activePage="shop" />
 
-      {/* Page Header */}
-      <div className="bg-green-900 text-white py-8 text-center">
-        <h1 className="text-3xl font-bold">{store?.farm_name} Shop</h1>
-        <p className="text-green-100 mt-2">Fresh natural products straight from our farm</p>
-      </div>
+      {/* Shop Page Banner */}
+      {(store?.shop_banner_url || store?.banner_url) ? (
+        <div className="w-full relative overflow-hidden">
+          <img
+            src={store.shop_banner_url || store.banner_url}
+            alt={`${store.farm_name} shop`}
+            className="w-full h-auto block"
+            style={{ maxHeight: '400px', objectFit: 'cover', width: '100%' }}
+          />
+          <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
+            <div className="text-center text-white">
+              <h1 className="text-4xl font-bold">{store.farm_name} Shop</h1>
+              <p className="text-lg mt-2 opacity-90">Fresh natural products straight from our farm</p>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-green-900 text-white py-8 text-center">
+          <h1 className="text-3xl font-bold">{store?.farm_name} Shop</h1>
+          <p className="text-green-100 mt-2">Fresh natural products straight from our farm</p>
+        </div>
+      )}
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-8 flex gap-6">
