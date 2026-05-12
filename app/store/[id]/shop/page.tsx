@@ -145,24 +145,28 @@ export default function StoreShopPage() {
             className="w-full h-auto block"
             style={{ maxHeight: '400px', objectFit: 'cover', width: '100%' }}
           />
-          <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
-            <div className="text-center text-white">
-              <h1 className="text-4xl font-bold drop-shadow-lg">
-                {store.shop_banner_title || `${store.farm_name} Shop`}
-              </h1>
-              {store.shop_banner_subtitle && (
-                <p className="text-lg mt-2 opacity-90 drop-shadow-md">
-                  {store.shop_banner_subtitle}
-                </p>
-              )}
+          {(store?.shop_banner_title || store?.shop_banner_subtitle) && (
+            <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
+              <div className="text-center text-white">
+                {store.shop_banner_title && (
+                  <h1 className="text-4xl font-bold drop-shadow-lg">
+                    {store.shop_banner_title}
+                  </h1>
+                )}
+                {store.shop_banner_subtitle && (
+                  <p className="text-lg mt-2 opacity-90 drop-shadow-md">
+                    {store.shop_banner_subtitle}
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       ) : (
         <div className="bg-green-900 text-white py-8 text-center">
-          <h1 className="text-3xl font-bold">
-            {store?.shop_banner_title || `${store?.farm_name} Shop`}
-          </h1>
+          {store?.shop_banner_title && (
+            <h1 className="text-3xl font-bold">{store.shop_banner_title}</h1>
+          )}
           {store?.shop_banner_subtitle && (
             <p className="text-green-100 mt-2">{store.shop_banner_subtitle}</p>
           )}
