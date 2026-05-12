@@ -45,6 +45,7 @@ export default function StoreShopPage() {
         { headers }
       )
       const stores = await storeRes.json()
+      console.log('Store data:', stores)
       if (!stores || stores.length === 0) return
       const storeData = stores[0]
       setStore(storeData)
@@ -54,28 +55,28 @@ export default function StoreShopPage() {
         { headers }
       )
       const productsData = await productsRes.json()
+      console.log('Products data:', productsData)
       const prods = Array.isArray(productsData) ? productsData : []
 
-      // Get unique category IDs from this farm's products
+      // Log all category_ids from products
       const categoryIds = [...new Set(prods.map((p: any) => p.category_id).filter(Boolean))]
-      console.log('Category IDs from products:', categoryIds)
+      console.log('Unique category IDs:', categoryIds)
 
       if (categoryIds.length > 0) {
-        // Fetch ALL categories then filter to only ones this farm uses
         const categoriesRes = await fetch(
           `${SUPABASE_URL}/rest/v1/categories?select=id,name,slug&order=display_order.asc`,
           { headers }
         )
         const allCategories = await categoriesRes.json()
-        console.log('All categories fetched:', allCategories)
+        console.log('All categories:', allCategories)
 
-        // Filter to only categories this farm's products belong to
         const farmCategories = Array.isArray(allCategories)
           ? allCategories.filter((cat: any) => categoryIds.includes(cat.id))
           : []
-
-        console.log('Farm specific categories:', farmCategories)
+        console.log('Farm categories after filter:', farmCategories)
         setCategories(farmCategories)
+      } else {
+        console.log('No category IDs found in products!')
       }
 
       setProducts(prods)
