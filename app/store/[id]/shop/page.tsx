@@ -26,7 +26,7 @@ export default function StoreShopPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [sortBy, setSortBy] = useState('newest')
-  const [categories, setCategories] = useState<string[]>([])
+  const [categories, setCategories] = useState<any[]>([])
   const [priceRange, setPriceRange] = useState({ min: '', max: '' })
 
   useEffect(() => {
@@ -56,8 +56,20 @@ export default function StoreShopPage() {
       const productsData = await productsRes.json()
       const prods = Array.isArray(productsData) ? productsData : []
 
-      const uniqueCategories = [...new Set(prods.map((p: any) => p.category).filter(Boolean))] as string[]
-      setCategories(uniqueCategories)
+      // Get unique category IDs from this farm's products
+      const categoryIds = [...new Set(prods.map((p: any) => p.category_id).filter(Boolean))]
+
+      // Fetch only the categories that this farm's products belong to
+      if (categoryIds.length > 0) {
+        const categoryFilter = categoryIds.map(id => `id=eq.${id}`).join(',')
+        const categoriesRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/categories?or=(${categoryFilter})&select=id,name,slug&order=display_order.asc`,
+          { headers }
+        )
+        const categoriesData = await categoriesRes.json()
+        setCategories(Array.isArray(categoriesData) ? categoriesData : [])
+      }
+
       setProducts(prods)
     } catch (err) {
       console.error('Shop error:', err)
@@ -77,7 +89,7 @@ export default function StoreShopPage() {
     }
 
     if (selectedCategory !== 'all') {
-      filtered = filtered.filter(p => p.category === selectedCategory)
+      filtered = filtered.filter(p => p.category_id === selectedCategory)
     }
 
     if (priceRange.min) {
@@ -167,20 +179,25 @@ export default function StoreShopPage() {
                       onChange={() => setSelectedCategory('all')}
                       className="accent-green-900"
                     />
-                    <span className="text-sm text-gray-600">All Products</span>
+                    <span className="text-sm text-gray-600">All Products ({products.length})</span>
                   </label>
-                  {categories.map(cat => (
-                    <label key={cat} className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="category"
-                        checked={selectedCategory === cat}
-                        onChange={() => setSelectedCategory(cat)}
-                        className="accent-green-900"
-                      />
-                      <span className="text-sm text-gray-600 capitalize">{cat}</span>
-                    </label>
-                  ))}
+                  {categories.map((cat: any) => {
+                    const count = products.filter(p => p.category_id === cat.id).length
+                    return (
+                      <label key={cat.id} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="category"
+                          checked={selectedCategory === cat.id}
+                          onChange={() => setSelectedCategory(cat.id)}
+                          className="accent-green-900"
+                        />
+                        <span className="text-sm text-gray-600">
+                          {cat.name} ({count})
+                        </span>
+                      </label>
+                    )
+                  })}
                 </div>
               </div>
             )}
@@ -284,7 +301,7 @@ export default function StoreShopPage() {
               )}
               {selectedCategory !== 'all' && (
                 <span className="bg-green-100 text-green-800 text-xs px-3 py-1 rounded-full flex items-center gap-1">
-                  {selectedCategory}
+                  {categories.find((c: any) => c.id === selectedCategory)?.name || selectedCategory}
                   <button onClick={() => setSelectedCategory('all')} className="ml-1 hover:text-red-500">×</button>
                 </span>
               )}
