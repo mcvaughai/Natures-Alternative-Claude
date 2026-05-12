@@ -78,6 +78,8 @@ export default function StoreEditorPage() {
   const [logoUrl, setLogoUrl] = useState("");
   const [bannerUrl, setBannerUrl] = useState("");
   const [shopBannerUrl, setShopBannerUrl] = useState("");
+  const [shopBannerTitle, setShopBannerTitle] = useState("");
+  const [shopBannerSubtitle, setShopBannerSubtitle] = useState("");
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const [uploadingShopBanner, setUploadingShopBanner] = useState(false);
@@ -127,9 +129,11 @@ export default function StoreEditorPage() {
             pickup_hours:         store.pickup_hours         ?? "",
             pickup_instructions:  store.pickup_instructions  ?? "",
           });
-          setLogoUrl(store.logo_url             ?? "");
-          setBannerUrl(store.banner_url         ?? "");
-          setShopBannerUrl(store.shop_banner_url ?? "");
+          setLogoUrl(store.logo_url                       ?? "");
+          setBannerUrl(store.banner_url                   ?? "");
+          setShopBannerUrl(store.shop_banner_url           ?? "");
+          setShopBannerTitle(store.shop_banner_title       ?? "");
+          setShopBannerSubtitle(store.shop_banner_subtitle ?? "");
         }
       } catch (err) {
         console.error("Fetch store error:", err);
@@ -180,6 +184,8 @@ export default function StoreEditorPage() {
             logo_url:             logoUrl,
             banner_url:           bannerUrl,
             shop_banner_url:      shopBannerUrl,
+            shop_banner_title:    shopBannerTitle,
+            shop_banner_subtitle: shopBannerSubtitle,
             updated_at:           new Date().toISOString(),
           }),
         }
@@ -422,6 +428,30 @@ export default function StoreEditorPage() {
                       {shopBannerUrl && (
                         <button onClick={() => setShopBannerUrl("")} className="text-sm text-red-500 hover:text-red-700 font-medium">Remove</button>
                       )}
+                    </div>
+                    <div className="mt-4 space-y-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Banner Title</label>
+                        <input
+                          type="text"
+                          value={shopBannerTitle}
+                          onChange={e => setShopBannerTitle(e.target.value)}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                          placeholder="e.g. Blessings Ranch Shop"
+                        />
+                        <p className="text-xs text-gray-400 mt-1">Leave blank to use your farm name + Shop</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Banner Subtitle</label>
+                        <input
+                          type="text"
+                          value={shopBannerSubtitle}
+                          onChange={e => setShopBannerSubtitle(e.target.value)}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                          placeholder="e.g. Fresh natural products straight from our farm"
+                        />
+                        <p className="text-xs text-gray-400 mt-1">Leave blank to hide the subtitle</p>
+                      </div>
                     </div>
                   </div>
 
