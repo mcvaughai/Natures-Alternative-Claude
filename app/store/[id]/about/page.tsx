@@ -114,23 +114,22 @@ export default function StoreAboutPage() {
       <main className="flex-1">
 
         {/* ── About Hero ── */}
-        <div className="relative h-48 sm:h-64 overflow-hidden flex items-end bg-gray-300">
+        <div className="w-full relative overflow-hidden">
           {bannerUrl ? (
             <img
               src={bannerUrl}
-              alt={`${store.farm_name} about banner`}
-              className="absolute inset-0 w-full h-full object-cover"
+              alt={`${store.farm_name} about`}
+              className="w-full h-auto block"
+              style={{ objectFit: 'contain', maxHeight: '600px', width: '100%' }}
             />
           ) : (
-            <div className="absolute inset-0 flex items-center justify-center text-gray-400">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-16 h-16 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
+            <div
+              className="w-full bg-gradient-to-r from-green-900 to-green-700 flex items-center justify-center"
+              style={{ height: '400px' }}
+            >
+              <h1 className="text-4xl font-bold text-white">About {store.farm_name}</h1>
             </div>
           )}
-          <div className="relative z-10 w-full bg-gradient-to-t from-black/60 to-transparent p-6">
-            <h1 className="text-2xl sm:text-3xl font-bold text-white">About {store.farm_name}</h1>
-          </div>
         </div>
 
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-6">

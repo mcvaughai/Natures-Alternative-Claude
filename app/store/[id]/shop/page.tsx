@@ -137,13 +137,13 @@ export default function StoreShopPage() {
       <StoreNavbar storeId={slug} activePage="shop" />
 
       {/* Shop Page Banner */}
-      {(store?.shop_banner_url || store?.banner_url) ? (
+      {(store?.shop_banner_url || store?.banner_url) && (
         <div className="w-full relative overflow-hidden">
           <img
             src={store.shop_banner_url || store.banner_url}
             alt={`${store.farm_name} shop`}
             className="w-full h-auto block"
-            style={{ maxHeight: '400px', objectFit: 'cover', width: '100%' }}
+            style={{ objectFit: 'contain', maxHeight: '600px', width: '100%' }}
           />
           {(store?.shop_banner_title || store?.shop_banner_subtitle) && (
             <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
@@ -160,15 +160,6 @@ export default function StoreShopPage() {
                 )}
               </div>
             </div>
-          )}
-        </div>
-      ) : (
-        <div className="bg-green-900 text-white py-8 text-center">
-          {store?.shop_banner_title && (
-            <h1 className="text-3xl font-bold">{store.shop_banner_title}</h1>
-          )}
-          {store?.shop_banner_subtitle && (
-            <p className="text-green-100 mt-2">{store.shop_banner_subtitle}</p>
           )}
         </div>
       )}
