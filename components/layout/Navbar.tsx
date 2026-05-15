@@ -113,6 +113,8 @@ function TabsRow({ activeKey }: { activeKey: string }) {
 export default function Navbar() {
   const { totalItems } = useCart();
   const router = useRouter();
+  const pathname = usePathname();
+  const isStorePage = pathname?.startsWith('/store/');
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [session, setSession] = useState<{ name: string; email: string } | null>(null);
@@ -147,7 +149,7 @@ export default function Navbar() {
   const initial = displayName.charAt(0).toUpperCase();
 
   return (
-    <header className="sticky top-0 z-50">
+    <header className={isStorePage ? 'relative' : 'sticky top-0 z-50'}>
       {/* ── Main bar ─────────────────────────────────────────── */}
       <div className="bg-[#1a4a2e]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center gap-3">
