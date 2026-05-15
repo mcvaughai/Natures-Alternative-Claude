@@ -1,11 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import StoreNavbar from '@/components/store/StoreNavbar'
+import { useCart } from '@/lib/context/CartContext'
 
 const SUPABASE_URL = 'https://ezryfycxfmtffobyfjfa.supabase.co'
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6cnlmeWN4Zm10ZmZvYnlmamZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MjQ1MDEsImV4cCI6MjA5MjQwMDUwMX0.woObRrj3MMUf6eAFVbkvDNUsQfQ-elmlDqPADBT9aZs'
@@ -14,6 +15,73 @@ const headers = {
   'apikey': SUPABASE_ANON_KEY,
   'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
   'Content-Type': 'application/json',
+}
+
+function ShopProductCard({ product }: { product: any }) {
+  const [added, setAdded] = useState(false)
+  const router = useRouter()
+  const { addToCart } = useCart()
+
+  function handleAddToCart(e: React.MouseEvent) {
+    e.stopPropagation()
+    addToCart({
+      id: product.id,
+      name: product.name,
+      description: product.description,
+      price: `$${Number(product.price).toFixed(2)}`,
+    })
+    setAdded(true)
+    setTimeout(() => setAdded(false), 1000)
+  }
+
+  return (
+    <div
+      className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow group cursor-pointer"
+      onClick={() => router.push(`/product/${product.id}`)}
+    >
+      <div className="relative bg-gray-200 aspect-square overflow-hidden">
+        {product.images?.[0] ? (
+          <img
+            src={product.images[0]}
+            alt={product.name}
+            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center text-gray-400">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+        )}
+      </div>
+
+      <div className="p-3">
+        <h3 className="font-semibold text-gray-800 text-sm mb-1 truncate group-hover:text-[#1a4a2e] transition-colors">
+          {product.name}
+        </h3>
+        <p className="text-xs text-gray-500 mb-1 line-clamp-2 leading-relaxed">{product.description}</p>
+
+        <div className="flex items-center justify-between">
+          <span className="font-bold text-[#1a4a2e] text-sm">${Number(product.price).toFixed(2)}</span>
+          <button
+            onClick={handleAddToCart}
+            className={`rounded-full p-1.5 transition-colors ${added ? 'bg-[#1a4a2e] hover:bg-[#2d6b47]' : 'bg-[#8b1a1a] hover:bg-[#6d1414]'} text-white`}
+            aria-label="Add to cart"
+          >
+            {added ? (
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export default function StoreShopPage() {
@@ -366,57 +434,7 @@ export default function StoreShopPage() {
           ) : (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {filteredProducts.map((product: any) => (
-                <Link
-                  key={product.id}
-                  href={`/product/${product.id}`}
-                  className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group"
-                >
-                  <div
-                    className="bg-gray-50 overflow-hidden flex items-center justify-center"
-                    style={{ height: '200px', width: '100%' }}
-                  >
-                    {product.images?.[0] ? (
-                      <img
-                        src={product.images[0]}
-                        alt={product.name}
-                        style={{
-                          maxHeight: '200px',
-                          maxWidth: '100%',
-                          width: 'auto',
-                          height: 'auto',
-                          objectFit: 'contain',
-                        }}
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                        <span className="text-gray-400 text-sm">No image</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-3">
-                    <h4 className="font-semibold text-sm text-gray-800 truncate">{product.name}</h4>
-                    {product.description && (
-                      <p className="text-xs text-gray-500 mt-1 line-clamp-2">{product.description}</p>
-                    )}
-                    <div className="flex justify-between items-center mt-2">
-                      <p className="text-green-900 font-bold text-sm">
-                        ${product.price}/{product.unit || 'each'}
-                      </p>
-                      <button
-                        type="button"
-                        onClick={e => e.preventDefault()}
-                        className="bg-green-900 text-white p-1.5 rounded-full hover:bg-green-800 transition-colors"
-                        aria-label="Add to cart"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
-                          <line x1="3" y1="6" x2="21" y2="6" />
-                          <path d="M16 10a4 4 0 01-8 0" />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                </Link>
+                <ShopProductCard key={product.id} product={product} />
               ))}
             </div>
           )}
