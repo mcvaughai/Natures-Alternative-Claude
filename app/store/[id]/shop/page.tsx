@@ -371,12 +371,12 @@ export default function StoreShopPage() {
                   href={`/product/${product.id}`}
                   className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group"
                 >
-                  <div className="h-48 bg-gray-200 overflow-hidden">
+                  <div className="h-48 bg-white overflow-hidden flex items-center justify-center">
                     {product.images?.[0] ? (
                       <img
                         src={product.images[0]}
                         alt={product.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
                       />
                     ) : (
                       <div className="w-full h-full bg-gray-300 flex items-center justify-center">
