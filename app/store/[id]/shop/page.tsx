@@ -17,7 +17,7 @@ const headers = {
   'Content-Type': 'application/json',
 }
 
-function ShopProductCard({ product }: { product: any }) {
+function ShopProductCard({ product, storeSlug }: { product: any; storeSlug: string }) {
   const [added, setAdded] = useState(false)
   const router = useRouter()
   const { addToCart } = useCart()
@@ -37,7 +37,7 @@ function ShopProductCard({ product }: { product: any }) {
   return (
     <div
       className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow group cursor-pointer"
-      onClick={() => router.push(`/product/${product.id}`)}
+      onClick={() => router.push(`/product/${product.id}?store=${storeSlug}`)}
     >
       <div className="relative bg-gray-200 aspect-square overflow-hidden">
         {product.images?.[0] ? (
@@ -434,7 +434,7 @@ export default function StoreShopPage() {
           ) : (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {filteredProducts.map((product: any) => (
-                <ShopProductCard key={product.id} product={product} />
+                <ShopProductCard key={product.id} product={product} storeSlug={slug} />
               ))}
             </div>
           )}

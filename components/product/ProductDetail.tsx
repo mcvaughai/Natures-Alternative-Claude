@@ -1,9 +1,10 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import ProductCard from "@/components/shared/ProductCard";
 import { useCart } from "@/lib/context/CartContext";
 import { fetchFromSupabase } from "@/lib/api";
+import StoreNavbar from "@/components/store/StoreNavbar";
 
 interface Seller {
   slug: string;
@@ -44,7 +45,10 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
   const [product, setProduct]           = useState<Product | null>(null);
   const [seller, setSeller]             = useState<Seller | null>(null);
   const [moreProducts, setMoreProducts] = useState<RelatedProduct[]>([]);
+  const [mainImage, setMainImage]       = useState<string>('');
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fromStore = searchParams.get('store');
   const { addToCart } = useCart();
 
   useEffect(() => {
@@ -76,6 +80,11 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
     load();
   }, [productId]);
 
+  // Sync mainImage when product data arrives
+  useEffect(() => {
+    if (product?.images?.[0]) setMainImage(product.images[0]);
+  }, [product]);
+
   function handleAddToCart() {
     if (!product) return;
     addToCart({
@@ -89,9 +98,11 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
     setTimeout(() => setAdded(false), 1000);
   }
 
-  const mainImage = product?.images?.[0];
-
   return (
+    <>
+    {fromStore && seller && (
+      <StoreNavbar storeId={seller.slug} activePage="shop" />
+    )}
     <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr_280px] gap-6 lg:gap-8">
 
@@ -103,26 +114,28 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
               <img src={mainImage} alt={product?.name} className="w-full h-full object-cover" />
             ) : IMAGE_PLACEHOLDER}
           </div>
-          <div className="grid grid-cols-3 gap-2">
-            {[0, 1, 2].map((i) => {
-              const img = product?.images?.[i + 1];
-              return (
-                <div
-                  key={i}
-                  className="bg-gray-200 aspect-square rounded-xl flex items-center justify-center text-gray-400 cursor-pointer hover:bg-gray-300 transition-colors overflow-hidden"
-                >
-                  {img ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={img} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+
+          {/* Thumbnails — only shown when product has more than 1 real image */}
+          {product?.images && product.images.filter((img: string) => img && img !== '').length > 1 && (
+            <div className="flex gap-2 mt-2 flex-wrap">
+              {product.images
+                .filter((img: string) => img && img !== '')
+                .map((img: string, index: number) => (
+                  <button
+                    key={index}
+                    type="button"
+                    onClick={() => setMainImage(img)}
+                    className={`w-20 h-20 rounded-lg overflow-hidden border-2 flex-shrink-0 transition-colors ${
+                      mainImage === img ? 'border-green-900' : 'border-gray-200 hover:border-gray-400'
+                    }`}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={img} alt={`${product.name} ${index + 1}`} className="w-full h-full object-cover" />
+                  </button>
+                ))
+              }
+            </div>
+          )}
         </div>
 
         {/* ── MIDDLE: Details ───────────────────────────────────── */}
@@ -228,5 +241,6 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
         </div>
       </div>
     </section>
+    </>
   );
 }

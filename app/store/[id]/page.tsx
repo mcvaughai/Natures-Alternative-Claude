@@ -239,7 +239,7 @@ export default function StorePage() {
               {products.map((product: any) => (
                 <Link
                   key={product.id}
-                  href={`/product/${product.id}`}
+                  href={`/product/${product.id}?store=${slug}`}
                   className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group"
                 >
                   <div className="h-52 bg-gray-100 overflow-hidden">
