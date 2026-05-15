@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import SellerLayout from "@/components/seller/SellerLayout";
 import { SUPABASE_URL, supabaseHeaders } from "@/lib/api";
 import { getValidSellerSession, getAuthHeaders } from "@/lib/sessionHelper";
@@ -62,10 +62,9 @@ export default function ProductsPage() {
   const [productForm, setProductForm] = useState({
     name: "", description: "", price: "", stock: "", unit: "each",
   });
-  const [selectedCategoryId, setSelectedCategoryId] = useState("");
-  const [selectedImageFile, setSelectedImageFile]   = useState<File | null>(null);
-  const [imagePreview, setImagePreview]             = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedCategoryId, setSelectedCategoryId]     = useState("");
+  const [productImages, setProductImages]                = useState<string[]>(['', '', '', '']);
+  const [uploadingImageIndex, setUploadingImageIndex]    = useState<number | null>(null);
 
   // ── Fetch products + images via REST API ──────────────────────────────────
   const fetchProducts = useCallback(async (sid: string) => {
@@ -137,83 +136,50 @@ export default function ProductsPage() {
     init();
   }, [fetchProducts]);
 
-  // ── Upload image via Storage REST API + save to product_images table ────────
-  const uploadProductImage = async (file: File, productId: string): Promise<string | null> => {
-    const session = await getValidSellerSession();
-    if (!session?.access_token) return null;
-    const authHeaders = getAuthHeaders(session.access_token);
+  // ── Upload one image slot to storage and update productImages state ──────────
+  const uploadProductImage = async (file: File, productId: string, index: number) => {
+    try {
+      setUploadingImageIndex(index);
+      const session = await getValidSellerSession();
+      if (!session?.access_token) return;
+      const authHeaders = getAuthHeaders(session.access_token);
 
-    // Step 1: Upload file to storage bucket
-    const fileExt = file.name.split(".").pop();
-    const fileName = `${productId}-${Date.now()}.${fileExt}`;
-    const uploadRes = await fetch(
-      `${SUPABASE_URL}/storage/v1/object/product-images/${fileName}`,
-      {
-        method: "POST",
-        headers: { ...authHeaders, "Content-Type": file.type, "x-upsert": "true" },
-        body: file,
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${productId}-image-${index}-${Date.now()}.${fileExt}`;
+
+      const uploadRes = await fetch(
+        `${SUPABASE_URL}/storage/v1/object/product-images/${fileName}`,
+        {
+          method: "POST",
+          headers: { ...authHeaders, "Content-Type": file.type, "x-upsert": "true" },
+          body: file,
+        }
+      );
+
+      if (!uploadRes.ok) {
+        const err = await uploadRes.text();
+        alert("Upload failed: " + err);
+        return;
       }
-    );
-    console.log("Storage upload status:", uploadRes.status);
-    if (!uploadRes.ok) {
-      const err = await uploadRes.text();
-      console.error("Upload error:", err);
-      alert("Image upload failed: " + err);
-      return null;
+
+      const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/product-images/${fileName}`;
+      setProductImages(prev => {
+        const next = [...prev];
+        next[index] = publicUrl;
+        return next;
+      });
+    } catch (err: any) {
+      alert("Upload error: " + err.message);
+    } finally {
+      setUploadingImageIndex(null);
     }
-
-    const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/product-images/${fileName}`;
-    console.log("Public URL:", publicUrl);
-
-    // Step 2: Clear existing product_images rows for this product
-    await fetch(
-      `${SUPABASE_URL}/rest/v1/product_images?product_id=eq.${productId}`,
-      { method: "DELETE", headers: { ...authHeaders, "Content-Type": "application/json" } }
-    ).catch(() => {});
-
-    // Step 3: Insert new product_images row
-    const saveRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/product_images`,
-      {
-        method: "POST",
-        headers: { ...authHeaders, "Content-Type": "application/json", Prefer: "return=minimal" },
-        body: JSON.stringify({ product_id: productId, url: publicUrl, is_primary: true, display_order: 0 }),
-      }
-    );
-    console.log("Save image record status:", saveRes.status);
-
-    // Step 4: Keep products.images column in sync
-    await fetch(
-      `${SUPABASE_URL}/rest/v1/products?id=eq.${productId}`,
-      {
-        method: "PATCH",
-        headers: { ...authHeaders, "Content-Type": "application/json" },
-        body: JSON.stringify({ images: [publicUrl] }),
-      }
-    ).catch(() => {});
-
-    return publicUrl;
-  };
-
-  // ── Image helpers ──────────────────────────────────────────────────────────
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setSelectedImageFile(file);
-    setImagePreview(URL.createObjectURL(file));
-  };
-
-  const clearImage = () => {
-    setSelectedImageFile(null);
-    setImagePreview(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const resetForm = () => {
     setProductForm({ name: "", description: "", price: "", stock: "", unit: "each" });
     setSelectedCategoryId("");
     setEditingProduct(null);
-    clearImage();
+    setProductImages(['', '', '', '']);
   };
 
   // ── Open form in edit mode ─────────────────────────────────────────────────
@@ -228,8 +194,13 @@ export default function ProductsPage() {
       unit:        product.unit ?? "each",
     });
     setSelectedCategoryId(product.category_id ?? "");
-    setImagePreview(product.primaryImage ?? product.images?.[0] ?? null);
-    setSelectedImageFile(null);
+    const existingImages = product.images || [];
+    setProductImages([
+      existingImages[0] || '',
+      existingImages[1] || '',
+      existingImages[2] || '',
+      existingImages[3] || '',
+    ]);
     setTimeout(() => {
       document.getElementById("product-form")?.scrollIntoView({ behavior: "smooth" });
     }, 100);
@@ -275,7 +246,7 @@ export default function ProductsPage() {
               in_stock:    productForm.stock ? parseInt(productForm.stock) > 0 : true,
               unit:        productForm.unit || null,
               category_id: selectedCategoryId || null,
-              images:      [],
+              images:      productImages.filter(img => img !== ''),
               status:      isActive ? "active" : "draft",
             }),
           }
@@ -290,12 +261,6 @@ export default function ProductsPage() {
         console.error("Save error:", errText);
         alert("Error saving product: " + errText);
         return;
-      }
-
-      // Get the new product's ID and upload image if selected
-      const [newProduct] = await response.json();
-      if (selectedImageFile && newProduct?.id) {
-        await uploadProductImage(selectedImageFile, newProduct.id);
       }
 
       alert(isActive ? "Product published successfully!" : "Product saved as draft!");
@@ -326,11 +291,6 @@ export default function ProductsPage() {
 
       const authHeaders = { ...getAuthHeaders(session.access_token), Prefer: "return=representation" };
 
-      // If a new image file was chosen, upload it (handles product_images table + images column)
-      if (selectedImageFile) {
-        await uploadProductImage(selectedImageFile, editingProduct.id);
-      }
-
       console.log("Updating product:", editingProduct.id);
 
       const controller = new AbortController();
@@ -352,6 +312,7 @@ export default function ProductsPage() {
               in_stock:    productForm.stock ? parseInt(productForm.stock) > 0 : true,
               unit:        productForm.unit || null,
               category_id: selectedCategoryId || null,
+              images:      productImages.filter(img => img !== ''),
               updated_at:  new Date().toISOString(),
             }),
           }
@@ -547,33 +508,72 @@ export default function ProductsPage() {
                   value={productForm.description} onChange={e => setProductForm(f => ({ ...f, description: e.target.value }))} />
               </div>
 
-              {/* Image upload */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Product Image</label>
-                {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
-                <label className="flex flex-col items-center justify-center w-full border-2 border-dashed border-gray-300 rounded-xl p-6 cursor-pointer hover:border-[#1a4a2e]/50 hover:bg-[#1a4a2e]/5 transition-colors">
-                  {imagePreview ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={imagePreview} alt="Preview" className="w-32 h-32 object-cover rounded-xl mb-2" />
-                  ) : (
-                    <>
-                      <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                      </svg>
-                      <span className="text-sm text-gray-500">Click to upload product image</span>
-                      <span className="text-xs text-gray-400 mt-1">JPG, JPEG, PNG, WEBP</span>
-                    </>
-                  )}
-                  <input ref={fileInputRef} type="file"
-                    accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
-                    className="hidden" onChange={handleImageSelect} />
+              {/* Image upload — 4 slots */}
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Product Images (up to 4)
                 </label>
-                {imagePreview && (
-                  <button type="button" onClick={clearImage}
-                    className="mt-2 text-xs text-red-500 hover:text-red-700 font-medium">
-                    Remove image
-                  </button>
-                )}
+                <p className="text-xs text-gray-400 mb-3">First image will be the main product photo</p>
+                <div className="grid grid-cols-4 gap-3">
+                  {[0, 1, 2, 3].map((index) => (
+                    <div key={index} className="relative">
+                      <div
+                        className="w-full aspect-square rounded-lg border-2 border-dashed border-gray-300 overflow-hidden bg-gray-50 flex items-center justify-center relative"
+                        style={{ minHeight: '120px' }}
+                      >
+                        {productImages[index] ? (
+                          <>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={productImages[index]}
+                              alt={`Product image ${index + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setProductImages(prev => {
+                                  const next = [...prev];
+                                  next[index] = '';
+                                  return next;
+                                });
+                              }}
+                              className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                            >
+                              ×
+                            </button>
+                          </>
+                        ) : uploadingImageIndex === index ? (
+                          <div className="text-center">
+                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-900 mx-auto" />
+                            <p className="text-xs text-gray-400 mt-1">Uploading...</p>
+                          </div>
+                        ) : (
+                          <div className="text-center p-2">
+                            <p className="text-2xl text-gray-300">+</p>
+                            <p className="text-xs text-gray-400">
+                              {index === 0 ? 'Main Photo' : `Photo ${index + 1}`}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                      {!productImages[index] && uploadingImageIndex !== index && (
+                        <label className="absolute inset-0 cursor-pointer">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={async (e) => {
+                              if (!e.target.files?.[0]) return;
+                              const tempId = editingProduct?.id || `temp-${Date.now()}`;
+                              await uploadProductImage(e.target.files[0], tempId, index);
+                            }}
+                          />
+                        </label>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {/* Action buttons */}
