@@ -1,10 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import ProductCard from "@/components/shared/ProductCard";
 import { useCart } from "@/lib/context/CartContext";
 import { fetchFromSupabase } from "@/lib/api";
-import StoreNavbar from "@/components/store/StoreNavbar";
 
 interface Seller {
   slug: string;
@@ -47,8 +46,6 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
   const [moreProducts, setMoreProducts] = useState<RelatedProduct[]>([]);
   const [mainImage, setMainImage]       = useState<string>('');
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const fromStore = searchParams.get('store');
   const { addToCart } = useCart();
 
   useEffect(() => {
@@ -99,10 +96,6 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
   }
 
   return (
-    <>
-    {fromStore && seller && (
-      <StoreNavbar storeId={seller.slug} activePage="shop" />
-    )}
     <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr_280px] gap-6 lg:gap-8">
 
@@ -241,6 +234,5 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
         </div>
       </div>
     </section>
-    </>
   );
 }

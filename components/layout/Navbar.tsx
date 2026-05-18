@@ -110,7 +110,7 @@ function TabsRow({ activeKey }: { activeKey: string }) {
   );
 }
 
-export default function Navbar() {
+export default function Navbar({ nonSticky = false }: { nonSticky?: boolean }) {
   const { totalItems } = useCart();
   const router = useRouter();
   const pathname = usePathname();
@@ -148,8 +148,10 @@ export default function Navbar() {
   const displayName = session?.name || session?.email || "";
   const initial = displayName.charAt(0).toUpperCase();
 
+  const shouldBeRelative = isStorePage || nonSticky;
+
   return (
-    <header className={isStorePage ? 'relative' : 'sticky top-0 z-50'}>
+    <header className={shouldBeRelative ? 'relative' : 'sticky top-0 z-50'}>
       {/* ── Main bar ─────────────────────────────────────────── */}
       <div className="bg-[#1a4a2e]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center gap-3">
