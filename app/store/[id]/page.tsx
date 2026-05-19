@@ -243,20 +243,15 @@ export default function StorePage() {
                   className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group"
                 >
                   <div
-                    className="bg-white overflow-hidden flex items-center justify-center"
-                    style={{ height: '280px' }}
+                    className="overflow-hidden rounded-t-xl"
+                    style={{ height: '320px' }}
                   >
                     {product.primaryImage ? (
                       <img
                         src={product.primaryImage}
                         alt={product.name}
-                        style={{
-                          maxHeight: '280px',
-                          maxWidth: '100%',
-                          width: 'auto',
-                          height: 'auto',
-                          objectFit: 'contain',
-                        }}
+                        className="w-full h-full"
+                        style={{ objectFit: 'cover', objectPosition: 'center' }}
                       />
                     ) : (
                       <div className="w-full h-full bg-gray-100 flex items-center justify-center">
