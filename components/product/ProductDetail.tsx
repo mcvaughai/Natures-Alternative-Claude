@@ -11,6 +11,12 @@ interface Seller {
   description: string;
 }
 
+interface WeightOption {
+  weight_oz: number;
+  label: string;
+  in_stock: boolean;
+}
+
 interface Product {
   id: string;
   name: string;
@@ -18,6 +24,10 @@ interface Product {
   price: number;
   images: string[];
   seller_id: string;
+  pricing_type?: string;
+  price_per_pound?: number | null;
+  weight_input_mode?: string;
+  weight_options?: WeightOption[] | null;
 }
 
 interface RelatedProduct {
@@ -45,6 +55,9 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
   const [seller, setSeller]             = useState<Seller | null>(null);
   const [moreProducts, setMoreProducts] = useState<RelatedProduct[]>([]);
   const [mainImage, setMainImage]       = useState<string>('');
+  const [selectedWeight, setSelectedWeight] = useState<WeightOption | null>(null);
+  const [customWeight, setCustomWeight]     = useState('');
+  const [calculatedPrice, setCalculatedPrice] = useState<number | null>(null);
   const router = useRouter();
   const { addToCart } = useCart();
 
@@ -53,7 +66,7 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
       try {
         // Step 1: fetch product
         const products = await fetchFromSupabase<Product[]>(
-          `products?id=eq.${productId}&select=id,name,description,price,images,seller_id`
+          `products?id=eq.${productId}&select=id,name,description,price,images,seller_id,pricing_type,price_per_pound,weight_input_mode,weight_options`
         );
         if (!products?.length) return;
         const productData = products[0];
@@ -82,13 +95,44 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
     if (product?.images?.[0]) setMainImage(product.images[0]);
   }, [product]);
 
+  // Calculate price for per_pound products
+  useEffect(() => {
+    if (!product || product.pricing_type !== 'per_pound' || !product.price_per_pound) {
+      setCalculatedPrice(null);
+      return;
+    }
+    if (selectedWeight) {
+      setCalculatedPrice((product.price_per_pound * selectedWeight.weight_oz) / 16);
+    } else if (customWeight) {
+      const lbs = parseFloat(customWeight);
+      setCalculatedPrice(isNaN(lbs) ? null : product.price_per_pound * lbs);
+    } else {
+      setCalculatedPrice(null);
+    }
+  }, [product, selectedWeight, customWeight]);
+
+  function getEffectivePrice(): number {
+    if (!product) return 0;
+    if (product.pricing_type === 'per_pound') return calculatedPrice ?? 0;
+    return product.price;
+  }
+
   function handleAddToCart() {
     if (!product) return;
+    const isPerPound = product.pricing_type === 'per_pound';
+    if (isPerPound && !selectedWeight && !customWeight) {
+      alert('Please select or enter a weight before adding to cart.');
+      return;
+    }
+    const effectivePrice = getEffectivePrice();
+    const weightLabel = isPerPound
+      ? (selectedWeight ? selectedWeight.label : `${customWeight} lbs`)
+      : '';
     addToCart({
       id:          product.id,
-      name:        product.name,
+      name:        weightLabel ? `${product.name} (${weightLabel})` : product.name,
       description: product.description,
-      price:       `$${product.price.toFixed(2)}`,
+      price:       `$${effectivePrice.toFixed(2)}`,
       quantity:    qty,
     });
     setAdded(true);
@@ -144,9 +188,80 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
             </p>
           </div>
 
-          <p className="text-3xl font-bold text-[#1a4a2e] mb-6">
-            {product ? `$${product.price.toFixed(2)}` : ""}
-          </p>
+          {/* Price display */}
+          {product?.pricing_type === 'per_pound' ? (
+            <div className="mb-4">
+              <p className="text-xl font-bold text-[#1a4a2e]">
+                ${Number(product.price_per_pound ?? 0).toFixed(2)}<span className="text-base font-normal text-gray-500"> / lb</span>
+              </p>
+              {calculatedPrice !== null && (
+                <p className="text-2xl font-bold text-[#1a4a2e] mt-1">
+                  Total: ${calculatedPrice.toFixed(2)}
+                </p>
+              )}
+            </div>
+          ) : (
+            <p className="text-3xl font-bold text-[#1a4a2e] mb-4">
+              {product ? `$${product.price.toFixed(2)}` : ""}
+            </p>
+          )}
+
+          {/* Weight selector for per_pound products */}
+          {product?.pricing_type === 'per_pound' && (
+            <div className="mb-5">
+              {product.weight_input_mode === 'preset' && product.weight_options?.length ? (
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-2">Select Weight:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {product.weight_options.filter(w => w.in_stock).map((opt, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => { setSelectedWeight(opt); setCustomWeight(''); }}
+                        className={`px-4 py-2 rounded-xl border-2 text-sm font-medium transition-colors ${
+                          selectedWeight?.label === opt.label
+                            ? 'border-[#1a4a2e] bg-[#1a4a2e] text-white'
+                            : 'border-gray-300 text-gray-700 hover:border-[#1a4a2e]/50'
+                        }`}
+                      >
+                        <span>{opt.label}</span>
+                        {product.price_per_pound && (
+                          <span className="ml-1.5 opacity-75 text-xs">
+                            ${((product.price_per_pound * opt.weight_oz) / 16).toFixed(2)}
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                    {product.weight_options.filter(w => !w.in_stock).map((opt, i) => (
+                      <button key={`out-${i}`} type="button" disabled
+                        className="px-4 py-2 rounded-xl border-2 border-gray-200 text-sm font-medium text-gray-400 line-through cursor-not-allowed">
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">Enter Weight (lbs):</label>
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-36">
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        placeholder="e.g. 1.5"
+                        value={customWeight}
+                        onChange={e => { setCustomWeight(e.target.value); setSelectedWeight(null); }}
+                        className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a4a2e]/30 focus:border-[#1a4a2e] transition"
+                      />
+                    </div>
+                    <span className="text-sm text-gray-500">lbs</span>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1.5">Final price confirmed at pickup/delivery based on exact weight</p>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Quantity selector */}
           <div className="flex items-center gap-3 mb-6">
