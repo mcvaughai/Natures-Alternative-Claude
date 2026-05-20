@@ -3,18 +3,12 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import ProductCard from "@/components/shared/ProductCard";
 import { useCart } from "@/lib/context/CartContext";
-import { fetchFromSupabase } from "@/lib/api";
+import { fetchFromSupabase, SUPABASE_URL, supabaseHeaders } from "@/lib/api";
 
 interface Seller {
   slug: string;
   farm_name: string;
   description: string;
-}
-
-interface WeightOption {
-  weight_oz: number;
-  label: string;
-  in_stock: boolean;
 }
 
 interface Product {
@@ -26,8 +20,14 @@ interface Product {
   seller_id: string;
   pricing_type?: string;
   price_per_pound?: number | null;
-  weight_input_mode?: string;
-  weight_options?: WeightOption[] | null;
+}
+
+interface ProductUnit {
+  id: string;
+  product_id: string;
+  weight_lbs: number;
+  price: number;
+  status: string;
 }
 
 interface RelatedProduct {
@@ -55,9 +55,8 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
   const [seller, setSeller]             = useState<Seller | null>(null);
   const [moreProducts, setMoreProducts] = useState<RelatedProduct[]>([]);
   const [mainImage, setMainImage]       = useState<string>('');
-  const [selectedWeight, setSelectedWeight] = useState<WeightOption | null>(null);
-  const [customWeight, setCustomWeight]     = useState('');
-  const [calculatedPrice, setCalculatedPrice] = useState<number | null>(null);
+  const [productUnits, setProductUnits] = useState<ProductUnit[]>([]);
+  const [selectedUnit, setSelectedUnit] = useState<ProductUnit | null>(null);
   const router = useRouter();
   const { addToCart } = useCart();
 
@@ -66,7 +65,7 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
       try {
         // Step 1: fetch product
         const products = await fetchFromSupabase<Product[]>(
-          `products?id=eq.${productId}&select=id,name,description,price,images,seller_id,pricing_type,price_per_pound,weight_input_mode,weight_options`
+          `products?id=eq.${productId}&select=id,name,description,price,images,seller_id,pricing_type,price_per_pound`
         );
         if (!products?.length) return;
         const productData = products[0];
@@ -83,6 +82,18 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
           `products?seller_id=eq.${productData.seller_id}&status=eq.active&id=neq.${productId}&select=id,name,description,price,images&limit=4`
         );
         if (more?.length) setMoreProducts(more);
+
+        // Step 4: fetch available units for per_pound products
+        if (productData.pricing_type === 'per_pound') {
+          const unitsRes = await fetch(
+            `${SUPABASE_URL}/rest/v1/product_units?product_id=eq.${productData.id}&status=eq.available&select=*&order=weight_lbs.asc`,
+            { headers: supabaseHeaders }
+          );
+          if (unitsRes.ok) {
+            const unitsData = await unitsRes.json();
+            setProductUnits(Array.isArray(unitsData) ? unitsData : []);
+          }
+        }
       } catch (err) {
         console.error("ProductDetail load error:", err);
       }
@@ -95,49 +106,37 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
     if (product?.images?.[0]) setMainImage(product.images[0]);
   }, [product]);
 
-  // Calculate price for per_pound products
-  useEffect(() => {
-    if (!product || product.pricing_type !== 'per_pound' || !product.price_per_pound) {
-      setCalculatedPrice(null);
-      return;
-    }
-    if (selectedWeight) {
-      setCalculatedPrice((product.price_per_pound * selectedWeight.weight_oz) / 16);
-    } else if (customWeight) {
-      const lbs = parseFloat(customWeight);
-      setCalculatedPrice(isNaN(lbs) ? null : product.price_per_pound * lbs);
-    } else {
-      setCalculatedPrice(null);
-    }
-  }, [product, selectedWeight, customWeight]);
-
-  function getEffectivePrice(): number {
-    if (!product) return 0;
-    if (product.pricing_type === 'per_pound') return calculatedPrice ?? 0;
-    return product.price;
-  }
-
   function handleAddToCart() {
     if (!product) return;
     const isPerPound = product.pricing_type === 'per_pound';
-    if (isPerPound && !selectedWeight && !customWeight) {
-      alert('Please select or enter a weight before adding to cart.');
-      return;
+
+    if (isPerPound) {
+      if (!selectedUnit) {
+        alert('Please select a cut first.');
+        return;
+      }
+      addToCart({
+        id:          selectedUnit.id,
+        name:        `${product.name} (${selectedUnit.weight_lbs} lbs)`,
+        description: product.description,
+        price:       `$${Number(selectedUnit.price).toFixed(2)}`,
+        quantity:    1,
+      });
+    } else {
+      addToCart({
+        id:          product.id,
+        name:        product.name,
+        description: product.description,
+        price:       `$${product.price.toFixed(2)}`,
+        quantity:    qty,
+      });
     }
-    const effectivePrice = getEffectivePrice();
-    const weightLabel = isPerPound
-      ? (selectedWeight ? selectedWeight.label : `${customWeight} lbs`)
-      : '';
-    addToCart({
-      id:          product.id,
-      name:        weightLabel ? `${product.name} (${weightLabel})` : product.name,
-      description: product.description,
-      price:       `$${effectivePrice.toFixed(2)}`,
-      quantity:    qty,
-    });
     setAdded(true);
     setTimeout(() => setAdded(false), 1000);
   }
+
+  const isPerPound = product?.pricing_type === 'per_pound';
+  const canAddToCart = !isPerPound || !!selectedUnit;
 
   return (
     <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -188,17 +187,13 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
             </p>
           </div>
 
-          {/* Price display */}
-          {product?.pricing_type === 'per_pound' ? (
+          {/* ── Price display ── */}
+          {isPerPound ? (
             <div className="mb-4">
-              <p className="text-xl font-bold text-[#1a4a2e]">
-                ${Number(product.price_per_pound ?? 0).toFixed(2)}<span className="text-base font-normal text-gray-500"> / lb</span>
+              <p className="text-lg text-gray-600">
+                <span className="font-bold text-[#1a4a2e]">${Number(product?.price_per_pound ?? 0).toFixed(2)}</span>
+                <span className="text-base font-normal"> / lb</span>
               </p>
-              {calculatedPrice !== null && (
-                <p className="text-2xl font-bold text-[#1a4a2e] mt-1">
-                  Total: ${calculatedPrice.toFixed(2)}
-                </p>
-              )}
             </div>
           ) : (
             <p className="text-3xl font-bold text-[#1a4a2e] mb-4">
@@ -206,96 +201,103 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
             </p>
           )}
 
-          {/* Weight selector for per_pound products */}
-          {product?.pricing_type === 'per_pound' && (
+          {/* ── Per-pound: unit selector ── */}
+          {isPerPound && (
             <div className="mb-5">
-              {product.weight_input_mode === 'preset' && product.weight_options?.length ? (
-                <div>
-                  <p className="text-sm font-medium text-gray-700 mb-2">Select Weight:</p>
-                  <div className="flex flex-wrap gap-2">
-                    {product.weight_options.filter(w => w.in_stock).map((opt, i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        onClick={() => { setSelectedWeight(opt); setCustomWeight(''); }}
-                        className={`px-4 py-2 rounded-xl border-2 text-sm font-medium transition-colors ${
-                          selectedWeight?.label === opt.label
-                            ? 'border-[#1a4a2e] bg-[#1a4a2e] text-white'
-                            : 'border-gray-300 text-gray-700 hover:border-[#1a4a2e]/50'
-                        }`}
-                      >
-                        <span>{opt.label}</span>
-                        {product.price_per_pound && (
-                          <span className="ml-1.5 opacity-75 text-xs">
-                            ${((product.price_per_pound * opt.weight_oz) / 16).toFixed(2)}
-                          </span>
-                        )}
-                      </button>
-                    ))}
-                    {product.weight_options.filter(w => !w.in_stock).map((opt, i) => (
-                      <button key={`out-${i}`} type="button" disabled
-                        className="px-4 py-2 rounded-xl border-2 border-gray-200 text-sm font-medium text-gray-400 line-through cursor-not-allowed">
-                        {opt.label}
-                      </button>
-                    ))}
-                  </div>
+              {productUnits.length === 0 ? (
+                <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                  <p className="text-gray-500 text-sm font-medium">No cuts currently available</p>
+                  <p className="text-gray-400 text-xs mt-1">Check back soon — new cuts are added regularly</p>
                 </div>
               ) : (
                 <div>
-                  <label className="text-sm font-medium text-gray-700 mb-2 block">Enter Weight (lbs):</label>
-                  <div className="flex items-center gap-3">
-                    <div className="relative w-36">
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.1"
-                        placeholder="e.g. 1.5"
-                        value={customWeight}
-                        onChange={e => { setCustomWeight(e.target.value); setSelectedWeight(null); }}
-                        className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a4a2e]/30 focus:border-[#1a4a2e] transition"
-                      />
-                    </div>
-                    <span className="text-sm text-gray-500">lbs</span>
+                  <p className="text-sm font-semibold text-gray-700 mb-2">Select Available Cut:</p>
+                  <div className="space-y-2">
+                    {productUnits.map((unit) => (
+                      <button
+                        key={unit.id}
+                        onClick={() => setSelectedUnit(unit)}
+                        className={`w-full flex justify-between items-center px-4 py-3 rounded-xl border-2 transition-colors ${
+                          selectedUnit?.id === unit.id
+                            ? 'border-[#1a4a2e] bg-[#1a4a2e]/5'
+                            : 'border-gray-200 hover:border-[#1a4a2e]/40 bg-white'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                            selectedUnit?.id === unit.id ? 'border-[#1a4a2e]' : 'border-gray-300'
+                          }`}>
+                            {selectedUnit?.id === unit.id && (
+                              <div className="w-2 h-2 rounded-full bg-[#1a4a2e]" />
+                            )}
+                          </div>
+                          <span className="text-sm font-semibold text-gray-800">
+                            {unit.weight_lbs} lbs
+                          </span>
+                        </div>
+                        <span className="text-lg font-bold text-[#1a4a2e]">
+                          ${Number(unit.price).toFixed(2)}
+                        </span>
+                      </button>
+                    ))}
                   </div>
-                  <p className="text-xs text-gray-400 mt-1.5">Final price confirmed at pickup/delivery based on exact weight</p>
+
+                  {selectedUnit && (
+                    <div className="mt-3 bg-[#1a4a2e]/5 border border-[#1a4a2e]/20 rounded-xl p-4">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Selected Cut</p>
+                          <p className="font-semibold text-gray-800 mt-0.5">{selectedUnit.weight_lbs} lbs</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Price</p>
+                          <p className="text-2xl font-bold text-[#1a4a2e] mt-0.5">
+                            ${Number(selectedUnit.price).toFixed(2)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
           )}
 
-          {/* Quantity selector */}
-          <div className="flex items-center gap-3 mb-6">
-            <span className="text-sm font-medium text-gray-700">Quantity:</span>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setQty((q) => Math.max(1, q - 1))}
-                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 border border-gray-300 flex items-center justify-center text-gray-700 font-bold text-lg leading-none transition-colors"
-                aria-label="Decrease quantity"
-              >
-                −
-              </button>
-              <input
-                type="number"
-                value={qty}
-                onChange={(e) => setQty(Math.max(1, parseInt(e.target.value) || 1))}
-                className="w-14 h-8 text-center border border-gray-300 rounded-lg text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#1a4a2e] focus:border-transparent"
-                min={1}
-              />
-              <button
-                onClick={() => setQty((q) => q + 1)}
-                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 border border-gray-300 flex items-center justify-center text-gray-700 font-bold text-lg leading-none transition-colors"
-                aria-label="Increase quantity"
-              >
-                +
-              </button>
+          {/* ── Quantity selector (fixed-price only) ── */}
+          {!isPerPound && (
+            <div className="flex items-center gap-3 mb-6">
+              <span className="text-sm font-medium text-gray-700">Quantity:</span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setQty((q) => Math.max(1, q - 1))}
+                  className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 border border-gray-300 flex items-center justify-center text-gray-700 font-bold text-lg leading-none transition-colors"
+                  aria-label="Decrease quantity"
+                >
+                  −
+                </button>
+                <input
+                  type="number"
+                  value={qty}
+                  onChange={(e) => setQty(Math.max(1, parseInt(e.target.value) || 1))}
+                  className="w-14 h-8 text-center border border-gray-300 rounded-lg text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#1a4a2e] focus:border-transparent"
+                  min={1}
+                />
+                <button
+                  onClick={() => setQty((q) => q + 1)}
+                  className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 border border-gray-300 flex items-center justify-center text-gray-700 font-bold text-lg leading-none transition-colors"
+                  aria-label="Increase quantity"
+                >
+                  +
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Add to Cart */}
+          {/* ── Add to Cart ── */}
           <button
             onClick={handleAddToCart}
-            disabled={!product}
-            className={`w-full ${added ? "bg-[#1a4a2e] hover:bg-[#2d6b47]" : "bg-[#8b1a1a] hover:bg-[#6d1414] active:bg-[#561010]"} text-white py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2.5 transition-colors shadow-sm mb-6 text-base disabled:opacity-50`}
+            disabled={!product || !canAddToCart}
+            className={`w-full ${added ? "bg-[#1a4a2e] hover:bg-[#2d6b47]" : canAddToCart ? "bg-[#8b1a1a] hover:bg-[#6d1414] active:bg-[#561010]" : "bg-gray-300 cursor-not-allowed"} text-white py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2.5 transition-colors shadow-sm mb-6 text-base disabled:opacity-60`}
           >
             {added ? (
               <>
@@ -303,6 +305,13 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                 </svg>
                 Added!
+              </>
+            ) : !canAddToCart ? (
+              <>
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                Select a Cut First
               </>
             ) : (
               <>

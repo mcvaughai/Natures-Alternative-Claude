@@ -69,9 +69,6 @@ export default function ProductsPage() {
   // Variable weight pricing state
   const [pricingType, setPricingType]       = useState<'fixed' | 'per_pound'>('fixed');
   const [pricePerPound, setPricePerPound]   = useState('');
-  const [weightInputMode, setWeightInputMode] = useState<'preset' | 'open'>('open');
-  const [weightOptions, setWeightOptions]   = useState<Array<{weight_oz: number; label: string; in_stock: boolean}>>([]);
-  const [newWeightOption, setNewWeightOption] = useState('');
 
   // ── Fetch products + images via REST API ──────────────────────────────────
   const fetchProducts = useCallback(async (sid: string) => {
@@ -189,9 +186,6 @@ export default function ProductsPage() {
     setProductImages(['', '', '', '']);
     setPricingType('fixed');
     setPricePerPound('');
-    setWeightInputMode('open');
-    setWeightOptions([]);
-    setNewWeightOption('');
   };
 
   // ── Open form in edit mode ─────────────────────────────────────────────────
@@ -216,9 +210,6 @@ export default function ProductsPage() {
     const p = product as any;
     setPricingType(p.pricing_type || 'fixed');
     setPricePerPound(p.price_per_pound?.toString() || '');
-    setWeightInputMode(p.weight_input_mode || 'open');
-    setWeightOptions(p.weight_options || []);
-    setNewWeightOption('');
     setTimeout(() => {
       document.getElementById("product-form")?.scrollIntoView({ behavior: "smooth" });
     }, 100);
@@ -268,8 +259,6 @@ export default function ProductsPage() {
               status:           isActive ? "active" : "draft",
               pricing_type:     pricingType,
               price_per_pound:  pricingType === 'per_pound' ? parseFloat(pricePerPound) || null : null,
-              weight_input_mode: weightInputMode,
-              weight_options:   weightOptions,
             }),
           }
         );
@@ -337,8 +326,6 @@ export default function ProductsPage() {
               images:           productImages.filter(img => img !== ''),
               pricing_type:     pricingType,
               price_per_pound:  pricingType === 'per_pound' ? parseFloat(pricePerPound) || null : null,
-              weight_input_mode: weightInputMode,
-              weight_options:   weightOptions,
               updated_at:       new Date().toISOString(),
             }),
           }
@@ -548,86 +535,28 @@ export default function ProductsPage() {
 
               {/* Per pound options */}
               {pricingType === 'per_pound' && (
-                <div className="space-y-4 bg-gray-50 rounded-xl p-4">
+                <div className="mt-4 space-y-3">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1.5">Price Per Pound</label>
                     <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm">$</span>
-                      <input type="number" placeholder="0.00 per lb" min="0" step="0.01"
-                        className={inputCls + " pl-7 bg-white"}
-                        value={pricePerPound} onChange={e => setPricePerPound(e.target.value)} />
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">$</span>
+                      <input
+                        type="number"
+                        value={pricePerPound}
+                        onChange={e => setPricePerPound(e.target.value)}
+                        className={inputCls + " pl-7"}
+                        placeholder="0.00"
+                        step="0.01"
+                        min="0"
+                      />
                     </div>
-                    <p className="text-xs text-gray-400 mt-1">e.g. $45.00/lb — price calculates based on weight</p>
+                    <p className="text-xs text-gray-400 mt-1">e.g. $45.00/lb</p>
                   </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">How do customers specify weight?</label>
-                    <div className="flex gap-3">
-                      <button type="button" onClick={() => setWeightInputMode('open')}
-                        className={`flex-1 py-2 px-3 rounded-xl border-2 text-sm font-medium transition-colors ${weightInputMode === 'open' ? 'border-[#1a4a2e] bg-[#1a4a2e] text-white' : 'border-gray-300 text-gray-600 hover:border-[#1a4a2e]/50'}`}>
-                        Customer Types Weight
-                      </button>
-                      <button type="button" onClick={() => setWeightInputMode('preset')}
-                        className={`flex-1 py-2 px-3 rounded-xl border-2 text-sm font-medium transition-colors ${weightInputMode === 'preset' ? 'border-[#1a4a2e] bg-[#1a4a2e] text-white' : 'border-gray-300 text-gray-600 hover:border-[#1a4a2e]/50'}`}>
-                        Preset Options
-                      </button>
-                    </div>
-                    <p className="text-xs text-gray-400 mt-1.5">
-                      {weightInputMode === 'open'
-                        ? 'Customer types the exact weight they want. Best for farms that weigh at pickup.'
-                        : 'You define specific weight options customers choose from. Best for pre-cut products.'}
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <p className="text-sm text-blue-700">
+                      💡 After saving this product, go to <strong>Inventory</strong> to add individual units with their specific weights. Each unit will be listed separately for customers to choose from.
                     </p>
                   </div>
-
-                  {weightInputMode === 'preset' && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Weight Options</label>
-                      <div className="space-y-2 mb-3">
-                        {weightOptions.map((option, index) => (
-                          <div key={index} className="flex items-center gap-2 bg-white p-2 rounded-lg border border-gray-200">
-                            <span className="text-sm font-medium text-gray-700 flex-1">{option.label}</span>
-                            <span className="text-sm text-[#1a4a2e] font-semibold">
-                              ${pricePerPound ? ((parseFloat(pricePerPound) * option.weight_oz) / 16).toFixed(2) : '0.00'}
-                            </span>
-                            <label className="flex items-center gap-1 text-xs text-gray-500 cursor-pointer">
-                              <input type="checkbox" checked={option.in_stock} className="accent-[#1a4a2e]"
-                                onChange={e => {
-                                  const updated = [...weightOptions];
-                                  updated[index] = { ...updated[index], in_stock: e.target.checked };
-                                  setWeightOptions(updated);
-                                }} />
-                              In Stock
-                            </label>
-                            <button type="button" onClick={() => setWeightOptions(weightOptions.filter((_, i) => i !== index))}
-                              className="text-red-500 hover:text-red-700 font-bold text-sm w-5 h-5 flex items-center justify-center">×</button>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="flex gap-2">
-                        <input type="text" value={newWeightOption} placeholder='e.g. "6 oz" or "1.5 lbs"'
-                          className={inputCls + " bg-white"}
-                          onChange={e => setNewWeightOption(e.target.value)}
-                          onKeyDown={e => {
-                            if (e.key === 'Enter' && newWeightOption.trim()) {
-                              e.preventDefault();
-                              const lbs = newWeightOption.toLowerCase().includes('lb') ? parseFloat(newWeightOption) * 16 : parseFloat(newWeightOption);
-                              setWeightOptions([...weightOptions, { weight_oz: lbs || 0, label: newWeightOption.trim(), in_stock: true }]);
-                              setNewWeightOption('');
-                            }
-                          }} />
-                        <button type="button" onClick={() => {
-                            if (!newWeightOption.trim()) return;
-                            const lbs = newWeightOption.toLowerCase().includes('lb') ? parseFloat(newWeightOption) * 16 : parseFloat(newWeightOption);
-                            setWeightOptions([...weightOptions, { weight_oz: lbs || 0, label: newWeightOption.trim(), in_stock: true }]);
-                            setNewWeightOption('');
-                          }}
-                          className="bg-[#1a4a2e] text-white px-4 py-2 rounded-xl text-sm hover:bg-[#2d6b47] whitespace-nowrap">
-                          Add
-                        </button>
-                      </div>
-                      <p className="text-xs text-gray-400 mt-1">Press Enter or click Add. e.g. &quot;6 oz&quot; or &quot;1.5 lbs&quot;</p>
-                    </div>
-                  )}
                 </div>
               )}
 
