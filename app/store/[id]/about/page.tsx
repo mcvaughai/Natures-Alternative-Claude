@@ -59,7 +59,7 @@ export default function StoreAboutPage() {
   }
 
   if (loading) return (
-    <div className="min-h-screen bg-[#f5f0e8]">
+    <div className="min-h-screen bg-[#FCF7F4]">
       <Navbar />
       <div className="flex items-center justify-center py-40">
         <div className="text-center">
@@ -72,7 +72,7 @@ export default function StoreAboutPage() {
   )
 
   if (error || !store) return (
-    <div className="min-h-screen bg-[#f5f0e8]">
+    <div className="min-h-screen bg-[#FCF7F4]">
       <Navbar />
       <div className="flex items-center justify-center py-40">
         <div className="text-center">
@@ -108,7 +108,7 @@ export default function StoreAboutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f0e8] flex flex-col">
+    <div className="min-h-screen bg-[#FCF7F4] flex flex-col">
       <Navbar />
       <StoreNavbar storeId={slug} activePage="about" />
       <main className="flex-1">

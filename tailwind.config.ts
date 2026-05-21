@@ -22,19 +22,21 @@ const config: Config = {
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
 
-        // ── Brand palette — PLACEHOLDER, update once brand colors land ──
+        // ── Brand palette ──────────────────────────────────────────────────────
+        brand: {
+          dark:    "#053D2D",   // main navbar / deepest green
+          primary: "#00674B",   // category tabs bar / CTA green
+          light:   "#FCF7F4",   // page background / warm off-white
+        },
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
-          // Direct hex values for use outside CSS-var context (e.g. SVGs, emails)
-          // TODO: replace with final brand values
           light:   "#6fa880",
-          dark:    "#2e5038",
+          dark:    "#053D2D",
         },
         accent: {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
-          // TODO: replace with final brand values
           light:   "#dba85e",
           dark:    "#9a6420",
         },

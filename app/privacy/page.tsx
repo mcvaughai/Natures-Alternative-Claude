@@ -68,7 +68,7 @@ const SECTIONS = [
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen bg-[#f5f0e8] flex flex-col">
+    <div className="min-h-screen bg-[#FCF7F4] flex flex-col">
       <Navbar />
       <main className="flex-1">
 
@@ -85,7 +85,7 @@ export default function PrivacyPage() {
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 sm:p-12">
 
             {/* Table of Contents */}
-            <div className="bg-[#f5f0e8] rounded-xl p-6 mb-10">
+            <div className="bg-[#FCF7F4] rounded-xl p-6 mb-10">
               <h2 className="font-bold text-gray-900 mb-4">Table of Contents</h2>
               <ol className="space-y-2">
                 {SECTIONS.map((section) => (

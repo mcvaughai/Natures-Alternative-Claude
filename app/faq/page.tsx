@@ -130,7 +130,7 @@ export default function FAQPage() {
     : Object.entries(FAQ_DATA).filter(([key]) => key === activeTab);
 
   return (
-    <div className="min-h-screen bg-[#f5f0e8] flex flex-col">
+    <div className="min-h-screen bg-[#FCF7F4] flex flex-col">
       <Navbar />
       <main className="flex-1">
 
@@ -217,7 +217,7 @@ export default function FAQPage() {
             <p className="text-green-200 mb-6">Contact us and we will get back to you within 24-48 hours.</p>
             <Link
               href="/contact"
-              className="inline-block bg-white text-[#1a4a2e] hover:bg-[#f5f0e8] font-semibold px-8 py-3 rounded-full transition-colors"
+              className="inline-block bg-white text-[#1a4a2e] hover:bg-[#FCF7F4] font-semibold px-8 py-3 rounded-full transition-colors"
             >
               Contact Us
             </Link>

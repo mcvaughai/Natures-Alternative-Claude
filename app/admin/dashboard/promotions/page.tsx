@@ -82,7 +82,7 @@ export default function PromotionsPage() {
             </div>
             <div className="space-y-2">
               {featuredFarms.map(f => (
-                <div key={f} className="flex items-center justify-between bg-[#f5f0e8] rounded-xl px-3 py-2">
+                <div key={f} className="flex items-center justify-between bg-[#FCF7F4] rounded-xl px-3 py-2">
                   <div className="flex items-center gap-2">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#1a4a2e] shrink-0"/>
                     <span className="text-sm text-gray-800 font-medium">{f}</span>
@@ -112,7 +112,7 @@ export default function PromotionsPage() {
             </div>
             <div className="space-y-2">
               {featuredProducts.map(p => (
-                <div key={p} className="flex items-center justify-between bg-[#f5f0e8] rounded-xl px-3 py-2">
+                <div key={p} className="flex items-center justify-between bg-[#FCF7F4] rounded-xl px-3 py-2">
                   <div className="flex items-center gap-2">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#1a4a2e] shrink-0"/>
                     <span className="text-sm text-gray-800 font-medium">{p}</span>
@@ -140,7 +140,7 @@ export default function PromotionsPage() {
           <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Special Deals</h2>
 
           {/* Create form */}
-          <div className="bg-[#f5f0e8] rounded-xl p-4 space-y-3">
+          <div className="bg-[#FCF7F4] rounded-xl p-4 space-y-3">
             <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Create New Deal</p>
             <div className="grid grid-cols-2 gap-3">
               <input type="text" value={dealName} onChange={e => setDealName(e.target.value)} placeholder="Deal name" className={inputCls}/>

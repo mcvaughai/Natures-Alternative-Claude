@@ -4,7 +4,7 @@ import SellerLandingSection from "@/components/seller/SellerLandingSection";
 
 export default function SellerLandingPage() {
   return (
-    <div className="min-h-screen bg-[#f5f0e8] flex flex-col">
+    <div className="min-h-screen bg-[#FCF7F4] flex flex-col">
       <Navbar />
       <main className="flex-1">
         <SellerLandingSection />

@@ -239,7 +239,7 @@ export default function FulfillmentPage() {
                   className={inputCls + " resize-none"}
                 />
               </div>
-              <div className="bg-[#f5f0e8] rounded-xl px-4 py-3 text-xs text-gray-600">
+              <div className="bg-[#FCF7F4] rounded-xl px-4 py-3 text-xs text-gray-600">
                 <span className="font-semibold">Tip:</span> Include directions and a phone number so customers can easily find you.
               </div>
             </div>

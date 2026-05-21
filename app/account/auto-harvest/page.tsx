@@ -82,7 +82,7 @@ export default function AutoHarvestPage() {
   }, [loading, user, router]);
 
   return (
-    <div className="min-h-screen bg-[#f5f0e8] flex flex-col">
+    <div className="min-h-screen bg-[#FCF7F4] flex flex-col">
       <Navbar />
       <main className="flex-1 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

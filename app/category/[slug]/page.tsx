@@ -96,7 +96,7 @@ export default function CategoryPage() {
           <p className="mt-2 text-green-100">Fresh from local natural farms near you</p>
         </div>
 
-        <div className="p-6 bg-amber-50 min-h-screen">
+        <div className="p-6 bg-[#FCF7F4] min-h-screen">
           {loading && (
             <div className="text-center py-20">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-900 mx-auto" />

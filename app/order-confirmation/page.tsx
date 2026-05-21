@@ -4,7 +4,7 @@ import OrderConfirmationSection from "@/components/order-confirmation/OrderConfi
 
 export default function OrderConfirmationPage() {
   return (
-    <div className="min-h-screen bg-[#f5f0e8] flex flex-col">
+    <div className="min-h-screen bg-[#FCF7F4] flex flex-col">
       <Navbar />
       <main className="flex-1 pb-8">
         <OrderConfirmationSection />

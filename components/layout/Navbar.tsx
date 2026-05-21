@@ -59,15 +59,16 @@ function TabsRow({ activeKey }: { activeKey: string }) {
   }, []);
 
   return (
-    <div className="bg-white border-b border-gray-200 shadow-sm relative">
+    <div className="relative" style={{ backgroundColor: '#00674B' }}>
       {/* Left scroll arrow */}
       {canScrollLeft && (
         <button
           onClick={() => scrollRef.current?.scrollBy({ left: -180, behavior: "smooth" })}
-          className="absolute left-0 top-0 bottom-0 z-10 px-2 bg-gradient-to-r from-white via-white/90 to-transparent flex items-center"
+          className="absolute left-0 top-0 bottom-0 z-10 px-2 flex items-center"
+          style={{ background: 'linear-gradient(to right, #00674B 60%, transparent)' }}
           aria-label="Scroll tabs left"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </button>
@@ -85,8 +86,8 @@ function TabsRow({ activeKey }: { activeKey: string }) {
             href={tab.href}
             className={`px-4 py-1.5 text-sm font-medium whitespace-nowrap rounded-full transition-colors shrink-0 ${
               activeKey === tab.key
-                ? "bg-[#1a4a2e] text-white"
-                : "text-[#1a4a2e] hover:bg-[#1a4a2e]/10"
+                ? "bg-white text-[#053D2D]"
+                : "text-white hover:bg-white/20"
             }`}
           >
             {tab.label}
@@ -98,10 +99,11 @@ function TabsRow({ activeKey }: { activeKey: string }) {
       {canScrollRight && (
         <button
           onClick={() => scrollRef.current?.scrollBy({ left: 180, behavior: "smooth" })}
-          className="absolute right-0 top-0 bottom-0 z-10 px-2 bg-gradient-to-l from-white via-white/90 to-transparent flex items-center"
+          className="absolute right-0 top-0 bottom-0 z-10 px-2 flex items-center"
+          style={{ background: 'linear-gradient(to left, #00674B 60%, transparent)' }}
           aria-label="Scroll tabs right"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </button>
@@ -153,7 +155,7 @@ export default function Navbar({ nonSticky = false }: { nonSticky?: boolean }) {
   return (
     <header className={shouldBeRelative ? 'relative' : 'sticky top-0 z-50'}>
       {/* ── Main bar ─────────────────────────────────────────── */}
-      <div className="bg-[#1a4a2e]">
+      <div style={{ backgroundColor: '#053D2D' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center gap-3">
 
           {/* Logo */}

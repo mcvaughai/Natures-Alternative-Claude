@@ -6,7 +6,7 @@ import Footer from "@/components/layout/Footer";
 
 export default function ForgotPasswordPage() {
   return (
-    <div className="min-h-screen bg-[#f5f0e8] flex flex-col">
+    <div className="min-h-screen bg-[#FCF7F4] flex flex-col">
       <Navbar />
 
       <main className="flex-1 flex items-center justify-center py-12 px-4">
