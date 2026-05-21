@@ -219,7 +219,8 @@ export default function ProductsPage() {
   const saveProduct = async (isActive: boolean) => {
     if (!sellerId)                { alert("Seller profile not found. Please log in again."); return; }
     if (!productForm.name.trim()) { alert("Please enter a product name."); return; }
-    if (!productForm.price)       { alert("Please enter a price."); return; }
+    if (pricingType === 'fixed' && !productForm.price)     { alert("Please enter a price."); return; }
+    if (pricingType === 'per_pound' && !pricePerPound)     { alert("Please enter a price per pound."); return; }
 
     setSaving(true);
     try {
@@ -250,7 +251,7 @@ export default function ProductsPage() {
               name:        productForm.name.trim(),
               slug,
               description: productForm.description.trim() || null,
-              price:       parseFloat(productForm.price),
+              price:       pricingType === 'per_pound' ? parseFloat(pricePerPound) : parseFloat(productForm.price),
               stock_qty:   productForm.stock ? parseInt(productForm.stock) : null,
               in_stock:    productForm.stock ? parseInt(productForm.stock) > 0 : true,
               unit:        productForm.unit || null,
@@ -293,7 +294,8 @@ export default function ProductsPage() {
   const updateProduct = async () => {
     if (!editingProduct)          { return; }
     if (!productForm.name.trim()) { alert("Please enter a product name."); return; }
-    if (!productForm.price)       { alert("Please enter a price."); return; }
+    if (pricingType === 'fixed' && !productForm.price)     { alert("Please enter a price."); return; }
+    if (pricingType === 'per_pound' && !pricePerPound)     { alert("Please enter a price per pound."); return; }
 
     setSaving(true);
     try {
@@ -318,7 +320,7 @@ export default function ProductsPage() {
             body: JSON.stringify({
               name:        productForm.name.trim(),
               description: productForm.description.trim() || null,
-              price:       parseFloat(productForm.price),
+              price:       pricingType === 'per_pound' ? parseFloat(pricePerPound) : parseFloat(productForm.price),
               stock_qty:   productForm.stock ? parseInt(productForm.stock) : null,
               in_stock:    productForm.stock ? parseInt(productForm.stock) > 0 : true,
               unit:        productForm.unit || null,
