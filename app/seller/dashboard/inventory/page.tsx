@@ -491,28 +491,21 @@ export default function InventoryPage() {
                                   <span className="ml-2 text-[10px] font-bold px-1.5 py-0.5 bg-orange-100 text-orange-600 rounded-full">SEASONAL</span>
                                 )}
                               </td>
-                              {/* Stock — inline editor for fixed; unit count display for per_pound */}
+                              {/* Stock — inline ±/input editor for ALL products */}
                               <td className="px-4 py-3">
-                                {p.pricing_type === "per_pound" ? (
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-sm font-semibold text-gray-800">{p.stock_qty ?? 0}</span>
-                                    <span className="text-xs text-gray-400">units</span>
-                                  </div>
-                                ) : (
-                                  <div className="flex items-center gap-1.5">
-                                    <button onClick={() => handleInlineStockUpdate(p.id, Math.max(0, (p.stock_qty ?? 0) - 1))}
-                                      className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 border border-gray-200 flex items-center justify-center text-gray-500 text-sm font-bold leading-none transition-colors">−</button>
-                                    <input type="number" min={0} value={p.stock_qty ?? 0}
-                                      onChange={e => {
-                                        const v = parseInt(e.target.value);
-                                        if (!isNaN(v) && v >= 0) handleInlineStockUpdate(p.id, v);
-                                      }}
-                                      className="w-14 text-center border border-gray-200 rounded-lg py-1 text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-[#1a4a2e]" />
-                                    <button onClick={() => handleInlineStockUpdate(p.id, (p.stock_qty ?? 0) + 1)}
-                                      className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 border border-gray-200 flex items-center justify-center text-gray-500 text-sm font-bold leading-none transition-colors">+</button>
-                                    <span className="text-xs text-gray-400">{p.unit ?? ""}</span>
-                                  </div>
-                                )}
+                                <div className="flex items-center gap-1.5">
+                                  <button onClick={() => handleInlineStockUpdate(p.id, Math.max(0, (p.stock_qty ?? 0) - 1))}
+                                    className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 border border-gray-200 flex items-center justify-center text-gray-500 text-sm font-bold leading-none transition-colors">−</button>
+                                  <input type="number" min={0} value={p.stock_qty ?? 0}
+                                    onChange={e => {
+                                      const v = parseInt(e.target.value);
+                                      if (!isNaN(v) && v >= 0) handleInlineStockUpdate(p.id, v);
+                                    }}
+                                    className="w-14 text-center border border-gray-200 rounded-lg py-1 text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-[#1a4a2e]" />
+                                  <button onClick={() => handleInlineStockUpdate(p.id, (p.stock_qty ?? 0) + 1)}
+                                    className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 border border-gray-200 flex items-center justify-center text-gray-500 text-sm font-bold leading-none transition-colors">+</button>
+                                  <span className="text-xs text-gray-400">{p.pricing_type === "per_pound" ? "slots" : (p.unit ?? "")}</span>
+                                </div>
                               </td>
                               {/* Status */}
                               <td className="px-4 py-3">
@@ -561,94 +554,98 @@ export default function InventoryPage() {
                             {p.pricing_type === "per_pound" && isExpanded && (
                               <tr className="border-b border-gray-100">
                                 <td colSpan={6} className="bg-amber-50/40 px-4 pb-4 pt-2">
-                                  <div className="bg-white rounded-xl p-4 border border-amber-200">
-                                    <h3 className="font-semibold text-[#1a4a2e] mb-1">
-                                      Individual Units — {p.name}
-                                    </h3>
-                                    <p className="text-xs text-gray-500 mb-4">
-                                      Price per pound: <strong>${Number(pricePerPound).toFixed(2)}/lb</strong> — Each unit is listed separately for customers to choose from
-                                    </p>
-
-                                    {/* Add New Unit */}
-                                    <div className="flex items-end gap-3 mb-4 p-3 bg-green-50 rounded-lg border border-green-200">
-                                      <div className="flex-1">
-                                        <label className="block text-xs font-medium text-gray-700 mb-1">Weight (lbs)</label>
-                                        <input
-                                          type="number"
-                                          value={newUnitWeight[p.id] || ""}
-                                          onChange={e => setNewUnitWeight(prev => ({ ...prev, [p.id]: e.target.value }))}
-                                          placeholder="e.g. 0.65"
-                                          step="0.01"
-                                          min="0"
-                                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a4a2e]/30 focus:border-[#1a4a2e]"
-                                        />
-                                      </div>
-                                      <div className="flex-1">
-                                        <label className="block text-xs font-medium text-gray-700 mb-1">Calculated Price</label>
-                                        <div className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 font-semibold text-[#1a4a2e]">
-                                          {newUnitWeight[p.id] && pricePerPound
-                                            ? `$${(pricePerPound * parseFloat(newUnitWeight[p.id] || "0")).toFixed(2)}`
-                                            : "$0.00"}
-                                        </div>
-                                      </div>
-                                      <button
-                                        onClick={() => {
-                                          const weight = parseFloat(newUnitWeight[p.id] || "0");
-                                          if (weight > 0) {
-                                            addProductUnit(p.id, weight, pricePerPound);
-                                          } else {
-                                            alert("Please enter a valid weight.");
-                                          }
-                                        }}
-                                        disabled={addingUnit === p.id}
-                                        className="bg-[#1a4a2e] hover:bg-[#2d6b47] disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap flex items-center gap-1.5"
-                                      >
-                                        {addingUnit === p.id ? <Spinner /> : null}
-                                        {addingUnit === p.id ? "Adding…" : "+ Add Unit"}
-                                      </button>
+                                  {loadingUnits === p.id ? (
+                                    <div className="flex items-center justify-center py-8">
+                                      <div className="w-6 h-6 rounded-full border-2 border-[#1a4a2e] border-t-transparent animate-spin" />
                                     </div>
+                                  ) : (
+                                    <div className="bg-white rounded-xl p-4 border border-amber-200">
+                                      <h3 className="font-semibold text-[#1a4a2e] mb-1">
+                                        Individual Units — {p.name}
+                                      </h3>
+                                      <p className="text-xs text-gray-500 mb-1">
+                                        Price per pound: <strong>${Number(pricePerPound).toFixed(2)}/lb</strong>
+                                      </p>
+                                      <p className="text-xs text-gray-400 mb-4">
+                                        Stock is set to <strong>{p.stock_qty ?? 0}</strong> units. Enter the weight for each unit below. Update stock quantity above to add or remove slots.
+                                      </p>
 
-                                    {/* Units list */}
-                                    {loadingUnits === p.id ? (
-                                      <div className="flex items-center justify-center py-6">
-                                        <div className="w-6 h-6 rounded-full border-2 border-[#1a4a2e] border-t-transparent animate-spin" />
-                                      </div>
-                                    ) : units.length === 0 ? (
-                                      <div className="text-center py-6 text-gray-400">
-                                        <p className="text-2xl mb-2">⚖️</p>
-                                        <p className="text-sm">No units added yet</p>
-                                        <p className="text-xs mt-1">Add individual units above with their exact weights</p>
-                                      </div>
-                                    ) : (
-                                      <div className="space-y-2">
-                                        <div className="grid grid-cols-4 gap-2 text-xs font-semibold text-gray-400 uppercase tracking-wide px-2 pb-1">
-                                          <span>Unit #</span>
-                                          <span>Weight</span>
-                                          <span>Price</span>
-                                          <span>Action</span>
+                                      {(p.stock_qty ?? 0) === 0 ? (
+                                        <div className="text-center py-6 text-gray-400">
+                                          <p className="text-2xl mb-2">⚖️</p>
+                                          <p className="text-sm">Stock quantity is 0</p>
+                                          <p className="text-xs mt-1">Update the stock quantity above to create weight slots</p>
                                         </div>
-                                        {units.map((unit, index) => (
-                                          <div key={unit.id} className="grid grid-cols-4 gap-2 items-center bg-gray-50 rounded-lg px-3 py-2.5">
-                                            <span className="text-sm text-gray-500 font-medium">#{index + 1}</span>
-                                            <span className="text-sm font-semibold text-gray-800">{unit.weight_lbs} lbs</span>
-                                            <span className="text-sm font-bold text-[#1a4a2e]">${Number(unit.price).toFixed(2)}</span>
-                                            <button
-                                              onClick={() => removeProductUnit(unit.id, p.id)}
-                                              className="text-xs text-red-500 hover:text-red-700 font-medium text-left transition-colors"
-                                            >
-                                              Remove
-                                            </button>
+                                      ) : (
+                                        <div className="space-y-2">
+                                          {/* Header */}
+                                          <div className="grid grid-cols-4 gap-3 text-xs font-semibold text-gray-400 uppercase tracking-wide px-2 pb-1 border-b border-gray-100">
+                                            <span>Unit #</span>
+                                            <span>Weight (lbs)</span>
+                                            <span>Price</span>
+                                            <span>Action</span>
                                           </div>
-                                        ))}
-                                        <div className="pt-2 border-t border-gray-100 mt-2">
-                                          <p className="text-xs text-gray-400 text-right">
-                                            {units.length} units total &nbsp;·&nbsp;&nbsp;
-                                            {units.reduce((sum, u) => sum + u.weight_lbs, 0).toFixed(2)} lbs combined
-                                          </p>
+
+                                          {generateUnitSlots(p, units).map((slot) => (
+                                            <UnitSlotRow
+                                              key={slot.index}
+                                              slot={slot}
+                                              pricePerPound={pricePerPound}
+                                              onSave={async (weight: number) => {
+                                                const session = await getValidSellerSession();
+                                                if (!session?.access_token) return;
+                                                const price = parseFloat((pricePerPound * weight).toFixed(2));
+                                                const res = await fetch(
+                                                  `${SUPABASE_URL}/rest/v1/product_units`,
+                                                  {
+                                                    method: "POST",
+                                                    headers: { ...getAuthHeaders(session.access_token), "Content-Type": "application/json", Prefer: "return=representation" },
+                                                    body: JSON.stringify({ product_id: p.id, seller_id: session.seller_id, weight_lbs: weight, price, status: "available" }),
+                                                  }
+                                                );
+                                                if (res.ok) {
+                                                  const saved: ProductUnit[] = await res.json();
+                                                  setProductUnits(prev => ({
+                                                    ...prev,
+                                                    [p.id]: [...(prev[p.id] || []), saved[0]].sort((a, b) => a.weight_lbs - b.weight_lbs),
+                                                  }));
+                                                  setSuccessMessage("Unit weight saved!");
+                                                  setTimeout(() => setSuccessMessage(""), 2500);
+                                                } else {
+                                                  alert("Error saving unit: " + await res.text());
+                                                }
+                                              }}
+                                              onRemove={async (unitId: string) => {
+                                                const session = await getValidSellerSession();
+                                                if (!session?.access_token) return;
+                                                await fetch(
+                                                  `${SUPABASE_URL}/rest/v1/product_units?id=eq.${unitId}`,
+                                                  {
+                                                    method: "PATCH",
+                                                    headers: { ...getAuthHeaders(session.access_token), "Content-Type": "application/json" },
+                                                    body: JSON.stringify({ status: "sold" }),
+                                                  }
+                                                );
+                                                setProductUnits(prev => ({
+                                                  ...prev,
+                                                  [p.id]: (prev[p.id] || []).filter(u => u.id !== unitId),
+                                                }));
+                                                setSuccessMessage("Unit removed!");
+                                                setTimeout(() => setSuccessMessage(""), 2500);
+                                              }}
+                                            />
+                                          ))}
+
+                                          {/* Summary */}
+                                          <div className="pt-2 border-t border-gray-100 text-right">
+                                            <p className="text-xs text-gray-400">
+                                              {units.length} of {p.stock_qty ?? 0} units have weights assigned
+                                            </p>
+                                          </div>
                                         </div>
-                                      </div>
-                                    )}
-                                  </div>
+                                      )}
+                                    </div>
+                                  )}
                                 </td>
                               </tr>
                             )}
@@ -798,5 +795,103 @@ export default function InventoryPage() {
         </div>
       </div>
     </SellerLayout>
+  );
+}
+
+// ── Helpers outside the page component ───────────────────────────────────────
+
+interface UnitSlot {
+  index: number;
+  unit: ProductUnit | null;
+  hasData: boolean;
+}
+
+function generateUnitSlots(product: InventoryProduct, existingUnits: ProductUnit[]): UnitSlot[] {
+  const stockQty = product.stock_qty ?? 0;
+  const slots: UnitSlot[] = [];
+  for (let i = 0; i < stockQty; i++) {
+    const unit = existingUnits[i] ?? null;
+    slots.push({ index: i, unit, hasData: !!unit });
+  }
+  return slots;
+}
+
+interface UnitSlotRowProps {
+  slot: UnitSlot;
+  pricePerPound: number;
+  onSave: (weight: number) => Promise<void>;
+  onRemove: (unitId: string) => Promise<void>;
+}
+
+function UnitSlotRow({ slot, pricePerPound, onSave, onRemove }: UnitSlotRowProps) {
+  const [weight, setWeight] = useState(slot.unit?.weight_lbs?.toString() ?? "");
+  const [saving, setSaving] = useState(false);
+
+  const parsedWeight = parseFloat(weight);
+  const calculatedPrice =
+    weight && pricePerPound && !isNaN(parsedWeight) && parsedWeight > 0
+      ? (pricePerPound * parsedWeight).toFixed(2)
+      : null;
+
+  return (
+    <div className={`grid grid-cols-4 gap-3 items-center px-2 py-2 rounded-lg ${slot.hasData ? "bg-green-50" : "bg-gray-50"}`}>
+      {/* Unit number */}
+      <span className="text-sm font-medium text-gray-600">
+        Unit #{slot.index + 1}
+        {slot.hasData && <span className="ml-1 text-xs text-green-600">✓</span>}
+      </span>
+
+      {/* Weight */}
+      <div>
+        {slot.hasData ? (
+          <span className="text-sm font-bold text-gray-800">{slot.unit!.weight_lbs} lbs</span>
+        ) : (
+          <input
+            type="number"
+            value={weight}
+            onChange={e => setWeight(e.target.value)}
+            placeholder="0.00"
+            step="0.01"
+            min="0"
+            className="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a4a2e]/30 focus:border-[#1a4a2e]"
+          />
+        )}
+      </div>
+
+      {/* Price */}
+      <span className={`text-sm font-bold ${slot.hasData ? "text-[#1a4a2e]" : calculatedPrice ? "text-[#1a4a2e]/70" : "text-gray-300"}`}>
+        {slot.hasData
+          ? `$${Number(slot.unit!.price).toFixed(2)}`
+          : calculatedPrice
+            ? `$${calculatedPrice}`
+            : "$0.00"}
+      </span>
+
+      {/* Action */}
+      <div>
+        {slot.hasData ? (
+          <button
+            onClick={() => onRemove(slot.unit!.id)}
+            className="text-xs text-red-500 hover:text-red-700 font-medium transition-colors"
+          >
+            Remove
+          </button>
+        ) : (
+          <button
+            onClick={async () => {
+              const w = parseFloat(weight);
+              if (!w || w <= 0) { alert("Please enter a valid weight."); return; }
+              setSaving(true);
+              await onSave(w);
+              setSaving(false);
+            }}
+            disabled={!weight || saving}
+            className="text-xs bg-[#1a4a2e] hover:bg-[#2d6b47] text-white px-3 py-1 rounded-lg disabled:opacity-50 transition-colors"
+          >
+            {saving ? "…" : "Save"}
+          </button>
+        )}
+      </div>
+    </div>
   );
 }
