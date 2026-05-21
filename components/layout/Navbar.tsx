@@ -59,7 +59,7 @@ function TabsRow({ activeKey }: { activeKey: string }) {
   }, []);
 
   return (
-    <div className="relative" style={{ backgroundColor: '#00674B' }}>
+    <div className="sticky z-40" style={{ top: '94px', backgroundColor: '#00674B' }}>
       {/* Left scroll arrow */}
       {canScrollLeft && (
         <button
@@ -155,8 +155,8 @@ export default function Navbar({ nonSticky = false }: { nonSticky?: boolean }) {
   return (
     <header className={shouldBeRelative ? 'relative' : 'sticky top-0 z-50'}>
       {/* ── Main bar ─────────────────────────────────────────── */}
-      <div style={{ backgroundColor: '#053D2D' }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center gap-3">
+      <div style={{ backgroundColor: '#053D2D', height: '94px' }} className="flex items-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex items-center gap-3">
 
           {/* Logo */}
           <Link href="/" className="flex items-center shrink-0">
