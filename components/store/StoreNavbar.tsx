@@ -52,7 +52,7 @@ export default function StoreNavbar({ storeId, activePage }: StoreNavbarProps) {
   }, [storeId])
 
   return (
-    <nav className="sticky top-0 bg-white border-b border-gray-200" style={{ zIndex: 40 }}>
+    <nav className="sticky top-0 bg-white border-b border-gray-200" style={{ zIndex: 40, boxShadow: '0px 4px 4px rgba(0, 0, 0, 0.25)' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center gap-4">
 
         {/* Logo + farm name */}
