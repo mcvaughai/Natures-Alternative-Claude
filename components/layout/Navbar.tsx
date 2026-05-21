@@ -59,7 +59,7 @@ function TabsRow({ activeKey }: { activeKey: string }) {
   }, []);
 
   return (
-    <div className="sticky z-40" style={{ top: '89px', backgroundColor: '#00674B' }}>
+    <div className="sticky z-40" style={{ top: '89px', backgroundColor: '#00674B', boxShadow: '0px 4px 4px rgba(0, 0, 0, 0.25)' }}>
       {/* Left scroll arrow */}
       {canScrollLeft && (
         <button
