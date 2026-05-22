@@ -49,7 +49,7 @@ function ExploreProductCard({ product }: { product: Product }) {
 
   return (
     <div
-      className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow group cursor-pointer"
+      className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-visible hover:shadow-md transition-shadow group cursor-pointer"
       onClick={() => router.push(`/product/${product.id}`)}
     >
       <div className="relative bg-gray-200 aspect-square overflow-hidden">
@@ -94,9 +94,17 @@ function ExploreProductCard({ product }: { product: Product }) {
           <span className="font-bold text-[#1a4a2e] text-sm">${product.price.toFixed(2)}</span>
           <button
             onClick={handleAddToCart}
-            className={`rounded-full p-1.5 transition-colors ${added ? "bg-[#1a4a2e] hover:bg-[#2d6b47]" : "bg-[#8b1a1a] hover:bg-[#6d1414]"} text-white`}
+            className={`relative rounded-full p-1.5 transition-colors ${added ? "bg-[#1a4a2e] hover:bg-[#2d6b47]" : "bg-[#8b1a1a] hover:bg-[#6d1414]"} text-white`}
             aria-label="Add to cart"
           >
+            {!added && (
+              <span
+                className="absolute -top-1.5 -right-1.5 bg-white text-[#8b1a1a] rounded-full flex items-center justify-center font-bold"
+                style={{ width: '14px', height: '14px', fontSize: '10px', lineHeight: '1', border: '1.5px solid #b91c1c' }}
+              >
+                +
+              </span>
+            )}
             {added ? (
               <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
