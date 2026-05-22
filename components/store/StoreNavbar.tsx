@@ -64,11 +64,11 @@ export default function StoreNavbar({ storeId, activePage }: StoreNavbarProps) {
             <img
               src={store.logo_url}
               alt={store.farm_name}
-              style={{ height: '52px' }}
+              style={{ height: '44px' }}
               className="w-auto object-contain"
             />
           ) : (
-            <div className="w-12 h-12 bg-[#1a4a2e]/10 rounded-lg flex items-center justify-center shrink-0">
+            <div className="bg-[#1a4a2e]/10 rounded-lg flex items-center justify-center shrink-0" style={{ height: '44px', width: '44px' }}>
               <span className="text-[#1a4a2e] font-bold text-lg">
                 {store?.farm_name?.charAt(0) ?? '…'}
               </span>
