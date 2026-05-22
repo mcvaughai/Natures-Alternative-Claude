@@ -1,6 +1,6 @@
 export default function WhoWeAre() {
   return (
-    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+    <section className="w-full px-6 py-14">
       <h2 className="text-center text-2xl sm:text-3xl font-bold text-gray-900 mb-12 uppercase tracking-wider">
         Who We Are and What We Do
       </h2>

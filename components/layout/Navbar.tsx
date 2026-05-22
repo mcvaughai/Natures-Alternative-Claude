@@ -77,7 +77,7 @@ function TabsRow({ activeKey }: { activeKey: string }) {
       {/* Scrollable tab list */}
       <div
         ref={scrollRef}
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex gap-1 overflow-x-auto py-2"
+        className="w-full px-6 flex gap-1 overflow-x-auto py-2"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {TABS.map((tab) => (
@@ -156,7 +156,7 @@ export default function Navbar({ nonSticky = false }: { nonSticky?: boolean }) {
     <header className={shouldBeRelative ? 'relative' : 'sticky top-0 z-50'}>
       {/* ── Main bar ─────────────────────────────────────────── */}
       <div style={{ backgroundColor: '#053D2D', height: '89px', boxShadow: '0px 4px 4px rgba(0, 0, 0, 0.25)', position: 'relative', zIndex: 51 }} className="flex items-center">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex items-center gap-3">
+        <div className="w-full px-6 flex items-center gap-3">
 
           {/* Logo */}
           <Link href="/" className="flex items-center shrink-0">

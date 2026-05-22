@@ -48,7 +48,7 @@ function ReviewCard({ text, stars = 0, reviewer, isEmpty = false }: ReviewCardPr
 
 export default function ReviewsSection() {
   return (
-    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <section className="w-full px-6 py-6">
       <h2 className="text-xl font-bold text-gray-800 mb-6">What people think of this product</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <ReviewCard

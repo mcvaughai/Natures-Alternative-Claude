@@ -88,7 +88,7 @@ export default function AboutPage() {
         </section>
 
         {/* ── Mission ──────────────────────────────────────────────── */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <section className="w-full px-6 py-16">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="bg-gray-200 rounded-2xl aspect-video flex items-center justify-center text-gray-400 order-2 lg:order-1">
               <svg xmlns="http://www.w3.org/2000/svg" className="w-16 h-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -109,7 +109,7 @@ export default function AboutPage() {
 
         {/* ── Values ───────────────────────────────────────────────── */}
         <section className="bg-white py-16">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="w-full px-6">
             <h2 className="text-3xl font-bold text-gray-900 text-center mb-10">What We Stand For</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {VALUES.map((v) => (
@@ -124,7 +124,7 @@ export default function AboutPage() {
         </section>
 
         {/* ── Story ────────────────────────────────────────────────── */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <section className="w-full px-6 py-16">
           <h2 className="text-3xl font-bold text-gray-900 text-center mb-10">Our Story</h2>
           <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-sm border border-gray-100 p-8 sm:p-12">
             <p className="text-gray-700 leading-relaxed mb-4">
@@ -144,7 +144,7 @@ export default function AboutPage() {
 
         {/* ── Team ─────────────────────────────────────────────────── */}
         <section className="bg-white py-16">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="w-full px-6">
             <h2 className="text-3xl font-bold text-gray-900 text-center mb-10">The Team Behind Natures Alternative</h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 max-w-3xl mx-auto">
               {TEAM.map((member, i) => (
@@ -164,7 +164,7 @@ export default function AboutPage() {
         </section>
 
         {/* ── Featured Farms ───────────────────────────────────────── */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <section className="w-full px-6 py-16">
           <h2 className="text-3xl font-bold text-gray-900 text-center mb-10">Meet Our Farmers</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {FARMS.map((farm) => (

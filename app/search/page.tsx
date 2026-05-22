@@ -51,7 +51,7 @@ function SearchResults() {
     <>
       {/* Search Header */}
       <div className="bg-white border-b border-gray-200 py-5">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-6">
           {query ? (
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
               Search Results for: <span className="text-[#1a4a2e]">&quot;{query}&quot;</span>
@@ -63,7 +63,7 @@ function SearchResults() {
       </div>
 
       {/* Two-column layout */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="w-full px-6 py-8">
         <FilterProvider>
           <div className="flex flex-col lg:flex-row gap-8 items-start">
             <FilterSidebar />

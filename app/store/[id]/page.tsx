@@ -222,7 +222,7 @@ export default function StorePage() {
       </div>
 
       {/* ── 3. SHOP OUR BESTSELLERS ── */}
-      <section className="max-w-7xl mx-auto px-6 py-14">
+      <section className="w-full px-6 py-14">
         <h2 className="text-3xl font-black text-center tracking-widest uppercase text-gray-900 mb-4">
           Shop Our Bestsellers
         </h2>
@@ -309,7 +309,7 @@ export default function StorePage() {
       </section>
 
       {/* ── 5. WHO WE ARE AND WHAT WE DO ── */}
-      <section className="max-w-7xl mx-auto px-6 py-14">
+      <section className="w-full px-6 py-14">
         <h2 className="text-3xl font-black text-center tracking-widest uppercase text-gray-900 mb-4">
           Who We Are And What We Do
         </h2>
@@ -355,7 +355,7 @@ export default function StorePage() {
       </section>
 
       {/* ── 6. WHAT PEOPLE THINK OF US ── */}
-      <section className="max-w-7xl mx-auto px-6 pb-14">
+      <section className="w-full px-6 pb-14">
         <h2 className="text-3xl font-black text-center tracking-widest uppercase text-gray-900 mb-4">
           What People Think Of Us
         </h2>
@@ -402,7 +402,7 @@ export default function StorePage() {
       </section>
 
       {/* ── 7. DISCOVER MORE ABOUT US ── */}
-      <section className="max-w-7xl mx-auto px-6 pb-16">
+      <section className="w-full px-6 pb-16">
         <h2 className="text-3xl font-black text-center tracking-widest uppercase text-gray-900 mb-4">
           Discover More About Us
         </h2>

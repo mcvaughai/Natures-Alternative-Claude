@@ -7,7 +7,7 @@ export default function ShopHeroBanner() {
       </div>
 
       {/* Content */}
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex flex-col justify-center">
+      <div className="relative w-full px-6 h-full flex flex-col justify-center">
         <p className="text-green-300 text-sm font-medium tracking-wide mb-1">Welcome to our store</p>
         <h1 className="text-white text-3xl sm:text-4xl font-bold mb-2">Shop All Products</h1>
         <p className="text-green-100/80 text-sm max-w-md">

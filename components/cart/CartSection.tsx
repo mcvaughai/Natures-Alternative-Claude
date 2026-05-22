@@ -206,7 +206,7 @@ export default function CartSection() {
   const { cartItems, totalItems, subtotal } = useCart();
 
   return (
-    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <section className="w-full px-6 py-8">
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8 items-start">
 
         {/* ── LEFT: Cart items ── */}

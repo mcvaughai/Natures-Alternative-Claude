@@ -283,7 +283,7 @@ function ActionButtonsCard() {
 // ── Farm Spotlight ────────────────────────────────────────────────────────────
 function FarmSpotlight() {
   return (
-    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <section className="w-full px-6 py-8">
       <SectionHeader title="You Ordered From" />
 
       <div className="max-w-sm">
@@ -318,7 +318,7 @@ function FarmSpotlight() {
 // ── You Might Also Like ───────────────────────────────────────────────────────
 function SuggestedProducts() {
   return (
-    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
+    <section className="w-full px-6 pb-8">
       <SectionHeader title="You Might Also Like" />
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
         {SUGGESTED_PRODUCTS.map((p) => (
@@ -337,7 +337,7 @@ export default function OrderConfirmationSection() {
       <ConfirmationHero />
 
       {/* Two-column body */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
+      <section className="w-full px-6 pb-8">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 items-start">
 
           {/* Left column */}

@@ -139,7 +139,7 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
   const canAddToCart = !isPerPound || !!selectedUnit;
 
   return (
-    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <section className="w-full px-6 py-6">
       <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr_280px] gap-6 lg:gap-8">
 
         {/* ── LEFT: Images ──────────────────────────────────────── */}

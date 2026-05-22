@@ -144,7 +144,7 @@ export default function FarmsPage() {
 
         {/* ── Stats Bar ─────────────────────────────────────────────────────── */}
         <div className="bg-[#eee8dc] border-b border-[#ddd5c5]">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="w-full px-6 py-4">
             <div className="flex items-center justify-center gap-8 sm:gap-16 flex-wrap">
               <div className="flex items-center gap-2 text-gray-700">
                 <span className="text-xl">🌿</span>
@@ -162,7 +162,7 @@ export default function FarmsPage() {
         </div>
 
         {/* ── Main Content ──────────────────────────────────────────────────── */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="w-full px-6 py-8">
           <FarmFilterProvider>
             <div className="flex flex-col lg:flex-row gap-8 items-start">
               <FarmFilterSidebar />
@@ -222,7 +222,7 @@ export default function FarmsPage() {
 
         {/* ── Featured Farms ────────────────────────────────────────────────── */}
         {farms.slice(0, 3).length > 0 && (
-          <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+          <section className="w-full px-6 pb-16">
             <SectionHeader title="Featured Farms" />
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
               {farms.slice(0, 3).map((farm) => (

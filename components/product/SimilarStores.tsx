@@ -25,7 +25,7 @@ const STORES = [
 
 export default function SimilarStores() {
   return (
-    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <section className="w-full px-6 py-6">
       <h2 className="text-xl font-bold text-gray-800 mb-6">Similar Stores</h2>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {STORES.map((store) => (

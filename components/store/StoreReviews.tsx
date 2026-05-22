@@ -122,7 +122,7 @@ export default function StoreReviews() {
 
   return (
     <section className="bg-white py-14">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-6">
         <h2 className="text-center text-2xl sm:text-3xl font-bold text-gray-900 mb-12 uppercase tracking-wider">
           What People Think of Us
         </h2>

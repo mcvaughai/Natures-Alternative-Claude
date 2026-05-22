@@ -241,7 +241,7 @@ export default function StoreShopPage() {
       )}
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8 flex gap-6">
+      <div className="w-full px-6 py-8 flex gap-6">
 
         {/* LEFT SIDEBAR - Filters */}
         <div className="w-64 flex-shrink-0">

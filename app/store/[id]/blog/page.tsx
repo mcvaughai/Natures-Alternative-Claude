@@ -111,13 +111,13 @@ export default function StoreBlogPage() {
 
         {/* ── Blog Header ── */}
         <div className="bg-white border-b border-gray-200 py-8">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="w-full px-6">
             <h1 className="text-3xl font-bold text-gray-900 mb-1">{store.farm_name} Blog</h1>
             <p className="text-gray-500">Stories from the farm</p>
           </div>
         </div>
 
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+        <div className="w-full px-6 py-10 space-y-8">
 
           {posts.length === 0 ? (
             /* ── Empty State ── */

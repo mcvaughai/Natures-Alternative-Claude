@@ -1,6 +1,6 @@
 export default function AdBanner() {
   return (
-    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <section className="w-full px-6 py-6">
       <div className="relative bg-gray-300 rounded-2xl overflow-hidden h-36 sm:h-44 w-full flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity">
         {/* Placeholder icon */}
         <div className="text-gray-400 flex flex-col items-center gap-2">

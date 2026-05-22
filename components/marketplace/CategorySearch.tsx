@@ -8,7 +8,7 @@ const CATEGORIES = [
 
 export default function CategorySearch() {
   return (
-    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+    <section className="w-full px-6 py-4">
       <h2 className="text-xl font-bold text-gray-800 mb-6">Category Search</h2>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
         {CATEGORIES.map((cat) => (

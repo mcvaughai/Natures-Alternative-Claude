@@ -8,7 +8,7 @@ export default function SettingsPage() {
     <div className="min-h-screen bg-[#FCF7F4] flex flex-col">
       <Navbar />
       <main className="flex-1 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-6">
           <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6 items-start">
             <AccountSidebar />
             <SettingsSection />

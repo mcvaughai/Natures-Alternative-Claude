@@ -45,7 +45,7 @@ export default function AllProductsGrid({ category = "all" }: Props) {
       : PRODUCTS.filter((p) => p.category === category);
 
   return (
-    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+    <section className="w-full px-6 py-4">
       <SectionHeader title="All Products" />
       {filtered.length === 0 ? (
         <p className="text-gray-500 text-sm py-8 text-center">No products found in this category.</p>

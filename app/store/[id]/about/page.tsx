@@ -132,7 +132,7 @@ export default function StoreAboutPage() {
           )}
         </div>
 
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-6">
+        <div className="w-full px-6 py-10 space-y-6">
 
           {/* ── Our Story ── */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">

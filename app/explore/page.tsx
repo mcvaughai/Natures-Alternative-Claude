@@ -152,7 +152,7 @@ export default function ExplorePage() {
       <main className="flex-1">
         <HeroBanner />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="w-full px-6 py-8">
           <FilterProvider>
             <div className="flex flex-col lg:flex-row gap-8 items-start">
               <FilterSidebar />

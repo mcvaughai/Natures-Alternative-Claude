@@ -10,7 +10,7 @@ const SIMILAR_ITEMS = [
 
 export default function SimilarItems() {
   return (
-    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <section className="w-full px-6 py-6">
       <SectionHeader title="Similar Items" />
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {SIMILAR_ITEMS.map((p) => (

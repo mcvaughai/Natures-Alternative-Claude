@@ -503,7 +503,7 @@ function OrderSummary() {
 // ── Main export ───────────────────────────────────────────────────────────────
 export default function CheckoutSection() {
   return (
-    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <section className="w-full px-6 py-8">
       <h1 className="text-2xl font-bold text-gray-900 mb-7">Checkout</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-8 items-start">
