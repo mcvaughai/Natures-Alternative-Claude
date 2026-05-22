@@ -64,11 +64,11 @@ export default function StoreNavbar({ storeId, activePage }: StoreNavbarProps) {
             <img
               src={store.logo_url}
               alt={store.farm_name}
-              style={{ height: '44px' }}
-              className="w-auto object-contain"
+              style={{ height: '52px', width: 'auto' }}
+              className="object-contain"
             />
           ) : (
-            <div className="bg-[#1a4a2e]/10 rounded-lg flex items-center justify-center shrink-0" style={{ height: '44px', width: '44px' }}>
+            <div className="bg-[#1a4a2e]/10 rounded-lg flex items-center justify-center shrink-0" style={{ height: '52px', width: '52px' }}>
               <span className="text-[#1a4a2e] font-bold text-lg">
                 {store?.farm_name?.charAt(0) ?? '…'}
               </span>
@@ -77,9 +77,9 @@ export default function StoreNavbar({ storeId, activePage }: StoreNavbarProps) {
           <div className="leading-tight hidden sm:block">
             {store ? (
               <>
-                <p className="font-bold text-green-900 text-xl leading-none">{store.farm_name}</p>
+                <p className="font-bold text-green-900 leading-none" style={{ fontSize: '20px', lineHeight: '1.2' }}>{store.farm_name}</p>
                 {store.city && store.state && (
-                  <p className="text-sm text-gray-500 mt-0.5">{store.city}, {store.state}</p>
+                  <p className="text-gray-500 mt-0.5" style={{ fontSize: '13px' }}>{store.city}, {store.state}</p>
                 )}
               </>
             ) : (
