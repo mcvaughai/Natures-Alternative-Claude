@@ -43,7 +43,7 @@ export default function NaturalSkincarePage() {
       }
       const categoryId = categories[0].id
       const productsRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/products?category_id=eq.${categoryId}&status=eq.active&select=id,name,price,unit,description,images&order=created_at.desc`,
+        `${SUPABASE_URL}/rest/v1/products?category_id=eq.${categoryId}&status=eq.active&select=id,name,price,unit,description,images,pricing_type,price_per_pound&order=created_at.desc`,
         { headers: HEADERS }
       )
       const data = await productsRes.json()

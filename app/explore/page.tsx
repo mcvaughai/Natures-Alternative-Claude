@@ -52,7 +52,7 @@ export default function ExplorePage() {
     setError("");
     try {
       const data = await fetchFromSupabase<Product[]>(
-        "products?status=eq.active&select=id,name,description,price,images,seller_id,sellers(id,farm_name,slug)&order=created_at.desc"
+        "products?status=eq.active&select=id,name,description,price,unit,images,pricing_type,price_per_pound,seller_id,sellers(id,farm_name,slug)&order=created_at.desc"
       );
       setProducts(data ?? []);
     } catch (err) {

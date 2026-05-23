@@ -34,8 +34,8 @@ function SearchResults() {
     setError("");
     try {
       const endpoint = query
-        ? `products?name=ilike.*${encodeURIComponent(query)}*&status=eq.active&select=id,name,description,price,images&order=created_at.desc`
-        : "products?status=eq.active&select=id,name,description,price,images&order=created_at.desc";
+        ? `products?name=ilike.*${encodeURIComponent(query)}*&status=eq.active&select=id,name,description,price,unit,images,pricing_type,price_per_pound&order=created_at.desc`
+        : "products?status=eq.active&select=id,name,description,price,unit,images,pricing_type,price_per_pound&order=created_at.desc";
 
       const data = await fetchFromSupabase<Product[]>(endpoint);
       setProducts(data ?? []);
