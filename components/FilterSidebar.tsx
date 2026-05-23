@@ -312,7 +312,7 @@ function SidebarContent({ category }: { category?: string }) {
   const { filters, setFilters, activeCount, clearAll } = useFilterContext();
 
   const [openSections, setOpenSections] = useState({
-    categories: true, subcategories: true, fulfillment: true,
+    subcategories: true, fulfillment: true,
     distance: true, price: true, certifications: true,
     rating: true, availability: true, farms: true,
   });
@@ -331,7 +331,6 @@ function SidebarContent({ category }: { category?: string }) {
     });
   }
 
-  const visibleSubcats = filters.categories.flatMap((c) => SUBCATEGORIES[c] ?? []);
   const categorySubcats = category ? (SUBCATEGORIES[category] ?? []) : [];
   const categoryTitle = category ? (CATEGORY_LABEL[category] ?? category) : "";
 
@@ -374,68 +373,7 @@ function SidebarContent({ category }: { category?: string }) {
             </div>
           </Section>
         )
-      ) : (
-        <>
-          {/* Explore page: show full Categories section */}
-          <Section title="Categories" open={openSections.categories} onToggle={() => toggleSection("categories")}>
-            <div className="space-y-2">
-              {/* All Products row */}
-              <label className="flex items-center justify-between cursor-pointer group">
-                <div className="flex items-center gap-2.5">
-                  <input
-                    type="checkbox"
-                    checked={filters.categories.length === 0}
-                    onChange={() => setFilters((prev) => ({ ...prev, categories: [], subcategories: [] }))}
-                    className="w-4 h-4 rounded border-gray-300 accent-[#1a4a2e] cursor-pointer"
-                  />
-                  <span className={`text-sm ${filters.categories.length === 0 ? "text-[#1a4a2e] font-medium" : "text-gray-700 group-hover:text-gray-900"}`}>
-                    All Products
-                  </span>
-                </div>
-                <span className="text-xs text-gray-400">(128)</span>
-              </label>
-              {/* Other categories */}
-              {CATEGORIES.slice(1).map((cat) => (
-                <label key={cat.key} className="flex items-center justify-between cursor-pointer group">
-                  <div className="flex items-center gap-2.5">
-                    <input
-                      type="checkbox"
-                      checked={filters.categories.includes(cat.key)}
-                      onChange={() => toggleCheckbox("categories", cat.key)}
-                      className="w-4 h-4 rounded border-gray-300 accent-[#1a4a2e] cursor-pointer"
-                    />
-                    <span className={`text-sm ${filters.categories.includes(cat.key) ? "text-[#1a4a2e] font-medium" : "text-gray-700 group-hover:text-gray-900"}`}>
-                      {cat.label}
-                    </span>
-                  </div>
-                  <span className="text-xs text-gray-400">({cat.count})</span>
-                </label>
-              ))}
-            </div>
-          </Section>
-
-          {/* Subcategories — visible when a category with subs is selected */}
-          {visibleSubcats.length > 0 && (
-            <Section title="Subcategories" open={openSections.subcategories} onToggle={() => toggleSection("subcategories")}>
-              <div className="space-y-2">
-                {visibleSubcats.map((sub) => (
-                  <label key={sub} className="flex items-center gap-2.5 cursor-pointer group">
-                    <input
-                      type="checkbox"
-                      checked={filters.subcategories.includes(sub)}
-                      onChange={() => toggleCheckbox("subcategories", sub)}
-                      className="w-4 h-4 rounded border-gray-300 accent-[#1a4a2e] cursor-pointer"
-                    />
-                    <span className={`text-sm ${filters.subcategories.includes(sub) ? "text-[#1a4a2e] font-medium" : "text-gray-700 group-hover:text-gray-900"}`}>
-                      {sub}
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </Section>
-          )}
-        </>
-      )}
+      ) : null}
 
       {/* Fulfillment */}
       <Section title="Fulfillment Type" open={openSections.fulfillment} onToggle={() => toggleSection("fulfillment")}>
