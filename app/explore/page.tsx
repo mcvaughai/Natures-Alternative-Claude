@@ -51,39 +51,53 @@ export default function ExplorePage() {
     setLoading(true);
     setError("");
     try {
+      // Step 1: fetch products
       const res = await fetch(
         `${SUPABASE_URL}/rest/v1/products?status=eq.active&select=*&order=created_at.desc`,
         { headers: supabaseHeaders }
       );
-      console.log('Products response status:', res.status);
-      let products = await res.json();
-      console.log('Products data:', products);
-      console.log('Is array?', Array.isArray(products), '| Length:', Array.isArray(products) ? products.length : 'n/a');
+      const data = await res.json();
+      console.log('Products:', data?.length);
 
-      if (!Array.isArray(products)) {
-        console.error('Products fetch returned non-array:', JSON.stringify(products));
+      if (!Array.isArray(data) || data.length === 0) {
         setProducts([]);
         return;
       }
 
-      const sellerIds = [...new Set(products.map((p: any) => p.seller_id).filter(Boolean))];
+      // Step 2: collect unique seller IDs
+      const sellerIds = [...new Set(data.map((p: any) => p.seller_id).filter(Boolean))];
+      console.log('Seller IDs:', sellerIds);
+
+      let sellersMap: any = {};
+
       if (sellerIds.length > 0) {
+        const idFilter = sellerIds.map((id: string) => `id=eq.${id}`).join(',');
         const sellersRes = await fetch(
-          `${SUPABASE_URL}/rest/v1/sellers?or=(${sellerIds.map((id: string) => `id=eq.${id}`).join(',')})&select=id,farm_name,store_name,slug,fulfillment`,
+          `${SUPABASE_URL}/rest/v1/sellers?or=(${idFilter})&select=id,farm_name,store_name,slug,fulfillment`,
           { headers: supabaseHeaders }
         );
-        console.log('Sellers fetch status:', sellersRes.status);
         const sellersData = await sellersRes.json();
-        console.log('Sellers data:', sellersData);
+        console.log('Sellers response:', sellersData);
+
         if (Array.isArray(sellersData)) {
-          const sellersMap = sellersData.reduce((acc: any, s: any) => { acc[s.id] = s; return acc; }, {});
-          products = products.map((p: any) => ({ ...p, sellers: sellersMap[p.seller_id] || null }));
+          sellersData.forEach((s: any) => { sellersMap[s.id] = s; });
         }
       }
-      setProducts(products);
-    } catch (err) {
-      console.error('Explore fetch error:', err);
-      setError("Failed to load products.");
+
+      console.log('Sellers map:', sellersMap);
+
+      // Step 3: merge sellers into products, THEN set state
+      const productsWithSellers = data.map((p: any) => ({
+        ...p,
+        sellers: sellersMap[p.seller_id] || null,
+      }));
+
+      console.log('First product with seller:', productsWithSellers[0]?.name, productsWithSellers[0]?.sellers);
+
+      setProducts(productsWithSellers);
+    } catch (err: any) {
+      console.error('Fetch error:', err);
+      setProducts([]);
     } finally {
       setLoading(false);
     }

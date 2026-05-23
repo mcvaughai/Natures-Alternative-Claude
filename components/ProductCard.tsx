@@ -11,6 +11,7 @@ interface ProductCardProps {
     images?: string[]
     pricing_type?: string
     price_per_pound?: number
+    status?: string
     stock_quantity?: number
     low_stock_threshold?: number
     fulfillment?: string[]
