@@ -36,25 +36,27 @@ export default function ExplorePage() {
         return
       }
 
-      const sellerIds = [...new Set(data.map((p: any) => p.seller_id).filter(Boolean))]
-      let sellersMap: any = {}
+      const sellersRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/sellers?select=id,farm_name,store_name,slug,fulfillment`,
+        { headers }
+      )
+      const sellersData = await sellersRes.json()
+      console.log('Sellers fetched:', sellersData)
 
-      if (sellerIds.length > 0) {
-        const idFilter = sellerIds.map((id: string) => `id=eq.${id}`).join(',')
-        const sellersRes = await fetch(
-          `${SUPABASE_URL}/rest/v1/sellers?or=(${idFilter})&select=id,farm_name,store_name,slug,fulfillment`,
-          { headers }
-        )
-        const sellersData = await sellersRes.json()
-        if (Array.isArray(sellersData)) {
-          sellersData.forEach((s: any) => { sellersMap[s.id] = s })
-        }
+      const sellersMap: any = {}
+      if (Array.isArray(sellersData)) {
+        sellersData.forEach((s: any) => {
+          sellersMap[s.id] = s
+          console.log('Seller:', s.id, s.farm_name, s.fulfillment)
+        })
       }
 
       const productsWithSellers = data.map((p: any) => ({
         ...p,
         sellers: sellersMap[p.seller_id] || null
       }))
+
+      console.log('First product sellers:', productsWithSellers[0]?.sellers)
 
       setProducts(productsWithSellers)
     } catch (err) {
