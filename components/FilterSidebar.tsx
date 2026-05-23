@@ -561,8 +561,17 @@ export default function FilterSidebar({ category }: { category?: string }) {
       </div>
 
       {/* Desktop sidebar */}
-      <aside className="hidden lg:block w-64 shrink-0">
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto">
+      <aside
+        className="hidden lg:block w-64 shrink-0"
+        style={{
+          position: 'sticky',
+          top: '160px',
+          alignSelf: 'flex-start',
+          maxHeight: 'calc(100vh - 180px)',
+          overflowY: 'auto',
+        }}
+      >
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
           <div className="flex items-center justify-between mb-1">
             <h2 className="font-bold text-gray-900">Filters</h2>
           </div>
