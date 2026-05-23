@@ -51,20 +51,47 @@ export default function ExplorePage() {
     setLoading(true);
     setError("");
     try {
+      // --- Step 1: try WITHOUT status filter to see what exists ---
+      const allRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/products?select=id,name,status,seller_id&limit=20`,
+        { headers: supabaseHeaders }
+      );
+      console.log('[DEBUG] All products (no filter) status:', allRes.status);
+      const allData = await allRes.json();
+      console.log('[DEBUG] All products raw:', allData);
+      if (Array.isArray(allData)) {
+        const statusCounts: Record<string, number> = {};
+        allData.forEach((p: any) => { statusCounts[p.status ?? 'null'] = (statusCounts[p.status ?? 'null'] || 0) + 1; });
+        console.log('[DEBUG] Status breakdown:', statusCounts);
+      }
+
+      // --- Step 2: fetch with status=active filter ---
       const res = await fetch(
         `${SUPABASE_URL}/rest/v1/products?status=eq.active&select=id,name,price,unit,images,pricing_type,price_per_pound,stock_quantity,low_stock_threshold,seller_id&order=created_at.desc`,
         { headers: supabaseHeaders }
       );
+      console.log('[DEBUG] Active products response status:', res.status);
       let products = await res.json();
-      if (!Array.isArray(products)) { setProducts([]); return; }
+      console.log('[DEBUG] Active products data:', products);
+      console.log('[DEBUG] Is array?', Array.isArray(products), '| Length:', Array.isArray(products) ? products.length : 'n/a');
 
+      if (!Array.isArray(products)) {
+        console.error('[DEBUG] products is not an array — raw:', JSON.stringify(products));
+        setProducts([]);
+        return;
+      }
+
+      // --- Step 3: fetch sellers ---
       const sellerIds = [...new Set(products.map((p: any) => p.seller_id).filter(Boolean))];
+      console.log('[DEBUG] Unique seller IDs:', sellerIds);
       if (sellerIds.length > 0) {
         const sellersRes = await fetch(
           `${SUPABASE_URL}/rest/v1/sellers?id=in.(${sellerIds.join(',')})&select=id,farm_name,store_name,slug,fulfillment`,
           { headers: supabaseHeaders }
         );
+        console.log('[DEBUG] Sellers response status:', sellersRes.status);
         const sellersData = await sellersRes.json();
+        console.log('[DEBUG] Sellers data:', sellersData);
         if (Array.isArray(sellersData)) {
           const sellersMap = sellersData.reduce((acc: any, s: any) => { acc[s.id] = s; return acc; }, {});
           products = products.map((p: any) => ({ ...p, sellers: sellersMap[p.seller_id] || null }));
@@ -72,7 +99,7 @@ export default function ExplorePage() {
       }
       setProducts(products);
     } catch (err) {
-      console.error("Explore fetch error:", err);
+      console.error('[DEBUG] Explore fetch error:', err);
       setError("Failed to load products.");
     } finally {
       setLoading(false);
