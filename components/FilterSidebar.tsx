@@ -82,6 +82,15 @@ const PRICE_PRESETS: [string, number, number][] = [
 
 const PRICE_MAX = 200;
 
+const SUPABASE_URL = 'https://ezryfycxfmtffobyfjfa.supabase.co'
+const SUPABASE_ANON_KEY =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6cnlmeWN4Zm10ZmZvYnlmamZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MjQ1MDEsImV4cCI6MjA5MjQwMDUwMX0.woObRrj3MMUf6eAFVbkvDNUsQfQ-elmlDqPADBT9aZs'
+const SB_HEADERS = {
+  apikey: SUPABASE_ANON_KEY,
+  Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+  'Content-Type': 'application/json',
+}
+
 const DEFAULT_FILTERS: FilterState = {
   searchWithin: "",
   categories:   [],
@@ -317,9 +326,49 @@ function SidebarContent({ category }: { category?: string }) {
     rating: true, availability: true, farms: true,
   });
 
+  const [dynamicSubcats, setDynamicSubcats] = useState<{ id: string; name: string; productCount: number }[]>([])
+
   function toggleSection(key: keyof typeof openSections) {
     setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
   }
+
+  useEffect(() => {
+    if (!category) return
+    let cancelled = false
+    async function load() {
+      try {
+        const catRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/categories?slug=eq.${category}&select=id`,
+          { headers: SB_HEADERS }
+        )
+        const cats = await catRes.json()
+        if (!cats?.[0] || cancelled) return
+        const subRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/categories?parent_id=eq.${cats[0].id}&select=id,name,slug`,
+          { headers: SB_HEADERS }
+        )
+        const subs = await subRes.json()
+        if (!Array.isArray(subs) || cancelled) return
+        const withCounts = await Promise.all(
+          subs.map(async (sub: any) => {
+            try {
+              const r = await fetch(
+                `${SUPABASE_URL}/rest/v1/products?category_id=eq.${sub.id}&status=eq.active&select=id`,
+                { headers: SB_HEADERS }
+              )
+              const p = await r.json()
+              return { id: sub.id, name: sub.name, productCount: Array.isArray(p) ? p.length : 0 }
+            } catch {
+              return { id: sub.id, name: sub.name, productCount: 0 }
+            }
+          })
+        )
+        if (!cancelled) setDynamicSubcats(withCounts.filter((s) => s.productCount > 0))
+      } catch { /* ignore */ }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [category])
 
   function toggleCheckbox(field: CheckboxField, value: string) {
     setFilters((prev) => {
@@ -353,26 +402,34 @@ function SidebarContent({ category }: { category?: string }) {
       </div>
 
       {category ? (
-        /* Category page: show only that category's subcategories */
-        categorySubcats.length > 0 && (
-          <Section title={categoryTitle} open={openSections.subcategories} onToggle={() => toggleSection("subcategories")}>
-            <div className="space-y-2">
-              {categorySubcats.map((sub) => (
-                <label key={sub} className="flex items-center gap-2.5 cursor-pointer group">
-                  <input
-                    type="checkbox"
-                    checked={filters.subcategories.includes(sub)}
-                    onChange={() => toggleCheckbox("subcategories", sub)}
-                    className="w-4 h-4 rounded border-gray-300 accent-[#1a4a2e] cursor-pointer"
-                  />
-                  <span className={`text-sm ${filters.subcategories.includes(sub) ? "text-[#1a4a2e] font-medium" : "text-gray-700 group-hover:text-gray-900"}`}>
-                    {sub}
-                  </span>
-                </label>
-              ))}
-            </div>
-          </Section>
-        )
+        (() => {
+          // Prefer dynamic subcategories from DB; fall back to static map
+          const subsToShow = dynamicSubcats.length > 0
+            ? dynamicSubcats.map((s) => ({ label: s.name, count: s.productCount, key: s.name }))
+            : categorySubcats.map((s) => ({ label: s, count: null, key: s }))
+          return subsToShow.length > 0 ? (
+            <Section title={categoryTitle} open={openSections.subcategories} onToggle={() => toggleSection("subcategories")}>
+              <div className="space-y-2">
+                {subsToShow.map(({ label, count, key }) => (
+                  <label key={key} className="flex items-center justify-between cursor-pointer group">
+                    <div className="flex items-center gap-2.5">
+                      <input
+                        type="checkbox"
+                        checked={filters.subcategories.includes(label)}
+                        onChange={() => toggleCheckbox("subcategories", label)}
+                        className="w-4 h-4 rounded border-gray-300 accent-[#1a4a2e] cursor-pointer"
+                      />
+                      <span className={`text-sm ${filters.subcategories.includes(label) ? "text-[#1a4a2e] font-medium" : "text-gray-700 group-hover:text-gray-900"}`}>
+                        {label}
+                      </span>
+                    </div>
+                    {count !== null && <span className="text-xs text-gray-400">({count})</span>}
+                  </label>
+                ))}
+              </div>
+            </Section>
+          ) : null
+        })()
       ) : null}
 
       {/* Fulfillment */}
