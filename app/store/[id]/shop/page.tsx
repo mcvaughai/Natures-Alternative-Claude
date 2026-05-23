@@ -54,12 +54,14 @@ export default function StoreShopPage() {
       setStore(storeData)
 
       const productsRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/products?seller_id=eq.${storeData.id}&status=eq.active&select=id,name,price,unit,images,pricing_type,price_per_pound,stock_quantity,low_stock_threshold,sellers(farm_name,store_name,slug,fulfillment)&order=created_at.desc`,
+        `${SUPABASE_URL}/rest/v1/products?seller_id=eq.${storeData.id}&status=eq.active&select=id,name,price,unit,images,pricing_type,price_per_pound,stock_quantity,low_stock_threshold,seller_id&order=created_at.desc`,
         { headers }
       )
       const productsData = await productsRes.json()
       console.log('Products data:', productsData)
-      const prods = Array.isArray(productsData) ? productsData : []
+      const rawProds = Array.isArray(productsData) ? productsData : []
+      // Map storeData as the seller for all products (all belong to the same seller)
+      const prods = rawProds.map((p: any) => ({ ...p, sellers: storeData }))
 
       // Log all category_ids from products
       const categoryIds = [...new Set(prods.map((p: any) => p.category_id).filter(Boolean))]

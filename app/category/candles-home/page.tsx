@@ -43,11 +43,25 @@ export default function CandlesHomePage() {
       }
       const categoryId = categories[0].id
       const productsRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/products?category_id=eq.${categoryId}&status=eq.active&select=id,name,price,unit,images,pricing_type,price_per_pound,stock_quantity,low_stock_threshold,sellers(farm_name,store_name,slug,fulfillment)&order=created_at.desc`,
+        `${SUPABASE_URL}/rest/v1/products?category_id=eq.${categoryId}&status=eq.active&select=id,name,price,unit,images,pricing_type,price_per_pound,stock_quantity,low_stock_threshold,seller_id&order=created_at.desc`,
         { headers: HEADERS }
       )
-      const data = await productsRes.json()
-      setProducts(Array.isArray(data) ? data : [])
+      let data = await productsRes.json()
+      if (!Array.isArray(data)) { setProducts([]); return }
+
+      const sellerIds = [...new Set(data.map((p: any) => p.seller_id).filter(Boolean))]
+      if (sellerIds.length > 0) {
+        const sellersRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/sellers?id=in.(${sellerIds.join(',')})&select=id,farm_name,store_name,slug,fulfillment`,
+          { headers: HEADERS }
+        )
+        const sellersData = await sellersRes.json()
+        if (Array.isArray(sellersData)) {
+          const sellersMap = sellersData.reduce((acc: any, s: any) => { acc[s.id] = s; return acc }, {})
+          data = data.map((p: any) => ({ ...p, sellers: sellersMap[p.seller_id] || null }))
+        }
+      }
+      setProducts(data)
     } catch (err) {
       console.error('Category fetch error:', err)
       setProducts([])

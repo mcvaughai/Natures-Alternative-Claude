@@ -107,7 +107,7 @@ export default function StorePage() {
 
       const [productsRes, postsRes] = await Promise.all([
         fetch(
-          `${SUPABASE_URL}/rest/v1/products?seller_id=eq.${storeData.id}&status=eq.active&select=id,name,price,unit,images,pricing_type,price_per_pound,stock_quantity,low_stock_threshold,sellers(farm_name,store_name,slug,fulfillment)&order=created_at.asc&limit=4`,
+          `${SUPABASE_URL}/rest/v1/products?seller_id=eq.${storeData.id}&status=eq.active&select=id,name,price,unit,images,pricing_type,price_per_pound,stock_quantity,low_stock_threshold,seller_id&order=created_at.asc&limit=4`,
           { headers }
         ),
         fetch(
@@ -125,6 +125,7 @@ export default function StorePage() {
         setProducts(
           productsData.map((product: any) => ({
             ...product,
+            sellers: storeData,
             primaryImage: Array.isArray(product.images) ? (product.images[0] ?? null) : null,
           }))
         )

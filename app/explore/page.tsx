@@ -9,7 +9,7 @@ import AdBanner from "@/components/explore/AdBanner";
 import FilterSidebar, { FilterProvider, ActiveFiltersBar } from "@/components/FilterSidebar";
 import GridHeader from "@/components/explore/GridHeader";
 import { useCart } from "@/lib/context/CartContext";
-import { fetchFromSupabase } from "@/lib/api";
+import { SUPABASE_URL, supabaseHeaders } from "@/lib/api";
 import ProductGrid from "@/components/ProductGrid";
 
 interface Seller {
@@ -51,10 +51,26 @@ export default function ExplorePage() {
     setLoading(true);
     setError("");
     try {
-      const data = await fetchFromSupabase<Product[]>(
-        "products?status=eq.active&select=id,name,price,unit,images,pricing_type,price_per_pound,stock_quantity,low_stock_threshold,sellers(farm_name,store_name,slug,fulfillment)&order=created_at.desc"
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/products?status=eq.active&select=id,name,price,unit,images,pricing_type,price_per_pound,stock_quantity,low_stock_threshold,seller_id&order=created_at.desc`,
+        { headers: supabaseHeaders }
       );
-      setProducts(data ?? []);
+      let products = await res.json();
+      if (!Array.isArray(products)) { setProducts([]); return; }
+
+      const sellerIds = [...new Set(products.map((p: any) => p.seller_id).filter(Boolean))];
+      if (sellerIds.length > 0) {
+        const sellersRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/sellers?id=in.(${sellerIds.join(',')})&select=id,farm_name,store_name,slug,fulfillment`,
+          { headers: supabaseHeaders }
+        );
+        const sellersData = await sellersRes.json();
+        if (Array.isArray(sellersData)) {
+          const sellersMap = sellersData.reduce((acc: any, s: any) => { acc[s.id] = s; return acc; }, {});
+          products = products.map((p: any) => ({ ...p, sellers: sellersMap[p.seller_id] || null }));
+        }
+      }
+      setProducts(products);
     } catch (err) {
       console.error("Explore fetch error:", err);
       setError("Failed to load products.");
