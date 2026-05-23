@@ -5,7 +5,7 @@ import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import FilterSidebar, { FilterProvider, ActiveFiltersBar } from '@/components/FilterSidebar'
 import { useCart } from '@/lib/context/CartContext'
-import ProductGrid from '@/components/ProductGrid'
+import ProductCard from '@/components/ProductCard'
 
 const SUPABASE_URL = 'https://ezryfycxfmtffobyfjfa.supabase.co'
 const SUPABASE_ANON_KEY =
@@ -49,19 +49,16 @@ export default function BakeryBreadsPage() {
       let data = await productsRes.json()
       if (!Array.isArray(data)) { setProducts([]); return }
 
-      const sellerIds = [...new Set(data.map((p: any) => p.seller_id).filter(Boolean))]
-      if (sellerIds.length > 0) {
-        const sellersRes = await fetch(
-          `${SUPABASE_URL}/rest/v1/sellers?or=(${sellerIds.map((id: string) => `id=eq.${id}`).join(',')})&select=id,farm_name,store_name,slug,fulfillment`,
-          { headers: HEADERS }
-        )
-        const sellersData = await sellersRes.json()
-        if (Array.isArray(sellersData)) {
-          const sellersMap = sellersData.reduce((acc: any, s: any) => { acc[s.id] = s; return acc }, {})
-          data = data.map((p: any) => ({ ...p, sellers: sellersMap[p.seller_id] || null }))
-        }
+      const sellersRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/sellers?select=id,farm_name,store_name,slug,fulfillment`,
+        { headers: HEADERS }
+      )
+      const sellersData = await sellersRes.json()
+      const sellersMap: any = {}
+      if (Array.isArray(sellersData)) {
+        sellersData.forEach((s: any) => { sellersMap[s.id] = s })
       }
-      setProducts(data)
+      setProducts(data.map((p: any) => ({ ...p, sellers: sellersMap[p.seller_id] || null })))
     } catch (err) {
       console.error('Category fetch error:', err)
       setProducts([])
@@ -109,12 +106,23 @@ export default function BakeryBreadsPage() {
                         Showing <span className="font-semibold text-gray-700">{products.length}</span> products
                       </p>
                     )}
-                    <ProductGrid
-                      products={products}
-                      onAddToCart={handleAddToCart}
-                      emptyMessage={`No products in ${CATEGORY_NAME} yet`}
-                      emptySubMessage="Check back soon as more farms join the platform!"
-                    />
+                    {products.length === 0 ? (
+                      <div className="text-center py-20 bg-white rounded-xl">
+                        <p className="text-4xl mb-4">🌿</p>
+                        <h3 className="text-xl font-bold text-gray-700">{`No products in ${CATEGORY_NAME} yet`}</h3>
+                        <p className="text-gray-400 mt-2">Check back soon as more farms join the platform!</p>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', width: '100%' }}>
+                        {products.map((product: any) => (
+                          <ProductCard
+                            key={product.id}
+                            product={product}
+                            onAddToCart={handleAddToCart}
+                          />
+                        ))}
+                      </div>
+                    )}
                   </>
                 )}
               </div>
