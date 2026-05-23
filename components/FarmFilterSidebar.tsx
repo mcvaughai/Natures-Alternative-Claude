@@ -230,7 +230,7 @@ function SidebarContent() {
       {/* Distance */}
       <Section title="Distance From You" open={openSections.distance} onToggle={() => toggleSection("distance")}>
         <p className="text-xs text-gray-400 italic mb-2">Enter your zip code to filter by distance</p>
-        <div className="flex gap-2 mb-3">
+        <div className="space-y-2 mb-3">
           <input
             type="text"
             value={zipInput}
@@ -238,13 +238,14 @@ function SidebarContent() {
             onKeyDown={(e) => e.key === "Enter" && setFilters((prev) => ({ ...prev, zipCode: zipInput }))}
             placeholder="ZIP code"
             maxLength={10}
-            className="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#1a4a2e] focus:border-[#1a4a2e]"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
           />
           <button
             onClick={() => setFilters((prev) => ({ ...prev, zipCode: zipInput }))}
-            className="bg-[#1a4a2e] hover:bg-[#2d6b47] text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+            className="w-full text-white py-2 rounded-lg text-sm font-medium"
+            style={{ backgroundColor: '#053D2D' }}
           >
-            Update
+            Update Location
           </button>
         </div>
         {filters.zipCode && (
@@ -432,8 +433,8 @@ export default function FarmFilterSidebar() {
       </div>
 
       {/* Desktop sidebar */}
-      <aside className="hidden lg:block w-64 shrink-0">
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto">
+      <aside className="hidden lg:block w-full">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 overflow-hidden">
           <h2 className="font-bold text-gray-900 mb-1">Filter Farms</h2>
           <SidebarContent />
         </div>

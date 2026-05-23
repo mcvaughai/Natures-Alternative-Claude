@@ -164,8 +164,18 @@ export default function FarmsPage() {
         {/* ── Main Content ──────────────────────────────────────────────────── */}
         <div className="w-full px-6 py-8">
           <FarmFilterProvider>
-            <div className="flex flex-col lg:flex-row gap-8 items-start">
-              <FarmFilterSidebar />
+            <div className="flex flex-col lg:flex-row gap-6 items-start">
+              <div style={{
+                position: 'sticky',
+                top: '160px',
+                alignSelf: 'flex-start',
+                maxHeight: 'calc(100vh - 180px)',
+                overflowY: 'auto',
+                width: '260px',
+                flexShrink: 0,
+              }}>
+                <FarmFilterSidebar />
+              </div>
               <div className="flex-1 min-w-0">
                 <FarmActiveFiltersBar />
 
