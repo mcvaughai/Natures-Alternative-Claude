@@ -11,10 +11,17 @@ interface ProductCardProps {
     images?: string[]
     pricing_type?: string
     price_per_pound?: number
+    stock_quantity?: number
+    low_stock_threshold?: number
+    fulfillment?: string[]
     sellers?: {
       store_name?: string
       farm_name?: string
       slug?: string
+      fulfillment?: string[]
+      fulfillment_pickup?: boolean
+      fulfillment_delivery?: boolean
+      fulfillment_shipping?: boolean
     }
   }
   storeSlug?: string
@@ -23,27 +30,39 @@ interface ProductCardProps {
 
 export default function ProductCard({ product, storeSlug, onAddToCart }: ProductCardProps) {
   const farmName = product.sellers?.farm_name || product.sellers?.store_name || ''
-  const storeLink = product.sellers?.slug ? `/store/${product.sellers.slug}` : '#'
+  const sellerSlug = product.sellers?.slug
+  const storeLink = sellerSlug ? `/store/${sellerSlug}` : '#'
   const productLink = storeSlug
     ? `/product/${product.id}?store=${storeSlug}`
     : `/product/${product.id}`
 
+  // Determine fulfillment options from seller
+  const fulfillmentOptions = product.sellers?.fulfillment || []
+  const offersPickup = fulfillmentOptions.includes('Farm Pickup') || product.sellers?.fulfillment_pickup
+  const offersDelivery = fulfillmentOptions.includes('Local Delivery') || product.sellers?.fulfillment_delivery
+  const offersShipping = fulfillmentOptions.includes('Shipping') || product.sellers?.fulfillment_shipping
+
+  // Stock status
+  const stockQty = product.stock_quantity || 0
+  const lowStockThreshold = product.low_stock_threshold || 5
+  const isLowStock = stockQty > 0 && stockQty <= lowStockThreshold
+  const isOutOfStock = stockQty === 0
+
+  // Price display
+  const priceDisplay = product.pricing_type === 'per_pound'
+    ? `$${product.price_per_pound}/lb`
+    : `$${Number(product.price).toFixed(2)}${product.unit ? `/${product.unit}` : ''}`
+
   return (
     <div
       className="bg-white flex flex-col overflow-visible shadow-sm hover:shadow-md transition-shadow"
-      style={{
-        borderRadius: '8px',
-        width: '100%'
-      }}
+      style={{ borderRadius: '8px', width: '100%' }}
     >
-      {/* Image Container - fixed height */}
-      <Link href={productLink}>
+      {/* IMAGE with badge overlays */}
+      <Link href={productLink} className="relative block">
         <div
-          className="overflow-hidden bg-gray-200"
-          style={{
-            height: '200px',
-            borderRadius: '8px 8px 0 0'
-          }}
+          className="overflow-hidden bg-gray-200 relative"
+          style={{ height: '200px', borderRadius: '8px 8px 0 0' }}
         >
           {product.images?.[0] ? (
             <img
@@ -52,7 +71,7 @@ export default function ProductCard({ product, storeSlug, onAddToCart }: Product
               className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
             />
           ) : (
-            <div className="w-full h-full bg-gray-300 flex items-center justify-center">
+            <div className="w-full h-full bg-gray-200 flex items-center justify-center">
               <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="1.5">
                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
                 <circle cx="8.5" cy="8.5" r="1.5"/>
@@ -60,25 +79,50 @@ export default function ProductCard({ product, storeSlug, onAddToCart }: Product
               </svg>
             </div>
           )}
+
+          {/* Stock badges top left */}
+          <div className="absolute top-2 left-2 flex flex-col gap-1">
+            {isOutOfStock && (
+              <span
+                className="text-white text-xs font-semibold px-2 py-0.5 rounded-full"
+                style={{ backgroundColor: '#dc2626', fontSize: '10px' }}
+              >
+                Out of Stock
+              </span>
+            )}
+            {isLowStock && !isOutOfStock && (
+              <span
+                className="text-white text-xs font-semibold px-2 py-0.5 rounded-full"
+                style={{ backgroundColor: '#d97706', fontSize: '10px' }}
+              >
+                Low Stock
+              </span>
+            )}
+          </div>
         </div>
       </Link>
 
-      {/* Content */}
-      <div className="p-3 flex flex-col flex-1">
+      {/* CARD CONTENT */}
+      <div className="p-3 flex flex-col flex-1 gap-1.5">
+
+        {/* Product Name */}
         <Link href={productLink}>
-          <h4 className="font-semibold text-sm text-gray-800 truncate hover:text-green-900 transition-colors">
+          <h4
+            className="font-semibold text-gray-800 hover:text-green-900 transition-colors leading-tight"
+            style={{ fontSize: '14px' }}
+          >
             {product.name}
           </h4>
         </Link>
 
         {/* Star Rating */}
-        <div className="flex items-center gap-1 mt-1">
+        <div className="flex items-center gap-1">
           {[1, 2, 3, 4, 5].map((star) => (
             <svg
               key={star}
               xmlns="http://www.w3.org/2000/svg"
-              width="12"
-              height="12"
+              width="11"
+              height="11"
               viewBox="0 0 24 24"
               fill="none"
               stroke="#d1d5db"
@@ -87,36 +131,65 @@ export default function ProductCard({ product, storeSlug, onAddToCart }: Product
               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
             </svg>
           ))}
-          <span className="text-xs text-gray-400 ml-1">
+          <span className="text-gray-400 ml-0.5" style={{ fontSize: '10px' }}>
             (0 reviews)
           </span>
         </div>
 
+        {/* Farm Name + Visit Store */}
         {farmName && (
-          <div className="flex items-center justify-between mt-1">
+          <div className="flex items-center justify-between">
             <Link
               href={storeLink}
-              className="text-xs text-gray-400 hover:text-green-900 transition-colors truncate"
+              className="text-gray-500 hover:text-green-900 transition-colors truncate"
+              style={{ fontSize: '11px' }}
             >
               {farmName}
             </Link>
             <Link
               href={storeLink}
-              className="text-xs font-medium ml-2 flex-shrink-0"
-              style={{ color: '#00674B' }}
+              className="font-medium flex-shrink-0 ml-2 hover:underline"
+              style={{ fontSize: '11px', color: '#00674B' }}
             >
               Visit Store
             </Link>
           </div>
         )}
 
-        {/* Price and Cart */}
-        <div className="flex justify-between items-center mt-auto pt-2">
-          <p className="text-sm font-bold" style={{ color: '#053D2D' }}>
-            {product.pricing_type === 'per_pound'
-              ? `$${product.price_per_pound}/lb`
-              : `$${Number(product.price).toFixed(2)}${product.unit ? `/${product.unit}` : ''}`
-            }
+        {/* Fulfillment Badges */}
+        {(offersPickup || offersDelivery || offersShipping) && (
+          <div className="flex flex-wrap gap-1">
+            {offersPickup && (
+              <span
+                className="flex items-center gap-0.5 text-white font-medium px-2 py-0.5 rounded-full"
+                style={{ fontSize: '10px', backgroundColor: '#16a34a' }}
+              >
+                🚗 Pickup
+              </span>
+            )}
+            {offersDelivery && (
+              <span
+                className="flex items-center gap-0.5 text-white font-medium px-2 py-0.5 rounded-full"
+                style={{ fontSize: '10px', backgroundColor: '#2563eb' }}
+              >
+                🚚 Delivery
+              </span>
+            )}
+            {offersShipping && (
+              <span
+                className="flex items-center gap-0.5 text-white font-medium px-2 py-0.5 rounded-full"
+                style={{ fontSize: '10px', backgroundColor: '#7c3aed' }}
+              >
+                📦 Ships
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Price + Cart Button */}
+        <div className="flex justify-between items-center mt-auto pt-1">
+          <p className="font-bold" style={{ fontSize: '14px', color: '#053D2D' }}>
+            {priceDisplay}
           </p>
           <button
             className="relative text-white p-1.5 flex-shrink-0"
@@ -146,6 +219,7 @@ export default function ProductCard({ product, storeSlug, onAddToCart }: Product
             </svg>
           </button>
         </div>
+
       </div>
     </div>
   )

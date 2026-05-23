@@ -54,7 +54,7 @@ export default function StoreShopPage() {
       setStore(storeData)
 
       const productsRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/products?seller_id=eq.${storeData.id}&status=eq.active&select=*&order=created_at.desc`,
+        `${SUPABASE_URL}/rest/v1/products?seller_id=eq.${storeData.id}&status=eq.active&select=id,name,price,unit,images,pricing_type,price_per_pound,stock_quantity,low_stock_threshold,sellers(farm_name,store_name,slug,fulfillment)&order=created_at.desc`,
         { headers }
       )
       const productsData = await productsRes.json()

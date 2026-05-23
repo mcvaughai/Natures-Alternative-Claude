@@ -17,7 +17,7 @@ export default function PopularProducts() {
 
   useEffect(() => {
     fetchFromSupabase<Product[]>(
-      "products?status=eq.active&featured=eq.true&select=id,name,description,price,images&limit=6"
+      "products?status=eq.active&featured=eq.true&select=id,name,price,unit,images,pricing_type,price_per_pound,stock_quantity,low_stock_threshold,sellers(farm_name,store_name,slug,fulfillment)&limit=6"
     )
       .then((data) => { if (data?.length) setProducts(data); })
       .catch((err) => console.error("PopularProducts fetch error:", err));
