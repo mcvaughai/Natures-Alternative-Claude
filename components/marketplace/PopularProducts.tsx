@@ -19,7 +19,7 @@ export default function PopularProducts() {
     async function fetchProducts() {
       try {
         const res = await fetch(
-          `${SUPABASE_URL}/rest/v1/products?status=eq.active&featured=eq.true&select=id,name,price,unit,images,pricing_type,price_per_pound,stock_quantity,low_stock_threshold,seller_id&limit=6`,
+          `${SUPABASE_URL}/rest/v1/products?status=eq.active&featured=eq.true&select=*&limit=6`,
           { headers: supabaseHeaders }
         );
         let products = await res.json();

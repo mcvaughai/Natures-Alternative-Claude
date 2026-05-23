@@ -52,7 +52,7 @@ export default function ExplorePage() {
     setError("");
     try {
       const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/products?status=eq.active&select=id,name,price,unit,images,pricing_type,price_per_pound,stock_quantity,low_stock_threshold,seller_id&order=created_at.desc`,
+        `${SUPABASE_URL}/rest/v1/products?status=eq.active&select=*&order=created_at.desc`,
         { headers: supabaseHeaders }
       );
       console.log('Products response status:', res.status);

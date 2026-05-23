@@ -43,7 +43,7 @@ export default function NaturalCleaningPage() {
       }
       const categoryId = categories[0].id
       const productsRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/products?category_id=eq.${categoryId}&status=eq.active&select=id,name,price,unit,images,pricing_type,price_per_pound,stock_quantity,low_stock_threshold,seller_id&order=created_at.desc`,
+        `${SUPABASE_URL}/rest/v1/products?category_id=eq.${categoryId}&status=eq.active&select=*&order=created_at.desc`,
         { headers: HEADERS }
       )
       let data = await productsRes.json()

@@ -34,8 +34,8 @@ function SearchResults() {
     setError("");
     try {
       const url = query
-        ? `${SUPABASE_URL}/rest/v1/products?name=ilike.*${encodeURIComponent(query)}*&status=eq.active&select=id,name,price,unit,images,pricing_type,price_per_pound,stock_quantity,low_stock_threshold,seller_id&order=created_at.desc`
-        : `${SUPABASE_URL}/rest/v1/products?status=eq.active&select=id,name,price,unit,images,pricing_type,price_per_pound,stock_quantity,low_stock_threshold,seller_id&order=created_at.desc`;
+        ? `${SUPABASE_URL}/rest/v1/products?name=ilike.*${encodeURIComponent(query)}*&status=eq.active&select=*&order=created_at.desc`
+        : `${SUPABASE_URL}/rest/v1/products?status=eq.active&select=*&order=created_at.desc`;
 
       const res = await fetch(url, { headers: supabaseHeaders });
       let products = await res.json();
