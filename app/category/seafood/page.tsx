@@ -52,7 +52,7 @@ export default function SeafoodPage() {
       const sellerIds = [...new Set(data.map((p: any) => p.seller_id).filter(Boolean))]
       if (sellerIds.length > 0) {
         const sellersRes = await fetch(
-          `${SUPABASE_URL}/rest/v1/sellers?id=in.(${sellerIds.join(',')})&select=id,farm_name,store_name,slug,fulfillment`,
+          `${SUPABASE_URL}/rest/v1/sellers?or=(${sellerIds.map((id: string) => `id=eq.${id}`).join(',')})&select=id,farm_name,store_name,slug,fulfillment`,
           { headers: HEADERS }
         )
         const sellersData = await sellersRes.json()

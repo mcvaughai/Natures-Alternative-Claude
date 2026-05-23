@@ -69,10 +69,12 @@ export default function ExplorePage() {
       const sellerIds = [...new Set(products.map((p: any) => p.seller_id).filter(Boolean))];
       if (sellerIds.length > 0) {
         const sellersRes = await fetch(
-          `${SUPABASE_URL}/rest/v1/sellers?id=in.(${sellerIds.join(',')})&select=id,farm_name,store_name,slug,fulfillment`,
+          `${SUPABASE_URL}/rest/v1/sellers?or=(${sellerIds.map((id: string) => `id=eq.${id}`).join(',')})&select=id,farm_name,store_name,slug,fulfillment`,
           { headers: supabaseHeaders }
         );
+        console.log('Sellers fetch status:', sellersRes.status);
         const sellersData = await sellersRes.json();
+        console.log('Sellers data:', sellersData);
         if (Array.isArray(sellersData)) {
           const sellersMap = sellersData.reduce((acc: any, s: any) => { acc[s.id] = s; return acc; }, {});
           products = products.map((p: any) => ({ ...p, sellers: sellersMap[p.seller_id] || null }));
