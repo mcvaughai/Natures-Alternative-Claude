@@ -37,16 +37,19 @@ export default function ProductCard({ product, storeSlug, onAddToCart }: Product
     : `/product/${product.id}`
 
   // Determine fulfillment options from seller
-  const fulfillmentOptions = product.sellers?.fulfillment || []
-  const offersPickup = fulfillmentOptions.includes('Farm Pickup') || product.sellers?.fulfillment_pickup
-  const offersDelivery = fulfillmentOptions.includes('Local Delivery') || product.sellers?.fulfillment_delivery
-  const offersShipping = fulfillmentOptions.includes('Shipping') || product.sellers?.fulfillment_shipping
+  const fulfillmentOptions = Array.isArray(product.sellers?.fulfillment) ? product.sellers.fulfillment : []
+  const offersPickup = fulfillmentOptions.includes('Farm Pickup')
+  const offersDelivery = fulfillmentOptions.includes('Local Delivery')
+  const offersShipping = fulfillmentOptions.includes('Shipping')
+  console.log('Product:', product.name, '| Sellers:', product.sellers, '| Fulfillment:', fulfillmentOptions)
 
-  // Stock status
-  const stockQty = product.stock_quantity || 0
+  // Stock status — only show badge if status is explicitly 'out_of_stock',
+  // or if stock_quantity is a positive number at/below the low-stock threshold.
+  // A default-0 stock_quantity should NOT trigger Out of Stock.
+  const stockQty = product.stock_quantity
   const lowStockThreshold = product.low_stock_threshold || 5
-  const isLowStock = stockQty > 0 && stockQty <= lowStockThreshold
-  const isOutOfStock = stockQty === 0
+  const showOutOfStock = product.status === 'out_of_stock'
+  const showLowStock = stockQty != null && stockQty > 0 && stockQty <= lowStockThreshold && !showOutOfStock
 
   // Price display
   const priceDisplay = product.pricing_type === 'per_pound'
@@ -82,7 +85,7 @@ export default function ProductCard({ product, storeSlug, onAddToCart }: Product
 
           {/* Stock badges top left */}
           <div className="absolute top-2 left-2 flex flex-col gap-1">
-            {isOutOfStock && (
+            {showOutOfStock && (
               <span
                 className="text-white text-xs font-semibold px-2 py-0.5 rounded-full"
                 style={{ backgroundColor: '#dc2626', fontSize: '10px' }}
@@ -90,7 +93,7 @@ export default function ProductCard({ product, storeSlug, onAddToCart }: Product
                 Out of Stock
               </span>
             )}
-            {isLowStock && !isOutOfStock && (
+            {showLowStock && (
               <span
                 className="text-white text-xs font-semibold px-2 py-0.5 rounded-full"
                 style={{ backgroundColor: '#d97706', fontSize: '10px' }}
