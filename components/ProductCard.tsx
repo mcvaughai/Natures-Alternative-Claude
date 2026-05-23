@@ -7,22 +7,17 @@ interface ProductCardProps {
     name: string
     price: number
     unit?: string
-    description?: string
     images?: string[]
     pricing_type?: string
     price_per_pound?: number
     status?: string
     stock_quantity?: number
     low_stock_threshold?: number
-    fulfillment?: string[]
     sellers?: {
-      store_name?: string
       farm_name?: string
+      store_name?: string
       slug?: string
       fulfillment?: string[]
-      fulfillment_pickup?: boolean
-      fulfillment_delivery?: boolean
-      fulfillment_shipping?: boolean
     }
   }
   storeSlug?: string
@@ -31,28 +26,25 @@ interface ProductCardProps {
 
 export default function ProductCard({ product, storeSlug, onAddToCart }: ProductCardProps) {
   const farmName = product.sellers?.farm_name || product.sellers?.store_name || ''
-  const sellerSlug = product.sellers?.slug
+  const sellerSlug = product.sellers?.slug || ''
   const storeLink = sellerSlug ? `/store/${sellerSlug}` : '#'
   const productLink = storeSlug
     ? `/product/${product.id}?store=${storeSlug}`
     : `/product/${product.id}`
 
-  // Determine fulfillment options from seller
-  const fulfillmentOptions = Array.isArray(product.sellers?.fulfillment) ? product.sellers.fulfillment : []
-  const offersPickup = fulfillmentOptions.includes('Farm Pickup')
-  const offersDelivery = fulfillmentOptions.includes('Local Delivery')
-  const offersShipping = fulfillmentOptions.includes('Shipping')
-  console.log('Product:', product.name, '| Sellers:', product.sellers, '| Fulfillment:', fulfillmentOptions)
+  // Fulfillment
+  const fulfillment = Array.isArray(product.sellers?.fulfillment) ? product.sellers!.fulfillment! : []
+  const offersPickup = fulfillment.includes('Farm Pickup')
+  const offersDelivery = fulfillment.includes('Local Delivery')
+  const offersShipping = fulfillment.includes('Shipping')
 
-  // Stock status — only show badge if status is explicitly 'out_of_stock',
-  // or if stock_quantity is a positive number at/below the low-stock threshold.
-  // A default-0 stock_quantity should NOT trigger Out of Stock.
+  // Stock badges
   const stockQty = product.stock_quantity
   const lowStockThreshold = product.low_stock_threshold || 5
   const showOutOfStock = product.status === 'out_of_stock'
   const showLowStock = stockQty != null && stockQty > 0 && stockQty <= lowStockThreshold && !showOutOfStock
 
-  // Price display
+  // Price
   const priceDisplay = product.pricing_type === 'per_pound'
     ? `$${product.price_per_pound}/lb`
     : `$${Number(product.price).toFixed(2)}${product.unit ? `/${product.unit}` : ''}`
@@ -62,7 +54,7 @@ export default function ProductCard({ product, storeSlug, onAddToCart }: Product
       className="bg-white flex flex-col overflow-visible shadow-sm hover:shadow-md transition-shadow"
       style={{ borderRadius: '8px', width: '100%' }}
     >
-      {/* IMAGE with badge overlays */}
+      {/* IMAGE */}
       <Link href={productLink} className="relative block">
         <div
           className="overflow-hidden bg-gray-200 relative"
@@ -84,7 +76,7 @@ export default function ProductCard({ product, storeSlug, onAddToCart }: Product
             </div>
           )}
 
-          {/* Stock badges top left */}
+          {/* Stock badges */}
           <div className="absolute top-2 left-2 flex flex-col gap-1">
             {showOutOfStock && (
               <span
@@ -106,7 +98,7 @@ export default function ProductCard({ product, storeSlug, onAddToCart }: Product
         </div>
       </Link>
 
-      {/* CARD CONTENT */}
+      {/* CONTENT */}
       <div className="p-3 flex flex-col flex-1 gap-1.5">
 
         {/* Product Name */}
@@ -120,11 +112,10 @@ export default function ProductCard({ product, storeSlug, onAddToCart }: Product
         </Link>
 
         {/* Star Rating */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
           {[1, 2, 3, 4, 5].map((star) => (
             <svg
               key={star}
-              xmlns="http://www.w3.org/2000/svg"
               width="11"
               height="11"
               viewBox="0 0 24 24"
@@ -135,21 +126,15 @@ export default function ProductCard({ product, storeSlug, onAddToCart }: Product
               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
             </svg>
           ))}
-          <span className="text-gray-400 ml-0.5" style={{ fontSize: '10px' }}>
-            (0 reviews)
-          </span>
+          <span className="text-gray-400 ml-1" style={{ fontSize: '10px' }}>(0 reviews)</span>
         </div>
 
         {/* Farm Name + Visit Store */}
         {farmName && (
           <div className="flex items-center justify-between">
-            <Link
-              href={storeLink}
-              className="text-gray-500 hover:text-green-900 transition-colors truncate"
-              style={{ fontSize: '11px' }}
-            >
+            <span className="text-gray-500 truncate" style={{ fontSize: '11px' }}>
               {farmName}
-            </Link>
+            </span>
             <Link
               href={storeLink}
               className="font-medium flex-shrink-0 ml-2 hover:underline"
@@ -165,24 +150,24 @@ export default function ProductCard({ product, storeSlug, onAddToCart }: Product
           <div className="flex flex-wrap gap-1">
             {offersPickup && (
               <span
-                className="flex items-center gap-0.5 bg-green-100 text-green-700 font-medium px-2 py-0.5 rounded-full"
-                style={{ fontSize: '10px' }}
+                className="text-white font-medium px-2 py-0.5 rounded-full flex items-center gap-0.5"
+                style={{ fontSize: '10px', backgroundColor: '#16a34a' }}
               >
                 🚗 Pickup
               </span>
             )}
             {offersDelivery && (
               <span
-                className="flex items-center gap-0.5 bg-blue-100 text-blue-700 font-medium px-2 py-0.5 rounded-full"
-                style={{ fontSize: '10px' }}
+                className="text-white font-medium px-2 py-0.5 rounded-full flex items-center gap-0.5"
+                style={{ fontSize: '10px', backgroundColor: '#2563eb' }}
               >
                 🚚 Delivery
               </span>
             )}
             {offersShipping && (
               <span
-                className="flex items-center gap-0.5 bg-purple-100 text-purple-700 font-medium px-2 py-0.5 rounded-full"
-                style={{ fontSize: '10px' }}
+                className="text-white font-medium px-2 py-0.5 rounded-full flex items-center gap-0.5"
+                style={{ fontSize: '10px', backgroundColor: '#7c3aed' }}
               >
                 📦 Ships
               </span>
@@ -213,13 +198,15 @@ export default function ProductCard({ product, storeSlug, onAddToCart }: Product
                 fontSize: '10px',
                 color: '#b91c1c',
                 border: '1.5px solid #b91c1c',
-                lineHeight: '1'
+                lineHeight: '1',
               }}
             >
               +
             </span>
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+              <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <path d="M16 10a4 4 0 01-8 0"/>
             </svg>
           </button>
         </div>
