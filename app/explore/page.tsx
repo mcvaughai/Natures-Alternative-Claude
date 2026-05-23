@@ -40,8 +40,11 @@ export default function ExplorePage() {
         `${SUPABASE_URL}/rest/v1/sellers?select=id,farm_name,store_name,slug,fulfillment`,
         { headers }
       )
-      const sellersData = await sellersRes.json()
-      console.log('Sellers fetched:', sellersData)
+      console.log('Sellers response status:', sellersRes.status)
+      const sellersRaw = await sellersRes.text()
+      console.log('Sellers raw response:', sellersRaw)
+      const sellersData = JSON.parse(sellersRaw)
+      console.log('Sellers parsed:', sellersData)
 
       const sellersMap: any = {}
       if (Array.isArray(sellersData)) {
