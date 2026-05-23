@@ -6,6 +6,8 @@ import Link from 'next/link'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import StoreNavbar from '@/components/store/StoreNavbar'
+import { useCart } from '@/lib/context/CartContext'
+import ProductGrid from '@/components/ProductGrid'
 
 const SUPABASE_URL = 'https://ezryfycxfmtffobyfjfa.supabase.co'
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6cnlmeWN4Zm10ZmZvYnlmamZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MjQ1MDEsImV4cCI6MjA5MjQwMDUwMX0.woObRrj3MMUf6eAFVbkvDNUsQfQ-elmlDqPADBT9aZs'
@@ -73,6 +75,7 @@ function ClickableStars({ rating, setRating }: { rating: number; setRating: (n: 
 export default function StorePage() {
   const params = useParams()
   const slug = params?.id as string
+  const { addToCart } = useCart()
   const [store, setStore] = useState<any>(null)
   const [products, setProducts] = useState<any[]>([])
   const [blogPosts, setBlogPosts] = useState<any[]>([])
@@ -134,6 +137,15 @@ export default function StorePage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  function handleAddToCart(product: any) {
+    addToCart({
+      id: product.id,
+      name: product.name,
+      description: product.description ?? '',
+      price: `$${Number(product.price).toFixed(2)}`,
+    })
   }
 
   /* ── Loading ── */
@@ -228,63 +240,23 @@ export default function StorePage() {
         </h2>
         <hr className="border-gray-300 mb-10" />
 
-        {products.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-xl shadow-sm">
-            <h3 className="text-xl font-bold text-gray-700">No products yet</h3>
-            <p className="text-gray-500 mt-2">Check back soon!</p>
-          </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-              {products.map((product: any) => (
-                <Link
-                  key={product.id}
-                  href={`/product/${product.id}?store=${slug}`}
-                  className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group"
-                >
-                  <div
-                    className="overflow-hidden rounded-t-xl"
-                    style={{ height: '320px' }}
-                  >
-                    {product.primaryImage ? (
-                      <img
-                        src={product.primaryImage}
-                        alt={product.name}
-                        className="w-full h-full"
-                        style={{ objectFit: 'cover', objectPosition: 'center' }}
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gray-100 flex items-center justify-center">
-                        <svg className="w-10 h-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-4">
-                    <h4 className="font-semibold text-sm text-gray-800 line-clamp-2">{product.name}</h4>
-                    <p className="text-green-900 font-bold mt-1 text-sm">
-                      ${product.price}/{product.unit || 'each'}
-                    </p>
-                    <div className="mt-3">
-                      <span className="block text-center w-full bg-green-900 text-white text-xs font-semibold py-2 rounded-full hover:bg-green-800 transition-colors">
-                        Add to Cart
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
+        <ProductGrid
+          products={products}
+          storeSlug={slug}
+          onAddToCart={handleAddToCart}
+          emptyMessage="No products yet"
+          emptySubMessage="Check back soon!"
+        />
 
-            <div className="text-center mt-8">
-              <Link
-                href={`/store/${slug}/shop`}
-                className="inline-block bg-green-900 text-white px-10 py-3 rounded-full font-medium hover:bg-green-800 transition-colors"
-              >
-                View All Products
-              </Link>
-            </div>
-          </>
+        {products.length > 0 && (
+          <div className="text-center mt-8">
+            <Link
+              href={`/store/${slug}/shop`}
+              className="inline-block bg-green-900 text-white px-10 py-3 rounded-full font-medium hover:bg-green-800 transition-colors"
+            >
+              View All Products
+            </Link>
+          </div>
         )}
       </section>
 

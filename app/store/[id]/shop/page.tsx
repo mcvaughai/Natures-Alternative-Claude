@@ -1,12 +1,13 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import StoreNavbar from '@/components/store/StoreNavbar'
 import { useCart } from '@/lib/context/CartContext'
+import ProductGrid from '@/components/ProductGrid'
 
 const SUPABASE_URL = 'https://ezryfycxfmtffobyfjfa.supabase.co'
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6cnlmeWN4Zm10ZmZvYnlmamZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MjQ1MDEsImV4cCI6MjA5MjQwMDUwMX0.woObRrj3MMUf6eAFVbkvDNUsQfQ-elmlDqPADBT9aZs'
@@ -17,84 +18,10 @@ const headers = {
   'Content-Type': 'application/json',
 }
 
-function ShopProductCard({ product, storeSlug }: { product: any; storeSlug: string }) {
-  const [added, setAdded] = useState(false)
-  const router = useRouter()
-  const { addToCart } = useCart()
-
-  function handleAddToCart(e: React.MouseEvent) {
-    e.stopPropagation()
-    addToCart({
-      id: product.id,
-      name: product.name,
-      description: product.description,
-      price: `$${Number(product.price).toFixed(2)}`,
-    })
-    setAdded(true)
-    setTimeout(() => setAdded(false), 1000)
-  }
-
-  return (
-    <div
-      className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-visible hover:shadow-md transition-shadow group cursor-pointer"
-      onClick={() => router.push(`/product/${product.id}?store=${storeSlug}`)}
-    >
-      <div className="relative bg-gray-200 aspect-square overflow-hidden">
-        {product.images?.[0] ? (
-          <img
-            src={product.images[0]}
-            alt={product.name}
-            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          />
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-gray-400">
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-          </div>
-        )}
-      </div>
-
-      <div className="p-3">
-        <h3 className="font-semibold text-gray-800 text-sm mb-1 truncate group-hover:text-[#1a4a2e] transition-colors">
-          {product.name}
-        </h3>
-        <p className="text-xs text-gray-500 mb-1 line-clamp-2 leading-relaxed">{product.description}</p>
-
-        <div className="flex items-center justify-between">
-          <span className="font-bold text-[#1a4a2e] text-sm">${Number(product.price).toFixed(2)}</span>
-          <button
-            onClick={handleAddToCart}
-            className={`relative rounded-full p-1.5 transition-colors ${added ? 'bg-[#1a4a2e] hover:bg-[#2d6b47]' : 'bg-[#8b1a1a] hover:bg-[#6d1414]'} text-white`}
-            aria-label="Add to cart"
-          >
-            {!added && (
-              <span
-                className="absolute -top-1.5 -right-1.5 bg-white text-[#8b1a1a] rounded-full flex items-center justify-center font-bold"
-                style={{ width: '14px', height: '14px', fontSize: '10px', lineHeight: '1', border: '1.5px solid #b91c1c' }}
-              >
-                +
-              </span>
-            )}
-            {added ? (
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-              </svg>
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-            )}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 export default function StoreShopPage() {
   const params = useParams()
   const slug = params?.id as string
+  const { addToCart } = useCart()
   const [store, setStore] = useState<any>(null)
   const [products, setProducts] = useState<any[]>([])
   const [filteredProducts, setFilteredProducts] = useState<any[]>([])
@@ -194,6 +121,15 @@ export default function StoreShopPage() {
     }
 
     setFilteredProducts(filtered)
+  }
+
+  function handleAddToCart(product: any) {
+    addToCart({
+      id: product.id,
+      name: product.name,
+      description: product.description ?? '',
+      price: `$${Number(product.price).toFixed(2)}`,
+    })
   }
 
   if (loading) return (
@@ -423,29 +359,13 @@ export default function StoreShopPage() {
           )}
 
           {/* Products Grid */}
-          {filteredProducts.length === 0 ? (
-            <div className="text-center py-20 bg-white rounded-xl shadow-sm">
-              <div className="text-4xl mb-3">🌿</div>
-              <h3 className="text-xl font-bold text-gray-700">No products found</h3>
-              <p className="text-gray-400 text-sm mt-1">Try adjusting your filters</p>
-              <button
-                onClick={() => {
-                  setSearchQuery('')
-                  setSelectedCategory('all')
-                  setPriceRange({ min: '', max: '' })
-                }}
-                className="mt-4 bg-green-900 text-white px-6 py-2 rounded-full text-sm"
-              >
-                Clear Filters
-              </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              {filteredProducts.map((product: any) => (
-                <ShopProductCard key={product.id} product={product} storeSlug={slug} />
-              ))}
-            </div>
-          )}
+          <ProductGrid
+            products={filteredProducts}
+            storeSlug={slug}
+            onAddToCart={handleAddToCart}
+            emptyMessage="No products found"
+            emptySubMessage="Try adjusting your filters"
+          />
         </div>
       </div>
 

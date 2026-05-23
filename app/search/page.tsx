@@ -4,10 +4,10 @@ import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import ProductCard from "@/components/shared/ProductCard";
 import FilterSidebar, { FilterProvider, ActiveFiltersBar } from "@/components/FilterSidebar";
 import GridHeader from "@/components/explore/GridHeader";
 import { fetchFromSupabase } from "@/lib/api";
+import ProductGrid from "@/components/ProductGrid";
 
 interface Product {
   id: string;
@@ -83,27 +83,14 @@ function SearchResults() {
                     Try Again
                   </button>
                 </div>
-              ) : products.length === 0 ? (
-                <div className="text-center py-16 text-gray-500 text-sm">
-                  {query
-                    ? `No products found for "${query}". Try a different search.`
-                    : "No products available yet. Check back soon!"}
-                </div>
               ) : (
                 <>
-                  <GridHeader resultCount={products.length} />
-                  <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {products.map((p) => (
-                      <ProductCard
-                        key={p.id}
-                        id={p.id}
-                        name={p.name}
-                        price={`$${p.price.toFixed(2)}`}
-                        description={p.description}
-                        imageUrl={p.images?.[0]}
-                      />
-                    ))}
-                  </div>
+                  {products.length > 0 && <GridHeader resultCount={products.length} />}
+                  <ProductGrid
+                    products={products}
+                    emptyMessage={query ? `No products found for "${query}"` : "No products available yet"}
+                    emptySubMessage={query ? "Try a different search." : "Check back soon!"}
+                  />
                 </>
               )}
             </div>
