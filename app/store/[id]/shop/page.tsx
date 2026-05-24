@@ -83,7 +83,16 @@ export default function StoreShopPage() {
         console.log('No category IDs found in products!')
       }
 
-      setProducts(prods)
+      // Attach seller data to products for fulfillment badges
+      const productsWithSeller = prods.map((p: any) => ({
+        ...p,
+        sellers: {
+          farm_name: storeData.farm_name,
+          slug: storeData.slug,
+          fulfillment: storeData.fulfillment || []
+        }
+      }))
+      setProducts(productsWithSeller)
     } catch (err) {
       console.error('Shop error:', err)
     } finally {
@@ -362,6 +371,7 @@ export default function StoreShopPage() {
           <ProductGrid
             products={filteredProducts}
             storeSlug={slug}
+            hideFarmInfo={true}
             onAddToCart={handleAddToCart}
             emptyMessage="No products found"
             emptySubMessage="Try adjusting your filters"
