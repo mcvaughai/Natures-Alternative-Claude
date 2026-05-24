@@ -104,24 +104,24 @@ export default function ProductCard({ product, storeSlug, hideFarmInfo, onAddToC
           <div className="flex flex-wrap gap-1">
             {offersPickup && (
               <span
-                className="text-white font-medium px-2 py-0.5 rounded-full flex items-center gap-0.5"
-                style={{ fontSize: '10px', backgroundColor: '#16a34a' }}
+                className="font-medium px-2 py-0.5 rounded-full flex items-center gap-0.5"
+                style={{ fontSize: '10px', backgroundColor: '#dcfce7', color: '#15803d' }}
               >
                 🚗 Pickup
               </span>
             )}
             {offersDelivery && (
               <span
-                className="text-white font-medium px-2 py-0.5 rounded-full flex items-center gap-0.5"
-                style={{ fontSize: '10px', backgroundColor: '#2563eb' }}
+                className="font-medium px-2 py-0.5 rounded-full flex items-center gap-0.5"
+                style={{ fontSize: '10px', backgroundColor: '#dbeafe', color: '#1d4ed8' }}
               >
                 🚚 Delivery
               </span>
             )}
             {offersShipping && (
               <span
-                className="text-white font-medium px-2 py-0.5 rounded-full flex items-center gap-0.5"
-                style={{ fontSize: '10px', backgroundColor: '#7c3aed' }}
+                className="font-medium px-2 py-0.5 rounded-full flex items-center gap-0.5"
+                style={{ fontSize: '10px', backgroundColor: '#ede9fe', color: '#6d28d9' }}
               >
                 📦 Ships
               </span>
