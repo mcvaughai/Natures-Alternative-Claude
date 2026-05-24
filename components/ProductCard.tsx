@@ -15,6 +15,7 @@ interface ProductCardProps {
       store_name?: string
       farm_name?: string
       slug?: string
+      fulfillment?: string[]
     }
   }
   storeSlug?: string
@@ -24,6 +25,13 @@ interface ProductCardProps {
 export default function ProductCard({ product, storeSlug, onAddToCart }: ProductCardProps) {
   const farmName = product.sellers?.farm_name || product.sellers?.store_name || ''
   const storeLink = product.sellers?.slug ? `/store/${product.sellers.slug}` : '#'
+  const fulfillmentOptions = product.sellers?.fulfillment || []
+  const offersPickup = Array.isArray(fulfillmentOptions) && fulfillmentOptions.includes('Farm Pickup')
+  const offersDelivery = Array.isArray(fulfillmentOptions) && fulfillmentOptions.includes('Local Delivery')
+  const offersShipping = Array.isArray(fulfillmentOptions) && fulfillmentOptions.includes('Shipping')
+  const priceDisplay = product.pricing_type === 'per_pound'
+    ? `$${product.price_per_pound}/lb`
+    : `$${product.price}${product.unit ? `/${product.unit}` : ''}`
   const productLink = storeSlug
     ? `/product/${product.id}?store=${storeSlug}`
     : `/product/${product.id}`
@@ -110,13 +118,40 @@ export default function ProductCard({ product, storeSlug, onAddToCart }: Product
           </div>
         )}
 
+        {/* Fulfillment Badges */}
+        {(offersPickup || offersDelivery || offersShipping) && (
+          <div className="flex flex-wrap gap-1 mt-1">
+            {offersPickup && (
+              <span
+                className="text-white font-medium px-2 py-0.5 rounded-full flex items-center gap-0.5"
+                style={{ fontSize: '10px', backgroundColor: '#16a34a' }}
+              >
+                🚗 Pickup
+              </span>
+            )}
+            {offersDelivery && (
+              <span
+                className="text-white font-medium px-2 py-0.5 rounded-full flex items-center gap-0.5"
+                style={{ fontSize: '10px', backgroundColor: '#2563eb' }}
+              >
+                🚚 Delivery
+              </span>
+            )}
+            {offersShipping && (
+              <span
+                className="text-white font-medium px-2 py-0.5 rounded-full flex items-center gap-0.5"
+                style={{ fontSize: '10px', backgroundColor: '#7c3aed' }}
+              >
+                📦 Ships
+              </span>
+            )}
+          </div>
+        )}
+
         {/* Price and Cart */}
         <div className="flex justify-between items-center mt-auto pt-2">
           <p className="text-sm font-bold" style={{ color: '#053D2D' }}>
-            {product.pricing_type === 'per_pound'
-              ? `$${product.price_per_pound}/lb`
-              : `$${Number(product.price).toFixed(2)}${product.unit ? `/${product.unit}` : ''}`
-            }
+            {priceDisplay}
           </p>
           <button
             className="relative text-white p-1.5 flex-shrink-0"
