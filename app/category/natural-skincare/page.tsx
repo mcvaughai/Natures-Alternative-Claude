@@ -43,11 +43,26 @@ export default function NaturalSkincarePage() {
       }
       const categoryId = categories[0].id
       const productsRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/products?category_id=eq.${categoryId}&status=eq.active&select=id,name,price,unit,description,images&order=created_at.desc`,
+        `${SUPABASE_URL}/rest/v1/products?category_id=eq.${categoryId}&status=eq.active&select=id,name,price,unit,description,images,seller_id&order=created_at.desc`,
         { headers: HEADERS }
       )
       const data = await productsRes.json()
-      setProducts(Array.isArray(data) ? data : [])
+      const prods = Array.isArray(data) ? data : []
+      // Fetch sellers separately
+      const sellersRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/sellers?select=id,farm_name,slug,fulfillment`,
+        { headers: HEADERS }
+      )
+      const sellersData = await sellersRes.json()
+      const sellersMap: any = {}
+      if (Array.isArray(sellersData)) {
+        sellersData.forEach((s: any) => { sellersMap[s.id] = s })
+      }
+      const productsWithSellers = prods.map((p: any) => ({
+        ...p,
+        sellers: sellersMap[p.seller_id] || null
+      }))
+      setProducts(productsWithSellers)
     } catch (err) {
       console.error('Category fetch error:', err)
       setProducts([])
