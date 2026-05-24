@@ -11,7 +11,6 @@ interface ProductCardProps {
     pricing_type?: string
     price_per_pound?: number
     sellers?: {
-      store_name?: string
       farm_name?: string
       slug?: string
       fulfillment?: string[]
@@ -22,7 +21,7 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product, storeSlug, onAddToCart }: ProductCardProps) {
-  const farmName = product.sellers?.farm_name || product.sellers?.store_name || ''
+  const farmName = product.sellers?.farm_name || ''
   const storeLink = product.sellers?.slug ? `/store/${product.sellers.slug}` : '#'
   const fulfillmentOptions = product.sellers?.fulfillment || []
   const offersPickup = Array.isArray(fulfillmentOptions) && fulfillmentOptions.includes('Farm Pickup')

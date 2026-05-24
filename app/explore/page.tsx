@@ -72,7 +72,7 @@ export default function ExplorePage() {
 
       // Fetch all sellers separately
       const sellersRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/sellers?select=id,farm_name,store_name,slug,fulfillment`,
+        `${SUPABASE_URL}/rest/v1/sellers?select=id,farm_name,slug,fulfillment`,
         { headers }
       )
       const sellersData = await sellersRes.json()
