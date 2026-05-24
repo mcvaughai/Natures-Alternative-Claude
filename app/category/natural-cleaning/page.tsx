@@ -5,7 +5,7 @@ import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import FilterSidebar, { FilterProvider, ActiveFiltersBar } from '@/components/FilterSidebar'
 import { useCart } from '@/lib/context/CartContext'
-import ProductCard from '@/components/ProductCard'
+import ProductGrid from '@/components/ProductGrid'
 
 const SUPABASE_URL = 'https://ezryfycxfmtffobyfjfa.supabase.co'
 const SUPABASE_ANON_KEY =
@@ -43,22 +43,11 @@ export default function NaturalCleaningPage() {
       }
       const categoryId = categories[0].id
       const productsRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/products?category_id=eq.${categoryId}&status=eq.active&select=*&order=created_at.desc`,
+        `${SUPABASE_URL}/rest/v1/products?category_id=eq.${categoryId}&status=eq.active&select=id,name,price,unit,description,images&order=created_at.desc`,
         { headers: HEADERS }
       )
-      let data = await productsRes.json()
-      if (!Array.isArray(data)) { setProducts([]); return }
-
-      const sellersRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/sellers?select=id,farm_name,store_name,slug,fulfillment`,
-        { headers: HEADERS }
-      )
-      const sellersData = await sellersRes.json()
-      const sellersMap: any = {}
-      if (Array.isArray(sellersData)) {
-        sellersData.forEach((s: any) => { sellersMap[s.id] = s })
-      }
-      setProducts(data.map((p: any) => ({ ...p, sellers: sellersMap[p.seller_id] || null })))
+      const data = await productsRes.json()
+      setProducts(Array.isArray(data) ? data : [])
     } catch (err) {
       console.error('Category fetch error:', err)
       setProducts([])
@@ -106,23 +95,12 @@ export default function NaturalCleaningPage() {
                         Showing <span className="font-semibold text-gray-700">{products.length}</span> products
                       </p>
                     )}
-                    {products.length === 0 ? (
-                      <div className="text-center py-20 bg-white rounded-xl">
-                        <p className="text-4xl mb-4">🌿</p>
-                        <h3 className="text-xl font-bold text-gray-700">{`No products in ${CATEGORY_NAME} yet`}</h3>
-                        <p className="text-gray-400 mt-2">Check back soon as more farms join the platform!</p>
-                      </div>
-                    ) : (
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', width: '100%' }}>
-                        {products.map((product: any) => (
-                          <ProductCard
-                            key={product.id}
-                            product={product}
-                            onAddToCart={handleAddToCart}
-                          />
-                        ))}
-                      </div>
-                    )}
+                    <ProductGrid
+                      products={products}
+                      onAddToCart={handleAddToCart}
+                      emptyMessage={`No products in ${CATEGORY_NAME} yet`}
+                      emptySubMessage="Check back soon as more farms join the platform!"
+                    />
                   </>
                 )}
               </div>

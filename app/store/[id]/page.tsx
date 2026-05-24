@@ -7,7 +7,7 @@ import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import StoreNavbar from '@/components/store/StoreNavbar'
 import { useCart } from '@/lib/context/CartContext'
-import ProductCard from '@/components/ProductCard'
+import ProductGrid from '@/components/ProductGrid'
 
 const SUPABASE_URL = 'https://ezryfycxfmtffobyfjfa.supabase.co'
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6cnlmeWN4Zm10ZmZvYnlmamZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MjQ1MDEsImV4cCI6MjA5MjQwMDUwMX0.woObRrj3MMUf6eAFVbkvDNUsQfQ-elmlDqPADBT9aZs'
@@ -125,7 +125,6 @@ export default function StorePage() {
         setProducts(
           productsData.map((product: any) => ({
             ...product,
-            sellers: storeData,
             primaryImage: Array.isArray(product.images) ? (product.images[0] ?? null) : null,
           }))
         )
@@ -241,24 +240,13 @@ export default function StorePage() {
         </h2>
         <hr className="border-gray-300 mb-10" />
 
-        {products.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-xl">
-            <p className="text-4xl mb-4">🌿</p>
-            <h3 className="text-xl font-bold text-gray-700">No products yet</h3>
-            <p className="text-gray-400 mt-2">Check back soon!</p>
-          </div>
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', width: '100%' }}>
-            {products.map((product: any) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                storeSlug={slug}
-                onAddToCart={handleAddToCart}
-              />
-            ))}
-          </div>
-        )}
+        <ProductGrid
+          products={products}
+          storeSlug={slug}
+          onAddToCart={handleAddToCart}
+          emptyMessage="No products yet"
+          emptySubMessage="Check back soon!"
+        />
 
         {products.length > 0 && (
           <div className="text-center mt-8">

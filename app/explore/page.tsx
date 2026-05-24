@@ -1,131 +1,114 @@
-'use client'
+"use client";
 
-import { useEffect, useState } from 'react'
-import Navbar from '@/components/layout/Navbar'
-import Footer from '@/components/layout/Footer'
-import FilterSidebar, { FilterProvider } from '@/components/FilterSidebar'
-import ProductCard from '@/components/ProductCard'
+import { useEffect, useState } from "react";
+import Navbar from "@/components/layout/Navbar";
+import Footer from "@/components/layout/Footer";
+import HeroBanner from "@/components/marketplace/HeroBanner";
+import TopRated from "@/components/explore/TopRated";
+import AdBanner from "@/components/explore/AdBanner";
+import FilterSidebar, { FilterProvider, ActiveFiltersBar } from "@/components/FilterSidebar";
+import GridHeader from "@/components/explore/GridHeader";
+import { useCart } from "@/lib/context/CartContext";
+import { fetchFromSupabase } from "@/lib/api";
+import ProductGrid from "@/components/ProductGrid";
 
-const SUPABASE_URL = 'https://ezryfycxfmtffobyfjfa.supabase.co'
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6cnlmeWN4Zm10ZmZvYnlmamZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MjQ1MDEsImV4cCI6MjA5MjQwMDUwMX0.woObRrj3MMUf6eAFVbkvDNUsQfQ-elmlDqPADBT9aZs'
+interface Seller {
+  id: string;
+  farm_name: string;
+  slug: string;
+}
 
-const headers = {
-  'apikey': SUPABASE_ANON_KEY,
-  'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-  'Content-Type': 'application/json'
+interface Product {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  images: string[];
+  seller_id: string;
+  sellers: Seller | null;
 }
 
 export default function ExplorePage() {
-  const [products, setProducts] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  const { addToCart } = useCart();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading]   = useState(true);
+  const [error, setError]       = useState("");
 
   useEffect(() => {
-    fetchProducts()
-  }, [])
+    fetchData();
+  }, []);
 
-  async function fetchProducts() {
-    setLoading(true)
+  function handleAddToCart(product: any) {
+    addToCart({
+      id: product.id,
+      name: product.name,
+      description: product.description ?? "",
+      price: `$${Number(product.price).toFixed(2)}`,
+    });
+  }
+
+  async function fetchData() {
+    setLoading(true);
+    setError("");
     try {
-      const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/products?status=eq.active&select=*&order=created_at.desc`,
-        { headers }
-      )
-      const data = await res.json()
-      if (!Array.isArray(data) || data.length === 0) {
-        setProducts([])
-        return
-      }
-
-      const sellersRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/sellers?select=id,farm_name,store_name,slug,fulfillment`,
-        { headers }
-      )
-      console.log('Sellers response status:', sellersRes.status)
-      const sellersRaw = await sellersRes.text()
-      console.log('Sellers raw response:', sellersRaw)
-      const sellersData = JSON.parse(sellersRaw)
-      console.log('Sellers parsed:', sellersData)
-
-      const sellersMap: any = {}
-      if (Array.isArray(sellersData)) {
-        sellersData.forEach((s: any) => {
-          sellersMap[s.id] = s
-          console.log('Seller:', s.id, s.farm_name, s.fulfillment)
-        })
-      }
-
-      const productsWithSellers = data.map((p: any) => ({
-        ...p,
-        sellers: sellersMap[p.seller_id] || null
-      }))
-
-      console.log('First product sellers:', productsWithSellers[0]?.sellers)
-
-      setProducts(productsWithSellers)
+      const data = await fetchFromSupabase<Product[]>(
+        "products?status=eq.active&select=id,name,description,price,images,seller_id,sellers(id,farm_name,slug)&order=created_at.desc"
+      );
+      setProducts(data ?? []);
     } catch (err) {
-      console.error('Error:', err)
-      setProducts([])
+      console.error("Explore fetch error:", err);
+      setError("Failed to load products.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   return (
-    <div style={{ backgroundColor: '#FCF7F4' }} className="min-h-screen">
+    <div className="min-h-screen bg-[#FCF7F4] flex flex-col">
       <Navbar />
-      <FilterProvider>
-      <div className="w-full px-6 py-8 flex gap-6 items-start">
+      <main className="flex-1">
+        <HeroBanner />
 
-        {/* Filter Sidebar */}
-        <div style={{
-          position: 'sticky',
-          top: '160px',
-          alignSelf: 'flex-start',
-          maxHeight: 'calc(100vh - 180px)',
-          overflowY: 'auto',
-          width: '260px',
-          flexShrink: 0
-        }}>
-          <FilterSidebar />
+        <div className="w-full px-6 py-8">
+          <FilterProvider>
+            <div className="flex flex-col lg:flex-row gap-8 items-start">
+              <FilterSidebar />
+              <div className="flex-1 min-w-0">
+                <ActiveFiltersBar />
+                {loading ? (
+                  <div className="flex items-center justify-center py-16">
+                    <div className="w-6 h-6 rounded-full border-2 border-[#1a4a2e] border-t-transparent animate-spin" />
+                  </div>
+                ) : error ? (
+                  <div className="text-center py-16">
+                    <p className="text-sm text-red-500 mb-3">{error}</p>
+                    <button
+                      onClick={fetchData}
+                      className="bg-[#1a4a2e] hover:bg-[#2d6b47] text-white text-sm font-semibold px-5 py-2 rounded-xl transition-colors"
+                    >
+                      Try Again
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    {products.length > 0 && <GridHeader resultCount={products.length} />}
+                    <ProductGrid
+                      products={products}
+                      onAddToCart={handleAddToCart}
+                      emptyMessage="No products found"
+                      emptySubMessage="Try adjusting your filters or check back soon!"
+                    />
+                  </>
+                )}
+              </div>
+            </div>
+          </FilterProvider>
         </div>
 
-        {/* Products */}
-        <div className="flex-1">
-          <div className="flex justify-between items-center mb-4">
-            <p className="text-gray-500 text-sm">
-              Showing <span className="font-semibold text-gray-700">{products.length}</span> results
-            </p>
-          </div>
-
-          {loading && (
-            <div className="flex items-center justify-center py-20">
-              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-900"></div>
-            </div>
-          )}
-
-          {!loading && products.length === 0 && (
-            <div className="text-center py-20 bg-white rounded-xl">
-              <p className="text-4xl mb-4">🌿</p>
-              <h3 className="text-xl font-bold text-gray-700">No products found</h3>
-              <p className="text-gray-400 mt-2">Check back soon!</p>
-            </div>
-          )}
-
-          {!loading && products.length > 0 && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', width: '100%' }}>
-              {products.map((product: any) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  onAddToCart={(p) => console.log('add to cart', p)}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-      </FilterProvider>
+        <TopRated />
+        <AdBanner />
+      </main>
       <Footer />
     </div>
-  )
+  );
 }

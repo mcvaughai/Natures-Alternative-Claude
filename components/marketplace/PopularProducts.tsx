@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import SectionHeader from "@/components/shared/SectionHeader";
 import ProductCard from "@/components/shared/ProductCard";
-import { SUPABASE_URL, supabaseHeaders } from "@/lib/api";
+import { fetchFromSupabase } from "@/lib/api";
 
 interface Product {
   id: string;
@@ -16,33 +16,11 @@ export default function PopularProducts() {
   const [products, setProducts] = useState<Product[]>([]);
 
   useEffect(() => {
-    async function fetchProducts() {
-      try {
-        const res = await fetch(
-          `${SUPABASE_URL}/rest/v1/products?status=eq.active&featured=eq.true&select=*&limit=6`,
-          { headers: supabaseHeaders }
-        );
-        let products = await res.json();
-        if (!Array.isArray(products) || products.length === 0) return;
-
-        const sellerIds = [...new Set(products.map((p: any) => p.seller_id).filter(Boolean))];
-        if (sellerIds.length > 0) {
-          const sellersRes = await fetch(
-            `${SUPABASE_URL}/rest/v1/sellers?id=in.(${sellerIds.join(',')})&select=id,farm_name,store_name,slug,fulfillment`,
-            { headers: supabaseHeaders }
-          );
-          const sellersData = await sellersRes.json();
-          if (Array.isArray(sellersData)) {
-            const sellersMap = sellersData.reduce((acc: any, s: any) => { acc[s.id] = s; return acc; }, {});
-            products = products.map((p: any) => ({ ...p, sellers: sellersMap[p.seller_id] || null }));
-          }
-        }
-        setProducts(products);
-      } catch (err) {
-        console.error("PopularProducts fetch error:", err);
-      }
-    }
-    fetchProducts();
+    fetchFromSupabase<Product[]>(
+      "products?status=eq.active&featured=eq.true&select=id,name,description,price,images&limit=6"
+    )
+      .then((data) => { if (data?.length) setProducts(data); })
+      .catch((err) => console.error("PopularProducts fetch error:", err));
   }, []);
 
   if (products.length === 0) return null;

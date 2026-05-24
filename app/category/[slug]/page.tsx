@@ -69,7 +69,7 @@ export default function CategoryPage() {
 
       // Step 2: fetch products — correct columns: status (not is_active), stock_qty (not stock_quantity)
       const productsResponse = await fetch(
-        `${SUPABASE_URL}/rest/v1/products?category_id=eq.${category.id}&status=eq.active&select=*`,
+        `${SUPABASE_URL}/rest/v1/products?category_id=eq.${category.id}&status=eq.active&select=id,name,price,description,stock_qty,unit,images`,
         { headers: HEADERS }
       );
 

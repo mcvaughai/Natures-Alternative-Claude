@@ -6,8 +6,8 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import FilterSidebar, { FilterProvider, ActiveFiltersBar } from "@/components/FilterSidebar";
 import GridHeader from "@/components/explore/GridHeader";
-import { SUPABASE_URL, supabaseHeaders } from "@/lib/api";
-import ProductCard from "@/components/ProductCard";
+import { fetchFromSupabase } from "@/lib/api";
+import ProductGrid from "@/components/ProductGrid";
 
 interface Product {
   id: string;
@@ -33,24 +33,12 @@ function SearchResults() {
     setLoading(true);
     setError("");
     try {
-      const url = query
-        ? `${SUPABASE_URL}/rest/v1/products?name=ilike.*${encodeURIComponent(query)}*&status=eq.active&select=*&order=created_at.desc`
-        : `${SUPABASE_URL}/rest/v1/products?status=eq.active&select=*&order=created_at.desc`;
+      const endpoint = query
+        ? `products?name=ilike.*${encodeURIComponent(query)}*&status=eq.active&select=id,name,description,price,images&order=created_at.desc`
+        : "products?status=eq.active&select=id,name,description,price,images&order=created_at.desc";
 
-      const res = await fetch(url, { headers: supabaseHeaders });
-      let products = await res.json();
-      if (!Array.isArray(products)) { setProducts([]); return; }
-
-      const sellersRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/sellers?select=id,farm_name,store_name,slug,fulfillment`,
-        { headers: supabaseHeaders }
-      );
-      const sellersData = await sellersRes.json();
-      const sellersMap: any = {};
-      if (Array.isArray(sellersData)) {
-        sellersData.forEach((s: any) => { sellersMap[s.id] = s; });
-      }
-      setProducts(products.map((p: any) => ({ ...p, sellers: sellersMap[p.seller_id] || null })));
+      const data = await fetchFromSupabase<Product[]>(endpoint);
+      setProducts(data ?? []);
     } catch (err) {
       console.error("Search fetch error:", err);
       setError("Failed to load results.");
@@ -98,23 +86,11 @@ function SearchResults() {
               ) : (
                 <>
                   {products.length > 0 && <GridHeader resultCount={products.length} />}
-                  {products.length === 0 ? (
-                    <div className="text-center py-20 bg-white rounded-xl">
-                      <p className="text-4xl mb-4">🌿</p>
-                      <h3 className="text-xl font-bold text-gray-700">{query ? `No products found for "${query}"` : "No products available yet"}</h3>
-                      <p className="text-gray-400 mt-2">{query ? "Try a different search." : "Check back soon!"}</p>
-                    </div>
-                  ) : (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', width: '100%' }}>
-                      {products.map((product: any) => (
-                        <ProductCard
-                          key={product.id}
-                          product={product}
-                          onAddToCart={(p) => console.log('add to cart', p)}
-                        />
-                      ))}
-                    </div>
-                  )}
+                  <ProductGrid
+                    products={products}
+                    emptyMessage={query ? `No products found for "${query}"` : "No products available yet"}
+                    emptySubMessage={query ? "Try a different search." : "Check back soon!"}
+                  />
                 </>
               )}
             </div>

@@ -59,9 +59,7 @@ export default function StoreShopPage() {
       )
       const productsData = await productsRes.json()
       console.log('Products data:', productsData)
-      const rawProds = Array.isArray(productsData) ? productsData : []
-      // Map storeData as the seller for all products (all belong to the same seller)
-      const prods = rawProds.map((p: any) => ({ ...p, sellers: storeData }))
+      const prods = Array.isArray(productsData) ? productsData : []
 
       // Log all category_ids from products
       const categoryIds = [...new Set(prods.map((p: any) => p.category_id).filter(Boolean))]
