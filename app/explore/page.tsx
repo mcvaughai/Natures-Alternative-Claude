@@ -9,8 +9,16 @@ import AdBanner from "@/components/explore/AdBanner";
 import FilterSidebar, { FilterProvider, ActiveFiltersBar } from "@/components/FilterSidebar";
 import GridHeader from "@/components/explore/GridHeader";
 import { useCart } from "@/lib/context/CartContext";
-import { fetchFromSupabase } from "@/lib/api";
 import ProductGrid from "@/components/ProductGrid";
+
+const SUPABASE_URL = 'https://ezryfycxfmtffobyfjfa.supabase.co'
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6cnlmeWN4Zm10ZmZvYnlmamZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MjQ1MDEsImV4cCI6MjA5MjQwMDUwMX0.woObRrj3MMUf6eAFVbkvDNUsQfQ-elmlDqPADBT9aZs'
+
+const headers = {
+  'apikey': SUPABASE_ANON_KEY,
+  'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+  'Content-Type': 'application/json'
+}
 
 interface Seller {
   id: string;
@@ -47,19 +55,45 @@ export default function ExplorePage() {
     });
   }
 
-  async function fetchData() {
-    setLoading(true);
-    setError("");
+  const fetchData = async () => {
+    setLoading(true)
     try {
-      const data = await fetchFromSupabase<Product[]>(
-        "products?status=eq.active&select=id,name,description,price,images,seller_id,sellers(id,farm_name,slug)&order=created_at.desc"
-      );
-      setProducts(data ?? []);
+      // Fetch products
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/products?status=eq.active&select=*&order=created_at.desc`,
+        { headers }
+      )
+      const data = await res.json()
+
+      if (!Array.isArray(data) || data.length === 0) {
+        setProducts([])
+        return
+      }
+
+      // Fetch all sellers separately
+      const sellersRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/sellers?select=id,farm_name,store_name,slug,fulfillment`,
+        { headers }
+      )
+      const sellersData = await sellersRes.json()
+      const sellersMap: any = {}
+      if (Array.isArray(sellersData)) {
+        sellersData.forEach((s: any) => { sellersMap[s.id] = s })
+      }
+
+      // Merge seller data into products
+      const productsWithSellers = data.map((p: any) => ({
+        ...p,
+        sellers: sellersMap[p.seller_id] || null
+      }))
+
+      setProducts(productsWithSellers)
+
     } catch (err) {
-      console.error("Explore fetch error:", err);
-      setError("Failed to load products.");
+      console.error('Error fetching products:', err)
+      setProducts([])
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
   }
 
