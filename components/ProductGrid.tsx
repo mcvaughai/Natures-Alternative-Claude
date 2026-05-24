@@ -4,6 +4,7 @@ import ProductCard from './ProductCard'
 interface ProductGridProps {
   products: any[]
   storeSlug?: string
+  hideFarmInfo?: boolean
   onAddToCart?: (product: any) => void
   emptyMessage?: string
   emptySubMessage?: string
@@ -12,6 +13,7 @@ interface ProductGridProps {
 export default function ProductGrid({
   products,
   storeSlug,
+  hideFarmInfo,
   onAddToCart,
   emptyMessage = 'No products found',
   emptySubMessage = 'Check back soon as more farms join!'
@@ -40,6 +42,7 @@ export default function ProductGrid({
           key={product.id}
           product={product}
           storeSlug={storeSlug}
+          hideFarmInfo={hideFarmInfo}
           onAddToCart={onAddToCart}
         />
       ))}

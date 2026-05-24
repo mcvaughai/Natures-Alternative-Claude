@@ -17,10 +17,11 @@ interface ProductCardProps {
     }
   }
   storeSlug?: string
+  hideFarmInfo?: boolean
   onAddToCart?: (product: any) => void
 }
 
-export default function ProductCard({ product, storeSlug, onAddToCart }: ProductCardProps) {
+export default function ProductCard({ product, storeSlug, hideFarmInfo, onAddToCart }: ProductCardProps) {
   const farmName = product.sellers?.farm_name || ''
   const storeLink = product.sellers?.slug ? `/store/${product.sellers.slug}` : '#'
   const fulfillmentOptions = product.sellers?.fulfillment || []
@@ -83,7 +84,7 @@ export default function ProductCard({ product, storeSlug, onAddToCart }: Product
         </div>
 
         {/* Farm Name + Visit Store */}
-        {farmName && (
+        {farmName && !hideFarmInfo && (
           <div className="flex items-center justify-between">
             <span className="text-gray-500 truncate" style={{ fontSize: '11px' }}>
               {farmName}

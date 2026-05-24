@@ -122,12 +122,17 @@ export default function StorePage() {
       if (!Array.isArray(productsData)) {
         setProducts([])
       } else {
-        setProducts(
-          productsData.map((product: any) => ({
-            ...product,
-            primaryImage: Array.isArray(product.images) ? (product.images[0] ?? null) : null,
-          }))
-        )
+        // Attach seller data to products for fulfillment badges
+        const productsWithSeller = productsData.map((product: any) => ({
+          ...product,
+          primaryImage: Array.isArray(product.images) ? (product.images[0] ?? null) : null,
+          sellers: {
+            farm_name: storeData.farm_name,
+            slug: storeData.slug,
+            fulfillment: storeData.fulfillment || []
+          }
+        }))
+        setProducts(productsWithSeller)
       }
 
       setBlogPosts(Array.isArray(postsData) ? postsData : [])
@@ -243,6 +248,7 @@ export default function StorePage() {
         <ProductGrid
           products={products}
           storeSlug={slug}
+          hideFarmInfo={true}
           onAddToCart={handleAddToCart}
           emptyMessage="No products yet"
           emptySubMessage="Check back soon!"
