@@ -37,7 +37,7 @@ export default function ProductCard({ product, storeSlug, hideFarmInfo, onAddToC
 
   return (
     <div
-      className="bg-white flex flex-col overflow-visible shadow-sm hover:shadow-md transition-shadow"
+      className="flex flex-col overflow-visible"
       style={{ borderRadius: '8px', width: '100%' }}
     >
       {/* Image */}
