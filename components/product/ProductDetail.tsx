@@ -9,6 +9,7 @@ interface Seller {
   farm_name: string;
   description: string;
   fulfillment?: string[];
+  banner_url?: string;
 }
 
 interface Product {
@@ -71,7 +72,7 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
 
         // Step 2: fetch seller
         const sellers = await fetchFromSupabase<Seller[]>(
-          `sellers?id=eq.${productData.seller_id}&select=slug,farm_name,description,fulfillment`
+          `sellers?id=eq.${productData.seller_id}&select=*`
         );
         if (sellers?.length) setSeller(sellers[0]);
 
@@ -337,16 +338,33 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
 
         {/* Store Info Card */}
         {seller && (
-          <div className="mt-4 rounded-xl p-4" style={{ backgroundColor: '#f9fafb' }}>
-            <h3 className="font-bold text-gray-900 text-base">{seller.farm_name}</h3>
-            <p className="text-gray-500 text-sm mt-1">{seller.description ?? ""}</p>
-            <Link
-              href={`/store/${seller.slug}`}
-              className="mt-3 inline-block px-4 py-2 rounded-full text-white text-sm font-medium"
-              style={{ backgroundColor: '#053D2D' }}
-            >
-              Visit Store
-            </Link>
+          <div className="mt-4 border border-gray-200 rounded-xl overflow-hidden">
+
+            {/* Banner Image */}
+            {seller.banner_url && (
+              <div style={{ height: '80px', overflow: 'hidden' }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={seller.banner_url}
+                  alt={`${seller.farm_name} banner`}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+
+            {/* Store Info */}
+            <div className="p-4">
+              <p className="text-xs text-gray-500 mb-1">Sold by</p>
+              <h3 className="font-bold text-gray-900 text-lg">{seller.farm_name}</h3>
+              <p className="text-gray-500 text-sm mt-1 line-clamp-2">{seller.description ?? ""}</p>
+              <Link
+                href={`/store/${seller.slug}`}
+                className="mt-3 inline-block px-5 py-2 rounded-full text-white text-sm font-medium hover:opacity-90"
+                style={{ backgroundColor: '#053D2D' }}
+              >
+                Visit Store
+              </Link>
+            </div>
           </div>
         )}
       </div>
