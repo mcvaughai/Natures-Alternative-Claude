@@ -133,12 +133,12 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
   return (
     <div className="w-full px-6 py-8 flex gap-8 items-start">
 
-      {/* LEFT - Product Image - flexible width */}
-      <div className="flex flex-col gap-3 flex-1">
+      {/* LEFT - Product Image - fixed width */}
+      <div className="flex flex-col gap-3" style={{ width: '339px', flexShrink: 0 }}>
         {/* Main Image */}
         <div
           className="w-full overflow-hidden bg-gray-100"
-          style={{ borderRadius: '12px', aspectRatio: '1/1' }}
+          style={{ borderRadius: '12px', width: '339px', height: '413px', flexShrink: 0 }}
         >
           {mainImage ? (
             // eslint-disable-next-line @next/next/no-img-element
