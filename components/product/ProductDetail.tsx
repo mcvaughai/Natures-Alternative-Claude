@@ -408,7 +408,7 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
                 </p>
                 <div className="flex items-center gap-0.5 mt-0.5">
                   {[1,2,3,4,5].map(s => (
-                    <svg key={s} width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="2">
+                    <svg key={s} width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="2">
                       <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
                     </svg>
                   ))}
@@ -419,21 +419,25 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
                     style={{ backgroundColor: '#b91c1c' }}
                     onClick={(e) => {
                       e.preventDefault();
+                      e.stopPropagation();
                       addToCart({
                         id: rp.id,
                         name: rp.name,
                         description: rp.description,
-                        price: `$${Number(rp.price).toFixed(2)}`,
+                        price: rp.pricing_type === 'per_pound'
+                          ? `$${Number(rp.price_per_pound ?? 0).toFixed(2)}`
+                          : `$${Number(rp.price).toFixed(2)}`,
+                        quantity: 1,
                       });
                     }}
                   >
                     <span
                       className="absolute bg-white rounded-full flex items-center justify-center font-bold"
-                      style={{ top: '-4px', right: '-4px', width: '11px', height: '11px', fontSize: '8px', color: '#b91c1c', border: '1px solid #b91c1c' }}
+                      style={{ top: '-5px', right: '-5px', width: '13px', height: '13px', fontSize: '9px', color: '#b91c1c', border: '1px solid #b91c1c' }}
                     >
                       +
                     </span>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <circle cx="9" cy="21" r="1"/>
                       <circle cx="20" cy="21" r="1"/>
                       <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
