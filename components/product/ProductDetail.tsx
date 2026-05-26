@@ -327,10 +327,11 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
               key={rp.id}
               href={`/product/${rp.id}`}
               className="flex flex-col group"
+              style={{ width: '190px' }}
             >
               <div
-                className="w-full overflow-hidden bg-gray-100"
-                style={{ borderRadius: '8px', aspectRatio: '1/1' }}
+                className="overflow-hidden bg-gray-100"
+                style={{ borderRadius: '8px', width: '190px', height: '271px', flexShrink: 0 }}
               >
                 {rp.images?.[0] ? (
                   // eslint-disable-next-line @next/next/no-img-element
