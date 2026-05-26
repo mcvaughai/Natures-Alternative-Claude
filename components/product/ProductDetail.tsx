@@ -50,6 +50,7 @@ interface ProductDetailProps {
 export default function ProductDetail({ productId }: ProductDetailProps) {
   const [quantity, setQuantity]         = useState(1);
   const [added, setAdded]               = useState(false);
+  const [addedItems, setAddedItems]     = useState<{[key: string]: boolean}>({});
   const [product, setProduct]           = useState<Product | null>(null);
   const [seller, setSeller]             = useState<Seller | null>(null);
   const [relatedProducts, setRelatedProducts] = useState<RelatedProduct[]>([]);
@@ -414,35 +415,71 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
                   ))}
                 </div>
                 <div className="flex justify-end mt-1">
-                  <button
-                    className="relative text-white p-1 rounded-full"
-                    style={{ backgroundColor: '#b91c1c' }}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      addToCart({
-                        id: rp.id,
-                        name: rp.name,
-                        description: rp.description,
-                        price: rp.pricing_type === 'per_pound'
-                          ? `$${Number(rp.price_per_pound ?? 0).toFixed(2)}`
-                          : `$${Number(rp.price).toFixed(2)}`,
-                        quantity: 1,
-                      });
-                    }}
-                  >
-                    <span
-                      className="absolute bg-white rounded-full flex items-center justify-center font-bold"
-                      style={{ top: '-5px', right: '-5px', width: '13px', height: '13px', fontSize: '9px', color: '#b91c1c', border: '1px solid #b91c1c' }}
+                  <div className="relative">
+                    {addedItems[rp.id] && (
+                      <div
+                        className="absolute pointer-events-none font-bold text-green-500"
+                        style={{
+                          top: '-18px',
+                          right: '0px',
+                          fontSize: '11px',
+                          animation: 'floatUp 1.5s ease-out forwards'
+                        }}
+                      >
+                        +1
+                      </div>
+                    )}
+                    <button
+                      className="relative text-white p-1 rounded-full transition-all duration-300"
+                      style={{
+                        backgroundColor: addedItems[rp.id] ? '#16a34a' : '#b91c1c',
+                        transform: addedItems[rp.id] ? 'scale(1.15)' : 'scale(1)'
+                      }}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        addToCart({
+                          id: rp.id,
+                          name: rp.name,
+                          description: rp.description,
+                          price: rp.pricing_type === 'per_pound'
+                            ? `$${Number(rp.price_per_pound ?? 0).toFixed(2)}`
+                            : `$${Number(rp.price).toFixed(2)}`,
+                          quantity: 1,
+                        });
+                        setAddedItems(prev => ({ ...prev, [rp.id]: true }));
+                        setTimeout(() => {
+                          setAddedItems(prev => ({ ...prev, [rp.id]: false }));
+                        }, 1500);
+                      }}
                     >
-                      +
-                    </span>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="9" cy="21" r="1"/>
-                      <circle cx="20" cy="21" r="1"/>
-                      <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
-                    </svg>
-                  </button>
+                      <span
+                        className="absolute bg-white rounded-full flex items-center justify-center font-bold"
+                        style={{
+                          top: '-5px',
+                          right: '-5px',
+                          width: '13px',
+                          height: '13px',
+                          fontSize: '9px',
+                          color: addedItems[rp.id] ? '#16a34a' : '#b91c1c',
+                          border: addedItems[rp.id] ? '1px solid #16a34a' : '1px solid #b91c1c'
+                        }}
+                      >
+                        {addedItems[rp.id] ? '✓' : '+'}
+                      </span>
+                      {addedItems[rp.id] ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <circle cx="9" cy="21" r="1"/>
+                          <circle cx="20" cy="21" r="1"/>
+                          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                        </svg>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
             </Link>

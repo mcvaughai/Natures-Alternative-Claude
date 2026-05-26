@@ -1,4 +1,5 @@
 'use client'
+import { useState } from 'react'
 import Link from 'next/link'
 
 interface ProductCardProps {
@@ -22,6 +23,7 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product, storeSlug, hideFarmInfo, onAddToCart }: ProductCardProps) {
+  const [added, setAdded] = useState(false)
   const farmName = product.sellers?.farm_name || ''
   const storeLink = product.sellers?.slug ? `/store/${product.sellers.slug}` : '#'
   const fulfillmentOptions = product.sellers?.fulfillment || []
@@ -34,6 +36,14 @@ export default function ProductCard({ product, storeSlug, hideFarmInfo, onAddToC
   const productLink = storeSlug
     ? `/product/${product.id}?store=${storeSlug}`
     : `/product/${product.id}`
+
+  const handleQuickAdd = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (onAddToCart) onAddToCart(product)
+    setAdded(true)
+    setTimeout(() => setAdded(false), 1500)
+  }
 
   return (
     <div
@@ -135,35 +145,58 @@ export default function ProductCard({ product, storeSlug, hideFarmInfo, onAddToC
           <p className="font-bold" style={{ fontSize: '16px', color: '#053D2D' }}>
             {priceDisplay}
           </p>
-          <button
-            className="relative text-white p-1.5 flex-shrink-0"
-            style={{ backgroundColor: '#b91c1c', borderRadius: '50%' }}
-            onClick={(e) => {
-              e.preventDefault()
-              if (onAddToCart) onAddToCart(product)
-            }}
-          >
-            <span
-              className="absolute bg-white rounded-full flex items-center justify-center font-bold"
+          <div className="relative">
+            {/* Floating +1 animation */}
+            {added && (
+              <div
+                className="absolute pointer-events-none font-bold text-green-500"
+                style={{
+                  top: '-20px',
+                  right: '0px',
+                  fontSize: '12px',
+                  animation: 'floatUp 1.5s ease-out forwards'
+                }}
+              >
+                +1
+              </div>
+            )}
+            <button
+              className="relative text-white p-1.5 flex-shrink-0 transition-all duration-300"
               style={{
-                top: '-6px',
-                right: '-6px',
-                width: '14px',
-                height: '14px',
-                fontSize: '10px',
-                color: '#b91c1c',
-                border: '1.5px solid #b91c1c',
-                lineHeight: '1'
+                backgroundColor: added ? '#16a34a' : '#b91c1c',
+                borderRadius: '50%',
+                transform: added ? 'scale(1.15)' : 'scale(1)'
               }}
+              onClick={handleQuickAdd}
             >
-              +
-            </span>
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="9" cy="21" r="1"/>
-              <circle cx="20" cy="21" r="1"/>
-              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
-            </svg>
-          </button>
+              <span
+                className="absolute bg-white rounded-full flex items-center justify-center font-bold transition-all duration-300"
+                style={{
+                  top: '-6px',
+                  right: '-6px',
+                  width: '14px',
+                  height: '14px',
+                  fontSize: '10px',
+                  color: added ? '#16a34a' : '#b91c1c',
+                  border: added ? '1.5px solid #16a34a' : '1.5px solid #b91c1c',
+                  lineHeight: '1'
+                }}
+              >
+                {added ? '✓' : '+'}
+              </span>
+              {added ? (
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="9" cy="21" r="1"/>
+                  <circle cx="20" cy="21" r="1"/>
+                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                </svg>
+              )}
+            </button>
+          </div>
         </div>
 
       </div>
