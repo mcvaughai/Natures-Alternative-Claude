@@ -4,8 +4,6 @@ import { useEffect, useState } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import HeroBanner from "@/components/marketplace/HeroBanner";
-import TopRated from "@/components/explore/TopRated";
-import AdBanner from "@/components/explore/AdBanner";
 import FilterSidebar, { FilterProvider, ActiveFiltersBar } from "@/components/FilterSidebar";
 import GridHeader from "@/components/explore/GridHeader";
 import { useCart } from "@/lib/context/CartContext";
@@ -139,8 +137,6 @@ export default function ExplorePage() {
           </FilterProvider>
         </div>
 
-        <TopRated />
-        <AdBanner />
       </main>
       <Footer />
     </div>
