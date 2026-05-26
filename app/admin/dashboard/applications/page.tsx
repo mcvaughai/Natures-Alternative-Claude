@@ -63,15 +63,26 @@ export default function ApplicationsPage() {
     setFetchError("");
     const sess = getSession();
     if (!sess) return;
+    console.log("[Admin] Fetching seller_applications...");
+    console.log("[Admin] Session user_id:", sess.user?.id, "| token prefix:", sess.access_token?.slice(0, 20));
     try {
       const res = await fetch(
         `${SUPABASE_URL}/rest/v1/seller_applications?select=*&order=created_at.desc`,
         { headers: authHeaders(sess.access_token) }
       );
-      if (!res.ok) { setFetchError(`Error ${res.status}`); return; }
+      console.log("[Admin] Response status:", res.status, res.statusText);
       const data = await res.json();
+      console.log("[Admin] Response body:", data);
+      if (!res.ok) {
+        setFetchError(`Supabase error ${res.status}: ${JSON.stringify(data)}`);
+        return;
+      }
+      if (Array.isArray(data) && data.length === 0) {
+        console.warn("[Admin] Empty array returned — likely blocked by RLS. Check seller_applications policies in Supabase dashboard.");
+      }
       setApplications(Array.isArray(data) ? data : []);
     } catch (err) {
+      console.error("[Admin] Fetch error:", err);
       setFetchError(err instanceof Error ? err.message : "Failed to load");
     } finally {
       setLoading(false);
@@ -208,8 +219,18 @@ export default function ApplicationsPage() {
               <div className="w-6 h-6 rounded-full border-2 border-[#1a4a2e] border-t-transparent animate-spin" />
             </div>
           ) : filtered.length === 0 ? (
-            <div className="text-center py-12 text-gray-400 text-sm">
-              {total === 0 ? "No applications yet" : `No ${tab} applications`}
+            <div className="text-center py-12 text-sm">
+              {total === 0 ? (
+                <div className="space-y-2">
+                  <p className="text-gray-400">No applications found.</p>
+                  <p className="text-xs text-gray-300 max-w-md mx-auto">
+                    If you expect data here, check the browser console for <code className="bg-gray-100 px-1 rounded">[Admin]</code> logs.
+                    This is usually an RLS policy issue — add a SELECT policy on <code className="bg-gray-100 px-1 rounded">seller_applications</code> for admin users in your Supabase dashboard.
+                  </p>
+                </div>
+              ) : (
+                <p className="text-gray-400">{`No ${tab} applications`}</p>
+              )}
             </div>
           ) : (
             <div className="overflow-x-auto">
