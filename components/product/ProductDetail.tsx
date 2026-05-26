@@ -342,7 +342,7 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
 
             {/* Banner Image */}
             {seller.banner_url && (
-              <div style={{ height: '80px', overflow: 'hidden' }}>
+              <div style={{ height: '140px', overflow: 'hidden' }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={seller.banner_url}
@@ -356,8 +356,7 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
             <div className="p-4">
               <p className="text-xs text-gray-500 mb-1">Sold by</p>
               <h3 className="font-bold text-gray-900 text-lg">{seller.farm_name}</h3>
-              <p className="text-gray-500 text-sm mt-1 line-clamp-2">{seller.description ?? ""}</p>
-              <Link
+<Link
                 href={`/store/${seller.slug}`}
                 className="mt-3 inline-block px-5 py-2 rounded-full text-white text-sm font-medium hover:opacity-90"
                 style={{ backgroundColor: '#053D2D' }}
