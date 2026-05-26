@@ -53,7 +53,7 @@ const FARMS = [
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-[#FCF7F4] flex flex-col">
+    <div className="min-h-screen bg-white flex flex-col">
       <Navbar />
       <main className="flex-1">
 
@@ -188,7 +188,7 @@ export default function AboutPage() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 href="/"
-                className="bg-white text-[#1a4a2e] hover:bg-[#FCF7F4] font-semibold px-8 py-3 rounded-full transition-colors"
+                className="bg-white text-[#1a4a2e] hover:bg-white font-semibold px-8 py-3 rounded-full transition-colors"
               >
                 Shop Now
               </Link>

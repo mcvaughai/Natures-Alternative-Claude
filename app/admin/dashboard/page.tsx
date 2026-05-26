@@ -158,7 +158,7 @@ export default function AdminDashboardPage() {
                 { label: "Active Listings",        value: "142"     },
                 { label: "Customer Satisfaction",  value: "4.8 / 5" },
               ].map(s => (
-                <div key={s.label} className="bg-[#FCF7F4] rounded-xl p-4">
+                <div key={s.label} className="bg-white rounded-xl p-4">
                   <p className="text-xs text-gray-500 mb-1">{s.label}</p>
                   <p className="text-xl font-bold text-[#1a4a2e]">{s.value}</p>
                 </div>

@@ -5,7 +5,7 @@ import DiscountedItems from "@/components/cart/DiscountedItems";
 
 export default function CartPage() {
   return (
-    <div className="min-h-screen bg-[#FCF7F4] flex flex-col">
+    <div className="min-h-screen bg-white flex flex-col">
       <Navbar />
       <main className="flex-1 pb-8">
         <CartSection />

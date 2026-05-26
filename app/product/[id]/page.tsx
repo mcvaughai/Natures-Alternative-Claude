@@ -12,7 +12,7 @@ interface ProductPageProps {
 
 export default function ProductPage({ params }: ProductPageProps) {
   return (
-    <div className="min-h-screen bg-[#FCF7F4] flex flex-col">
+    <div className="min-h-screen bg-white flex flex-col">
       {/* ProductNavbar reads ?store= param — needs Suspense for useSearchParams */}
       <Suspense fallback={<div className="h-[110px] bg-[#1a4a2e]" />}>
         <ProductNavbar />

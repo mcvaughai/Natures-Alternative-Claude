@@ -142,7 +142,7 @@ export default function StoreShopPage() {
   }
 
   if (loading) return (
-    <div className="min-h-screen bg-[#FCF7F4]">
+    <div className="min-h-screen bg-white">
       <Navbar />
       <StoreNavbar storeId={slug} activePage="shop" />
       <div className="flex items-center justify-center py-40">
@@ -153,7 +153,7 @@ export default function StoreShopPage() {
   )
 
   return (
-    <div className="min-h-screen bg-[#FCF7F4]">
+    <div className="min-h-screen bg-white">
       <Navbar />
       <StoreNavbar storeId={slug} activePage="shop" />
 

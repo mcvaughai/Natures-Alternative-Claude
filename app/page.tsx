@@ -9,7 +9,7 @@ import BuyAgain from "@/components/marketplace/BuyAgain";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[#FCF7F4] flex flex-col">
+    <div className="min-h-screen bg-white flex flex-col">
       <Navbar />
       <main className="flex-1 pb-8">
         <HeroBanner />

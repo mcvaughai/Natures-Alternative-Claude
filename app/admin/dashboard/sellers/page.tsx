@@ -160,7 +160,7 @@ export default function SellersPage() {
                     { label:"Products",     value: String(selected.products) },
                     { label:"Rating",       value: "★ " + selected.rating },
                   ].map(s => (
-                    <div key={s.label} className="bg-[#FCF7F4] rounded-xl p-3">
+                    <div key={s.label} className="bg-white rounded-xl p-3">
                       <p className="text-xs text-gray-500">{s.label}</p>
                       <p className="text-base font-bold text-[#1a4a2e] mt-0.5">{s.value}</p>
                     </div>

@@ -155,7 +155,7 @@ export default function StorePage() {
 
   /* ── Loading ── */
   if (loading) return (
-    <div className="min-h-screen bg-[#FCF7F4]">
+    <div className="min-h-screen bg-white">
       <Navbar />
       <div className="flex items-center justify-center py-40">
         <div className="text-center">
@@ -169,7 +169,7 @@ export default function StorePage() {
 
   /* ── Error ── */
   if (error) return (
-    <div className="min-h-screen bg-[#FCF7F4]">
+    <div className="min-h-screen bg-white">
       <Navbar />
       <div className="flex items-center justify-center py-40">
         <div className="text-center">
@@ -193,7 +193,7 @@ export default function StorePage() {
   const whoWeAreImage = store.who_we_are_image_url
 
   return (
-    <div className="min-h-screen bg-[#FCF7F4]">
+    <div className="min-h-screen bg-white">
       <Navbar />
 
       {/* ── 1. STORE SECONDARY NAVBAR ── */}

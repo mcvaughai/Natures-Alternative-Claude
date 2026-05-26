@@ -43,7 +43,7 @@ export default function ContactPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FCF7F4] flex flex-col">
+    <div className="min-h-screen bg-white flex flex-col">
       <Navbar />
       <main className="flex-1">
 
@@ -202,7 +202,7 @@ export default function ContactPage() {
 
                 <hr className="my-6 border-gray-100" />
 
-                <div className="bg-[#FCF7F4] rounded-xl p-4">
+                <div className="bg-white rounded-xl p-4">
                   <h3 className="font-semibold text-gray-900 mb-1">Are you a farmer?</h3>
                   <p className="text-sm text-gray-600 mb-4">For seller support and applications, visit our Seller Center.</p>
                   <Link
