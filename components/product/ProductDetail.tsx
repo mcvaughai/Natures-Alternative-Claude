@@ -331,7 +331,7 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
             >
               <div
                 className="overflow-hidden bg-gray-100"
-                style={{ borderRadius: '8px', width: '190px', height: '271px', flexShrink: 0 }}
+                style={{ borderRadius: '8px', width: '190px', height: '164px', flexShrink: 0 }}
               >
                 {rp.images?.[0] ? (
                   // eslint-disable-next-line @next/next/no-img-element
