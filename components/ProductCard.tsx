@@ -44,13 +44,14 @@ export default function ProductCard({ product, storeSlug, hideFarmInfo, onAddToC
       <Link href={productLink}>
         <div
           className="overflow-hidden bg-gray-200"
-          style={{ height: '200px', borderRadius: '8px 8px 0 0' }}
+          style={{ height: '200px', borderRadius: '8px' }}
         >
           {product.images?.[0] ? (
             <img
               src={product.images[0]}
               alt={product.name}
               className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+              style={{ borderRadius: '8px' }}
             />
           ) : (
             <div className="w-full h-full bg-gray-200 flex items-center justify-center">
@@ -61,13 +62,13 @@ export default function ProductCard({ product, storeSlug, hideFarmInfo, onAddToC
       </Link>
 
       {/* Content */}
-      <div className="p-3 flex flex-col flex-1 gap-1.5">
+      <div className="p-4 flex flex-col flex-1 gap-2">
 
         {/* Product Name */}
         <Link href={productLink}>
           <h4
-            className="font-semibold text-gray-800 hover:text-green-900 transition-colors leading-tight"
-            style={{ fontSize: '14px' }}
+            className="font-semibold hover:text-green-900 transition-colors leading-tight"
+            style={{ fontSize: '16px', color: '#111827' }}
           >
             {product.name}
           </h4>
@@ -76,23 +77,23 @@ export default function ProductCard({ product, storeSlug, hideFarmInfo, onAddToC
         {/* Star Rating */}
         <div className="flex items-center gap-0.5">
           {[1,2,3,4,5].map(star => (
-            <svg key={star} width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="2">
+            <svg key={star} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="2">
               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
             </svg>
           ))}
-          <span className="text-gray-400 ml-1" style={{ fontSize: '10px' }}>(0 reviews) </span>
+          <span className="text-gray-400 ml-1" style={{ fontSize: '11px' }}>(0 reviews) </span>
         </div>
 
         {/* Farm Name + Visit Store */}
         {farmName && !hideFarmInfo && (
           <div className="flex items-center justify-between">
-            <span className="text-gray-500 truncate" style={{ fontSize: '11px' }}>
+            <span className="text-gray-500 truncate" style={{ fontSize: '13px', color: '#4b5563' }}>
               {farmName}
             </span>
             <Link
               href={storeLink}
               className="font-medium flex-shrink-0 ml-2 hover:underline"
-              style={{ fontSize: '11px', color: '#00674B' }}
+              style={{ fontSize: '13px', color: '#00674B' }}
             >
               Visit Store
             </Link>
@@ -104,24 +105,24 @@ export default function ProductCard({ product, storeSlug, hideFarmInfo, onAddToC
           <div className="flex flex-wrap gap-1">
             {offersPickup && (
               <span
-                className="font-medium px-2 py-0.5 rounded-full flex items-center gap-0.5"
-                style={{ fontSize: '10px', backgroundColor: '#dcfce7', color: '#15803d' }}
+                className="font-medium rounded-full flex items-center gap-0.5"
+                style={{ fontSize: '11px', backgroundColor: '#dcfce7', color: '#15803d', padding: '2px 8px' }}
               >
                 🚗 Pickup
               </span>
             )}
             {offersDelivery && (
               <span
-                className="font-medium px-2 py-0.5 rounded-full flex items-center gap-0.5"
-                style={{ fontSize: '10px', backgroundColor: '#dbeafe', color: '#1d4ed8' }}
+                className="font-medium rounded-full flex items-center gap-0.5"
+                style={{ fontSize: '11px', backgroundColor: '#dbeafe', color: '#1d4ed8', padding: '2px 8px' }}
               >
                 🚚 Delivery
               </span>
             )}
             {offersShipping && (
               <span
-                className="font-medium px-2 py-0.5 rounded-full flex items-center gap-0.5"
-                style={{ fontSize: '10px', backgroundColor: '#ede9fe', color: '#6d28d9' }}
+                className="font-medium rounded-full flex items-center gap-0.5"
+                style={{ fontSize: '11px', backgroundColor: '#ede9fe', color: '#6d28d9', padding: '2px 8px' }}
               >
                 📦 Ships
               </span>
@@ -131,7 +132,7 @@ export default function ProductCard({ product, storeSlug, hideFarmInfo, onAddToC
 
         {/* Price + Cart Button */}
         <div className="flex justify-between items-center mt-auto pt-1">
-          <p className="font-bold" style={{ fontSize: '14px', color: '#053D2D' }}>
+          <p className="font-bold" style={{ fontSize: '16px', color: '#053D2D' }}>
             {priceDisplay}
           </p>
           <button
