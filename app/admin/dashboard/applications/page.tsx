@@ -2,175 +2,160 @@
 
 import { useState, useEffect, useCallback } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
-import { getValidAdminSession, getAuthHeaders } from "@/lib/sessionHelper";
 
-const SUPABASE_URL = "https://ezryfycxfmtffobyfjfa.supabase.co";
+const SUPABASE_URL  = "https://ezryfycxfmtffobyfjfa.supabase.co";
+const SUPABASE_KEY  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6cnlmeWN4Zm10ZmZvYnlmamZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MjQ1MDEsImV4cCI6MjA5MjQwMDUwMX0.woObRrj3MMUf6eAFVbkvDNUsQfQ-elmlDqPADBT9aZs";
 
-type AppStatus = "Pending" | "Approved" | "Rejected";
-const FILTER_TABS: AppStatus[] = ["Pending", "Approved", "Rejected"];
-
-interface Application {
-  id: string;
-  reference_number: string;
-  farm: string;
-  owner: string;
-  location: string;
-  city: string;
-  state: string;
-  products: string;
-  date: string;
-  status: AppStatus;
-  email: string;
-  phone: string;
-  fulfillment: string[];
-  description: string;
-  farming_practices: string;
-  unique_description: string;
-  applicant_user_id: string | null;
-}
-
-const STATUS_STYLES: Record<AppStatus, string> = {
-  Pending:  "bg-yellow-100 text-yellow-700",
-  Approved: "bg-green-100 text-green-700",
-  Rejected: "bg-red-100 text-red-600",
-};
-
-function capitalizeStatus(s: string): AppStatus {
-  const map: Record<string, AppStatus> = {
-    pending: "Pending", approved: "Approved", rejected: "Rejected",
-  };
-  return map[s] ?? "Pending";
-}
+type AppStatus = "pending" | "approved" | "rejected";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mapRow(row: any): Application {
-  return {
-    id:               row.id,
-    reference_number: row.reference_number ?? row.id?.slice(0, 8).toUpperCase(),
-    farm:             row.farm_name ?? "",
-    owner:            row.owner_name ?? "",
-    location:         [row.city, row.state].filter(Boolean).join(", "),
-    city:             row.city ?? "",
-    state:            row.state ?? "",
-    products:         Array.isArray(row.product_types) ? row.product_types.join(", ") : "",
-    date:             row.created_at
-      ? new Date(row.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
-      : "",
-    status:           capitalizeStatus(row.status ?? "pending"),
-    email:            row.email ?? "",
-    phone:            row.phone ?? "",
-    fulfillment:      Array.isArray(row.fulfillment_methods) ? row.fulfillment_methods : [],
-    description:      row.farming_practices ?? row.unique_description ?? row.description ?? "",
-    farming_practices: row.farming_practices ?? "",
-    unique_description: row.unique_description ?? "",
-    applicant_user_id: row.applicant_user_id ?? null,
-  };
+type Application = Record<string, any>;
+
+const STATUS_STYLES: Record<AppStatus, string> = {
+  pending:  "bg-yellow-100 text-yellow-700",
+  approved: "bg-green-100 text-green-700",
+  rejected: "bg-red-100 text-red-600",
+};
+
+function formatDate(iso: string): string {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
+function makeSlug(name: string): string {
+  return (name ?? "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    + `-${Date.now().toString(36)}`;
 }
 
 export default function ApplicationsPage() {
-  const [apps, setApps]           = useState<Application[]>([]);
-  const [loading, setLoading]     = useState(true);
-  const [fetchError, setFetchError] = useState("");
-  const [tab, setTab]             = useState<"All" | AppStatus>("All");
-  const [selected, setSelected]   = useState<Application | null>(null);
-  const [note, setNote]           = useState("");
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [loading, setLoading]           = useState(true);
+  const [fetchError, setFetchError]     = useState("");
+  const [tab, setTab]                   = useState<"all" | AppStatus>("all");
+  const [selected, setSelected]         = useState<Application | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
 
+  // ── Session ───────────────────────────────────────────────────────────────
+  const getSession = useCallback(() => {
+    try {
+      const s = localStorage.getItem("admin_session");
+      if (!s) { window.location.href = "/admin/login"; return null; }
+      return JSON.parse(s);
+    } catch {
+      window.location.href = "/admin/login";
+      return null;
+    }
+  }, []);
+
+  const authHeaders = useCallback((accessToken: string) => ({
+    "apikey":        SUPABASE_KEY,
+    "Authorization": `Bearer ${accessToken}`,
+    "Content-Type":  "application/json",
+  }), []);
+
+  // ── Fetch ─────────────────────────────────────────────────────────────────
   const fetchApplications = useCallback(async () => {
     setLoading(true);
     setFetchError("");
+    const sess = getSession();
+    if (!sess) return;
     try {
-      const session = await getValidAdminSession();
-      if (!session) { window.location.href = "/admin/login"; return; }
-      const headers = getAuthHeaders(session.access_token);
-
       const res = await fetch(
         `${SUPABASE_URL}/rest/v1/seller_applications?select=*&order=created_at.desc`,
-        { headers }
+        { headers: authHeaders(sess.access_token) }
       );
       if (!res.ok) { setFetchError(`Error ${res.status}`); return; }
       const data = await res.json();
-      setApps((data ?? []).map(mapRow));
+      setApplications(Array.isArray(data) ? data : []);
     } catch (err) {
       setFetchError(err instanceof Error ? err.message : "Failed to load");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [getSession, authHeaders]);
 
-  useEffect(() => {
-    fetchApplications();
-  }, [fetchApplications]);
+  useEffect(() => { fetchApplications(); }, [fetchApplications]);
 
-  const handleApprove = async (app: Application) => {
+  // ── Approve ───────────────────────────────────────────────────────────────
+  const approveApplication = async (app: Application) => {
     setActionLoading(true);
     setSuccessMessage("");
+    const sess = getSession();
+    if (!sess) return;
+    const headers = { ...authHeaders(sess.access_token), Prefer: "return=representation" };
     try {
-      const session = await getValidAdminSession();
-      if (!session) return;
-      const headers = { ...getAuthHeaders(session.access_token), Prefer: "return=representation" };
-
       // 1. Mark application approved
-      const appRes = await fetch(`${SUPABASE_URL}/rest/v1/seller_applications?id=eq.${app.id}`,
-        { method: "PATCH", headers, body: JSON.stringify({ status: "approved" }) });
-      if (!appRes.ok) return;
+      await fetch(`${SUPABASE_URL}/rest/v1/seller_applications?id=eq.${app.id}`, {
+        method:  "PATCH",
+        headers,
+        body:    JSON.stringify({ status: "approved", reviewed_at: new Date().toISOString() }),
+      });
 
-      if (app.applicant_user_id) {
-        // 2. Promote user role to seller
-        await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${app.applicant_user_id}`,
-          { method: "PATCH", headers, body: JSON.stringify({ role: "seller" }) });
+      // 2. Create seller record
+      await fetch(`${SUPABASE_URL}/rest/v1/sellers`, {
+        method:  "POST",
+        headers,
+        body:    JSON.stringify({
+          farm_name:   app.farm_name,
+          email:       app.email,
+          city:        app.city        ?? null,
+          state:       app.state       ?? null,
+          zip_code:    app.zip_code    ?? app.zip ?? null,
+          description: app.description ?? null,
+          phone:       app.phone       ?? null,
+          slug:        makeSlug(app.farm_name),
+          status:      "approved",
+          user_id:     app.user_id     ?? null,
+          fulfillment: app.fulfillment_methods ?? [],
+          created_at:  new Date().toISOString(),
+          updated_at:  new Date().toISOString(),
+        }),
+      });
 
-        // 3. Create sellers record
-        const baseSlug = app.farm.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-        const slug = `${baseSlug}-${Date.now().toString(36)}`;
-        await fetch(`${SUPABASE_URL}/rest/v1/sellers`,
-          { method: "POST", headers, body: JSON.stringify({
-            user_id: app.applicant_user_id,
-            farm_name: app.farm,
-            owner_name: app.owner,
-            slug,
-            status: "approved",
-            city: app.city || null,
-            state: app.state || null,
-            email: app.email,
-            phone: app.phone || null,
-          }) });
-      }
-
-      setSuccessMessage("Seller approved! Their account is now active.");
-      await fetchApplications();
+      setApplications(prev => prev.map(a => a.id === app.id ? { ...a, status: "approved" } : a));
+      setSuccessMessage(`${app.farm_name} has been approved! Their seller account is now active.`);
       setSelected(null);
+    } catch (err) {
+      setFetchError(err instanceof Error ? err.message : "Approve failed");
     } finally {
       setActionLoading(false);
     }
   };
 
-  const handleReject = async (app: Application) => {
+  // ── Reject ────────────────────────────────────────────────────────────────
+  const rejectApplication = async (app: Application) => {
+    if (!confirm(`Reject application from ${app.farm_name}?`)) return;
     setActionLoading(true);
     setSuccessMessage("");
+    const sess = getSession();
+    if (!sess) return;
+    const headers = authHeaders(sess.access_token);
     try {
-      const session = await getValidAdminSession();
-      if (!session) return;
-      const headers = { ...getAuthHeaders(session.access_token), Prefer: "return=representation" };
-
-      await fetch(`${SUPABASE_URL}/rest/v1/seller_applications?id=eq.${app.id}`,
-        { method: "PATCH", headers, body: JSON.stringify({ status: "rejected" }) });
-
-      await fetchApplications();
+      await fetch(`${SUPABASE_URL}/rest/v1/seller_applications?id=eq.${app.id}`, {
+        method:  "PATCH",
+        headers,
+        body:    JSON.stringify({ status: "rejected", reviewed_at: new Date().toISOString() }),
+      });
+      setApplications(prev => prev.map(a => a.id === app.id ? { ...a, status: "rejected" } : a));
       setSelected(null);
+    } catch (err) {
+      setFetchError(err instanceof Error ? err.message : "Reject failed");
     } finally {
       setActionLoading(false);
     }
   };
 
-  const filtered = tab === "All" ? apps : apps.filter(a => a.status === tab);
-  const counts = {
-    All:      apps.length,
-    Pending:  apps.filter(a => a.status === "Pending").length,
-    Approved: apps.filter(a => a.status === "Approved").length,
-    Rejected: apps.filter(a => a.status === "Rejected").length,
-  };
+  // ── Derived counts ────────────────────────────────────────────────────────
+  const total    = applications.length;
+  const pending  = applications.filter(a => a.status === "pending").length;
+  const approved = applications.filter(a => a.status === "approved").length;
+  const rejected = applications.filter(a => a.status === "rejected").length;
+
+  const filtered = tab === "all" ? applications : applications.filter(a => a.status === tab);
 
   return (
     <AdminLayout>
@@ -180,10 +165,10 @@ export default function ApplicationsPage() {
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
-            { label: "Total",    value: counts.All,      color: "text-gray-900"   },
-            { label: "Pending",  value: counts.Pending,  color: "text-yellow-600" },
-            { label: "Approved", value: counts.Approved, color: "text-green-700"  },
-            { label: "Rejected", value: counts.Rejected, color: "text-red-600"    },
+            { label: "Total",    value: total,    color: "text-gray-900"   },
+            { label: "Pending",  value: pending,  color: "text-yellow-600" },
+            { label: "Approved", value: approved, color: "text-green-700"  },
+            { label: "Rejected", value: rejected, color: "text-red-600"    },
           ].map(s => (
             <div key={s.label} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
               <p className="text-xs text-gray-400 font-medium uppercase tracking-wide">{s.label}</p>
@@ -192,14 +177,12 @@ export default function ApplicationsPage() {
           ))}
         </div>
 
-        {/* Error state */}
+        {/* Error / Success */}
         {fetchError && (
           <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">
-            Failed to load applications: {fetchError}
+            {fetchError}
           </div>
         )}
-
-        {/* Success message */}
         {successMessage && (
           <div className="bg-green-50 border border-green-200 text-green-700 text-sm rounded-xl px-4 py-3">
             {successMessage}
@@ -208,11 +191,14 @@ export default function ApplicationsPage() {
 
         {/* Table */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          {/* Filter tabs */}
           <div className="flex overflow-x-auto border-b border-gray-100">
-            {(["All", ...FILTER_TABS] as const).map(t => (
+            {(["all", "pending", "approved", "rejected"] as const).map(t => (
               <button key={t} onClick={() => setTab(t)}
-                className={`px-5 py-3.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${tab === t ? "border-[#1a4a2e] text-[#1a4a2e]" : "border-transparent text-gray-500 hover:text-gray-800"}`}>
-                {t} {t !== "All" && <span className="ml-1 text-xs">({counts[t]})</span>}
+                className={`px-5 py-3.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors capitalize ${
+                  tab === t ? "border-[#1a4a2e] text-[#1a4a2e]" : "border-transparent text-gray-500 hover:text-gray-800"
+                }`}>
+                {t === "all" ? `All (${total})` : `${t.charAt(0).toUpperCase() + t.slice(1)} (${t === "pending" ? pending : t === "approved" ? approved : rejected})`}
               </button>
             ))}
           </div>
@@ -222,15 +208,15 @@ export default function ApplicationsPage() {
               <div className="w-6 h-6 rounded-full border-2 border-[#1a4a2e] border-t-transparent animate-spin" />
             </div>
           ) : filtered.length === 0 ? (
-            <div className="text-center py-16 text-gray-400 text-sm">
-              No {tab === "All" ? "" : tab.toLowerCase()} applications yet
+            <div className="text-center py-12 text-gray-400 text-sm">
+              {total === 0 ? "No applications yet" : `No ${tab} applications`}
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-100">
-                    {["Ref #", "Farm Name","Owner","Location","Products","Applied","Status","Actions"].map(h => (
+                    {["Farm Name", "Owner", "Email", "Location", "Products", "Applied", "Status", "Actions"].map(h => (
                       <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
@@ -238,33 +224,25 @@ export default function ApplicationsPage() {
                 <tbody className="divide-y divide-gray-50">
                   {filtered.map(a => (
                     <tr key={a.id} className="hover:bg-gray-50/50 transition-colors">
-                      <td className="px-4 py-3.5 text-xs font-mono text-gray-400">{a.reference_number}</td>
-                      <td className="px-4 py-3.5 font-semibold text-gray-800 whitespace-nowrap">{a.farm}</td>
-                      <td className="px-4 py-3.5 text-gray-700 whitespace-nowrap">{a.owner}</td>
-                      <td className="px-4 py-3.5 text-gray-500 whitespace-nowrap">{a.location}</td>
-                      <td className="px-4 py-3.5 text-gray-500 max-w-[160px] truncate">{a.products}</td>
-                      <td className="px-4 py-3.5 text-gray-500 whitespace-nowrap">{a.date}</td>
+                      <td className="px-4 py-3.5 font-semibold text-gray-800 whitespace-nowrap">{a.farm_name}</td>
+                      <td className="px-4 py-3.5 text-gray-700 whitespace-nowrap">{a.owner_name ?? "—"}</td>
+                      <td className="px-4 py-3.5 text-gray-500">{a.email}</td>
+                      <td className="px-4 py-3.5 text-gray-500 whitespace-nowrap">{[a.city, a.state].filter(Boolean).join(", ") || "—"}</td>
+                      <td className="px-4 py-3.5 text-gray-500 max-w-[160px] truncate">
+                        {Array.isArray(a.product_types) ? a.product_types.join(", ") : (a.product_types ?? "—")}
+                      </td>
+                      <td className="px-4 py-3.5 text-gray-500 whitespace-nowrap">{formatDate(a.created_at)}</td>
                       <td className="px-4 py-3.5">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[a.status]}`}>{a.status}</span>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${STATUS_STYLES[a.status as AppStatus] ?? "bg-gray-100 text-gray-600"}`}>
+                          {a.status}
+                        </span>
                       </td>
                       <td className="px-4 py-3.5">
-                        <div className="flex items-center gap-1.5">
-                          {a.status === "Pending" && (
-                            <button onClick={() => { setSelected(selected?.id === a.id ? null : a); setNote(""); }}
-                              className="text-xs font-semibold bg-[#1a4a2e] hover:bg-[#2d6b47] text-white px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap">
-                              Review
-                            </button>
-                          )}
-                          {a.status === "Approved" && (
-                            <span className="text-xs font-semibold text-green-700 border border-green-200 px-3 py-1.5 rounded-lg">Approved</span>
-                          )}
-                          {a.status === "Rejected" && (
-                            <button onClick={() => { setSelected(selected?.id === a.id ? null : a); setNote(""); }}
-                              className="text-xs font-semibold border border-gray-300 text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
-                              View
-                            </button>
-                          )}
-                        </div>
+                        <button
+                          onClick={() => setSelected(selected?.id === a.id ? null : a)}
+                          className="text-xs font-semibold bg-[#1a4a2e] hover:bg-[#2d6b47] text-white px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap">
+                          {selected?.id === a.id ? "Close" : "Review"}
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -279,8 +257,8 @@ export default function ApplicationsPage() {
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
             <div className="flex items-center justify-between mb-5">
               <div>
-                <h2 className="text-base font-bold text-gray-900">Application Review — {selected.farm}</h2>
-                <p className="text-xs text-gray-400 font-mono mt-0.5">{selected.reference_number}</p>
+                <h2 className="text-base font-bold text-gray-900">{selected.farm_name}</h2>
+                <p className="text-xs text-gray-400 mt-0.5">Applied {formatDate(selected.created_at)}</p>
               </div>
               <button onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-600">
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -293,73 +271,80 @@ export default function ApplicationsPage() {
               <div className="space-y-3">
                 <div>
                   <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1">Farm Name</p>
-                  <p className="text-sm font-semibold text-gray-800">{selected.farm}</p>
+                  <p className="text-sm font-semibold text-gray-800">{selected.farm_name}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1">Owner</p>
-                  <p className="text-sm text-gray-700">{selected.owner}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1">Location</p>
-                  <p className="text-sm text-gray-700">{selected.location}</p>
+                  <p className="text-sm text-gray-700">{selected.owner_name ?? "—"}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1">Contact</p>
                   <p className="text-sm text-gray-700">{selected.email}</p>
-                  <p className="text-sm text-gray-700">{selected.phone}</p>
+                  {selected.phone && <p className="text-sm text-gray-700">{selected.phone}</p>}
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1">Location</p>
+                  <p className="text-sm text-gray-700">{[selected.city, selected.state].filter(Boolean).join(", ") || "—"}</p>
                 </div>
               </div>
               <div className="space-y-3">
                 <div>
-                  <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1">Products</p>
-                  <p className="text-sm text-gray-700">{selected.products}</p>
+                  <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1">Product Types</p>
+                  <p className="text-sm text-gray-700">
+                    {Array.isArray(selected.product_types) ? selected.product_types.join(", ") : (selected.product_types ?? "—")}
+                  </p>
                 </div>
-                {selected.fulfillment.length > 0 && (
+                {selected.fulfillment_methods?.length > 0 && (
                   <div>
-                    <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1">Fulfillment Methods</p>
+                    <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1">Fulfillment</p>
                     <div className="flex flex-wrap gap-1.5">
-                      {selected.fulfillment.map(f => (
+                      {selected.fulfillment_methods.map((f: string) => (
                         <span key={f} className="text-xs bg-[#1a4a2e]/10 text-[#1a4a2e] px-2 py-0.5 rounded-full font-medium">{f}</span>
                       ))}
                     </div>
                   </div>
                 )}
-                {selected.farming_practices && (
+                {selected.description && (
                   <div>
-                    <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1">Farming Practices</p>
-                    <p className="text-sm text-gray-700 leading-relaxed">{selected.farming_practices}</p>
+                    <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1">Description</p>
+                    <p className="text-sm text-gray-700 leading-relaxed">{selected.description}</p>
                   </div>
                 )}
-                {selected.unique_description && (
-                  <div>
-                    <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1">What Makes Them Unique</p>
-                    <p className="text-sm text-gray-700 leading-relaxed">{selected.unique_description}</p>
-                  </div>
-                )}
+                <div>
+                  <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1">Status</p>
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${STATUS_STYLES[selected.status as AppStatus] ?? "bg-gray-100 text-gray-600"}`}>
+                    {selected.status}
+                  </span>
+                </div>
               </div>
             </div>
 
-            <div className="mb-5">
-              <label className="block text-xs text-gray-400 uppercase tracking-wide font-medium mb-1.5">Admin Notes</label>
-              <textarea rows={3} value={note} onChange={e => setNote(e.target.value)}
-                placeholder="Add internal notes about this application..."
-                className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a4a2e]/30 focus:border-[#1a4a2e] transition resize-none"/>
-            </div>
-
-            {selected.status === "Pending" && (
+            {selected.status === "pending" && (
               <div className="flex gap-3">
                 <button
-                  onClick={() => handleApprove(selected)}
+                  onClick={() => approveApplication(selected)}
                   disabled={actionLoading}
                   className="flex-1 bg-[#1a4a2e] hover:bg-[#2d6b47] disabled:opacity-50 text-white font-semibold py-2.5 rounded-xl transition-colors text-sm">
                   {actionLoading ? "Processing..." : "Approve Application"}
                 </button>
                 <button
-                  onClick={() => handleReject(selected)}
+                  onClick={() => rejectApplication(selected)}
                   disabled={actionLoading}
                   className="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-semibold py-2.5 rounded-xl transition-colors text-sm">
                   {actionLoading ? "Processing..." : "Reject Application"}
                 </button>
+              </div>
+            )}
+
+            {selected.status === "approved" && (
+              <div className="bg-green-50 border border-green-200 text-green-700 text-sm rounded-xl px-4 py-3">
+                ✓ This application has been approved. The seller account is active.
+              </div>
+            )}
+
+            {selected.status === "rejected" && (
+              <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
+                ✗ This application has been rejected.
               </div>
             )}
           </div>
