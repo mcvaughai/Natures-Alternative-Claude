@@ -131,14 +131,14 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
   const canAddToCart = !isPerPound || !!selectedUnit;
 
   return (
-    <div className="w-full px-6 py-8 flex gap-8 items-start">
+    <div className="w-full px-6 py-8 flex gap-6 items-start justify-between">
 
-      {/* LEFT - Product Image - fixed width */}
-      <div className="flex flex-col gap-3" style={{ width: '339px', flexShrink: 0 }}>
+      {/* LEFT - Product Image - flexible width */}
+      <div className="flex flex-col gap-3 flex-1" style={{ minWidth: '280px', maxWidth: '400px' }}>
         {/* Main Image */}
         <div
           className="w-full overflow-hidden bg-gray-100"
-          style={{ borderRadius: '12px', width: '339px', height: '413px', flexShrink: 0 }}
+          style={{ borderRadius: '12px', width: '100%', height: '413px' }}
         >
           {mainImage ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -184,8 +184,8 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
         )}
       </div>
 
-      {/* MIDDLE - Product Info - fixed width centered */}
-      <div className="flex flex-col gap-4" style={{ width: '420px', flexShrink: 0 }}>
+      {/* MIDDLE - Product Info */}
+      <div className="flex flex-col gap-4" style={{ flexShrink: 0, width: '380px' }}>
 
         {/* Product Name */}
         <h1 className="text-3xl font-bold text-gray-900">
