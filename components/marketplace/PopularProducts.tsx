@@ -70,7 +70,7 @@ export default function PopularProducts() {
   return (
     <section className="w-full px-6 py-8">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">Popular Products</h2>
+        <h2 className="font-raleway text-2xl font-bold text-gray-900">Popular Products</h2>
         <Link 
           href="/explore"
           className="text-sm font-medium hover:underline"

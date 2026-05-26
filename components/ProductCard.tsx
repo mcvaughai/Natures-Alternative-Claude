@@ -77,7 +77,7 @@ export default function ProductCard({ product, storeSlug, hideFarmInfo, onAddToC
         {/* Product Name */}
         <Link href={productLink}>
           <h4
-            className="font-semibold hover:text-green-900 transition-colors leading-tight"
+            className="font-urbanist font-semibold hover:text-green-900 transition-colors leading-tight"
             style={{ fontSize: '16px', color: '#111827' }}
           >
             {product.name}
@@ -91,13 +91,13 @@ export default function ProductCard({ product, storeSlug, hideFarmInfo, onAddToC
               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
             </svg>
           ))}
-          <span className="text-gray-400 ml-1" style={{ fontSize: '11px' }}>(0 reviews) </span>
+          <span className="font-urbanist text-gray-400 ml-1" style={{ fontSize: '11px' }}>(0 reviews) </span>
         </div>
 
         {/* Farm Name + Visit Store */}
         {farmName && !hideFarmInfo && (
           <div className="flex items-center justify-between">
-            <span className="text-gray-500 truncate" style={{ fontSize: '13px', color: '#4b5563' }}>
+            <span className="font-urbanist text-gray-500 truncate" style={{ fontSize: '13px', color: '#4b5563' }}>
               {farmName}
             </span>
             <Link
@@ -142,7 +142,7 @@ export default function ProductCard({ product, storeSlug, hideFarmInfo, onAddToC
 
         {/* Price + Cart Button */}
         <div className="flex justify-between items-center mt-auto pt-1">
-          <p className="font-bold" style={{ fontSize: '16px', color: '#053D2D' }}>
+          <p className="font-urbanist font-bold" style={{ fontSize: '16px', color: '#053D2D' }}>
             {priceDisplay}
           </p>
           <div className="relative">

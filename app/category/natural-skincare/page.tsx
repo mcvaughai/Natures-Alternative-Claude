@@ -87,7 +87,7 @@ export default function NaturalSkincarePage() {
         {/* Hero */}
         <section className="bg-[#1a4a2e] py-14 text-center">
           <div className="max-w-2xl mx-auto px-4">
-            <h1 className="text-4xl sm:text-5xl font-bold text-white mb-3">{CATEGORY_NAME}</h1>
+            <h1 className="font-raleway text-4xl sm:text-5xl font-bold text-white mb-3">{CATEGORY_NAME}</h1>
             <p className="text-[#f5f0e8] opacity-90">{CATEGORY_DESC}</p>
           </div>
         </section>

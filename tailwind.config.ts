@@ -83,9 +83,10 @@ const config: Config = {
       },
 
       fontFamily: {
-        // TODO: update with brand typography choices
         sans: ["var(--font-sans)", "system-ui", "sans-serif"],
         serif: ["var(--font-serif)", "Georgia", "serif"],
+        raleway: ["var(--font-raleway)", "sans-serif"],
+        urbanist: ["var(--font-urbanist)", "sans-serif"],
       },
     },
   },

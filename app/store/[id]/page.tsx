@@ -210,7 +210,7 @@ export default function StorePage() {
               style={{ objectFit: 'contain', maxHeight: '600px', width: '100%' }}
             />
             <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/60 to-transparent">
-              <h1 className="text-4xl font-bold text-white">{heroTitle}</h1>
+              <h1 className="font-raleway text-4xl font-bold text-white">{heroTitle}</h1>
               {heroSubtitle && (
                 <p className="text-white text-lg mt-2 opacity-90">{heroSubtitle}</p>
               )}
@@ -240,7 +240,7 @@ export default function StorePage() {
 
       {/* ── 3. SHOP OUR BESTSELLERS ── */}
       <section className="w-full px-6 py-14">
-        <h2 className="text-3xl font-black text-center tracking-widest uppercase text-gray-900 mb-4">
+        <h2 className="font-raleway text-3xl font-black text-center tracking-widest uppercase text-gray-900 mb-4">
           Shop Our Bestsellers
         </h2>
         <hr className="border-gray-300 mb-10" />
@@ -269,11 +269,11 @@ export default function StorePage() {
       {/* ── 4. MISSION SECTION ── */}
       <section className="bg-[#f0ebe0] border-y border-[#ddd5c5] py-16 px-6">
         <div className="max-w-2xl mx-auto text-center">
-          <h2 className="text-3xl font-black text-gray-900 mb-5">
+          <h2 className="font-raleway text-3xl font-black text-gray-900 mb-5">
             {missionTitle}
           </h2>
           {missionText && (
-            <p className="text-gray-600 leading-relaxed text-base mb-6">
+            <p className="font-urbanist text-gray-600 leading-relaxed text-base mb-6">
               {missionText}
             </p>
           )}

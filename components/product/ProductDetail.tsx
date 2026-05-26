@@ -195,7 +195,7 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
       <div className="flex flex-col" style={{ flex: 1 }}>
 
         {/* Product Name */}
-        <h1 className="text-3xl font-bold text-gray-900 pb-4">
+        <h1 className="font-raleway text-3xl font-bold text-gray-900 pb-4">
           {product?.name ?? "Loading..."}
         </h1>
         <div className="border-b border-gray-200" />
@@ -215,7 +215,7 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
         <div className="py-4">
           {isPerPound ? (
             <div>
-              <p className="text-3xl font-bold" style={{ color: '#053D2D' }}>
+              <p className="font-urbanist text-3xl font-bold" style={{ color: '#053D2D' }}>
                 ${Number(product?.price_per_pound ?? 0).toFixed(2)}/lb
               </p>
               {productUnits.length === 0 ? (
@@ -225,7 +225,7 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
                 </div>
               ) : (
                 <div className="mt-3">
-                  <p className="text-sm font-medium text-gray-700 mb-2">Select Cut:</p>
+                  <p className="font-urbanist text-sm font-medium text-gray-700 mb-2">Select Cut:</p>
                   <div className="flex flex-col gap-2">
                     {productUnits.map((unit) => (
                       <button
@@ -256,7 +256,7 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
         <div className="border-b border-gray-200" />
 
         {/* Description */}
-        <p className="text-gray-600 text-sm leading-relaxed py-4">
+        <p className="font-urbanist text-gray-600 text-sm leading-relaxed py-4">
           {product?.description ?? ""}
         </p>
         <div className="border-b border-gray-200" />
@@ -288,7 +288,7 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
         {/* Quantity Selector */}
         {!isPerPound && (
           <div className="flex items-center gap-4 pb-4">
-            <span className="text-gray-700 font-medium">Quantity:</span>
+            <span className="font-urbanist text-gray-700 font-medium">Quantity:</span>
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
@@ -309,7 +309,7 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
 
         {/* Add to Cart Button */}
         <button
-          className={`w-full py-4 rounded-full text-white font-semibold text-lg flex items-center justify-center gap-2 transition-colors ${
+          className={`font-urbanist w-full py-4 rounded-full text-white font-semibold text-lg flex items-center justify-center gap-2 transition-colors ${
             added ? 'bg-[#1a4a2e]' : canAddToCart ? 'hover:opacity-90' : 'bg-gray-300 cursor-not-allowed opacity-60'
           }`}
           style={canAddToCart && !added ? { backgroundColor: '#7a1515' } : {}}
@@ -355,8 +355,8 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
 
             {/* Store Info */}
             <div className="p-4">
-              <p className="text-xs text-gray-500 mb-1">Sold by</p>
-              <h3 className="font-bold text-gray-900 text-lg">{seller.farm_name}</h3>
+              <p className="font-urbanist text-xs text-gray-500 mb-1">Sold by</p>
+              <h3 className="font-raleway font-bold text-gray-900 text-lg">{seller.farm_name}</h3>
 <Link
                 href={`/store/${seller.slug}`}
                 className="mt-3 inline-block px-5 py-2 rounded-full text-white text-sm font-medium hover:opacity-90"
@@ -371,7 +371,7 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
 
       {/* RIGHT — More from this seller 2×2 grid */}
       <div className="flex flex-col gap-4" style={{ width: '300px', flexShrink: 0 }}>
-        <h3 className="font-semibold text-gray-700 text-base">More from this seller</h3>
+        <h3 className="font-raleway font-semibold text-gray-700 text-base">More from this seller</h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
           {relatedProducts.slice(0, 4).map((rp) => (
             <Link

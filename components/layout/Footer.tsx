@@ -39,8 +39,8 @@ export default function Footer() {
         <p className="text-green-300 text-sm mb-8">Farm-fresh produce, delivered with care.</p>
 
         {/* Join the Revolution */}
-        <h3 className="text-2xl font-bold mb-2">Join the Revolution!</h3>
-        <p className="text-green-100 text-sm mb-5 max-w-sm mx-auto">
+        <h3 className="font-raleway text-2xl font-bold mb-2">Join the Revolution!</h3>
+        <p className="font-urbanist text-green-100 text-sm mb-5 max-w-sm mx-auto">
           Sign up for our newsletter and be the first to hear about fresh arrivals, seasonal deals, and local farm stories.
         </p>
 
@@ -95,7 +95,7 @@ export default function Footer() {
         <hr className="border-white/10 mb-6" />
 
         {/* Footer links */}
-        <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-green-300">
+        <div className="font-urbanist flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-green-300">
           <a href="/privacy" className="hover:text-white transition-colors">Privacy Policy</a>
           <span className="text-green-700 text-xs">|</span>
           <a href="/terms" className="hover:text-white transition-colors">Terms of use</a>

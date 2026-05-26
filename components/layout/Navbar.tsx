@@ -84,7 +84,7 @@ function TabsRow({ activeKey }: { activeKey: string }) {
           <Link
             key={tab.key}
             href={tab.href}
-            className={`px-4 py-1.5 text-sm font-medium whitespace-nowrap rounded-full transition-colors shrink-0 ${
+            className={`font-urbanist px-4 py-1.5 text-sm font-medium whitespace-nowrap rounded-full transition-colors shrink-0 ${
               activeKey === tab.key
                 ? "bg-white text-[#053D2D]"
                 : "text-white hover:bg-white/20"
@@ -190,7 +190,7 @@ export default function Navbar({ nonSticky = false }: { nonSticky?: boolean }) {
           </div>
 
           {/* Nav links */}
-          <nav className="hidden lg:flex items-center gap-5 text-white text-sm whitespace-nowrap">
+          <nav className="font-urbanist hidden lg:flex items-center gap-5 text-white text-sm whitespace-nowrap">
             <Link href="/about" className="hover:text-green-200 transition-colors">About us</Link>
             <Link href="/explore" className="hover:text-green-200 transition-colors">Our Store</Link>
             <Link href="/seller" className="hover:text-green-200 transition-colors">Become a seller</Link>

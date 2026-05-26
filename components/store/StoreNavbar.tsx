@@ -77,9 +77,9 @@ export default function StoreNavbar({ storeId, activePage }: StoreNavbarProps) {
           <div className="leading-tight hidden sm:block">
             {store ? (
               <>
-                <p className="font-bold text-green-900 leading-none" style={{ fontSize: '20px', lineHeight: '1.2' }}>{store.farm_name}</p>
+                <p className="font-raleway font-bold text-green-900 leading-none" style={{ fontSize: '20px', lineHeight: '1.2' }}>{store.farm_name}</p>
                 {store.city && store.state && (
-                  <p className="text-gray-500 mt-0.5" style={{ fontSize: '13px' }}>{store.city}, {store.state}</p>
+                  <p className="font-urbanist text-gray-500 mt-0.5" style={{ fontSize: '13px' }}>{store.city}, {store.state}</p>
                 )}
               </>
             ) : (
@@ -89,7 +89,7 @@ export default function StoreNavbar({ storeId, activePage }: StoreNavbarProps) {
         </Link>
 
         {/* Nav links */}
-        <div className="hidden md:flex items-center gap-10 text-sm font-medium text-gray-600 ml-auto">
+        <div className="font-urbanist hidden md:flex items-center gap-10 text-sm font-medium text-gray-600 ml-auto">
           {NAV_LINKS.map(({ key, label, path }) => {
             const isActive = activePage === key
             return (
