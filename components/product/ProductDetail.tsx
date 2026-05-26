@@ -8,6 +8,7 @@ interface Seller {
   slug: string;
   farm_name: string;
   description: string;
+  fulfillment?: string[];
 }
 
 interface Product {
@@ -70,7 +71,7 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
 
         // Step 2: fetch seller
         const sellers = await fetchFromSupabase<Seller[]>(
-          `sellers?id=eq.${productData.seller_id}&select=slug,farm_name,description`
+          `sellers?id=eq.${productData.seller_id}&select=slug,farm_name,description,fulfillment`
         );
         if (sellers?.length) setSeller(sellers[0]);
 
@@ -130,45 +131,27 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
   const isPerPound = product?.pricing_type === 'per_pound';
   const canAddToCart = !isPerPound || !!selectedUnit;
 
+  const offersPickup   = Array.isArray(seller?.fulfillment) && seller.fulfillment.includes('Farm Pickup');
+  const offersDelivery = Array.isArray(seller?.fulfillment) && seller.fulfillment.includes('Local Delivery');
+  const offersShipping = Array.isArray(seller?.fulfillment) && seller.fulfillment.includes('Shipping');
+
   return (
-    <div className="w-full px-6 py-8 flex gap-6 items-start justify-between">
+    <div className="w-full px-6 py-8 flex gap-8 items-start">
 
-      {/* LEFT - Product Image - flexible width */}
-      <div className="flex flex-col gap-3 flex-1" style={{ minWidth: '280px', maxWidth: '400px' }}>
-        {/* Main Image */}
-        <div
-          className="w-full overflow-hidden bg-gray-100"
-          style={{ borderRadius: '12px', width: '100%', height: '413px' }}
-        >
-          {mainImage ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={mainImage}
-              alt={product?.name}
-              className="w-full h-full object-cover"
-              style={{ borderRadius: '12px' }}
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-400">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-16 h-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={0.8} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-            </div>
-          )}
-        </div>
+      {/* LEFT — sticky image column */}
+      <div style={{ width: '40%', flexShrink: 0, position: 'sticky', top: '170px' }}>
+        <div className="flex gap-3">
 
-        {/* Thumbnails - only show if more than 1 image */}
-        {product?.images && product.images.filter((img: string) => img).length > 1 && (
-          <div className="flex gap-2">
-            {product.images
-              .filter((img: string) => img)
-              .map((img: string, index: number) => (
+          {/* Vertical thumbnail strip */}
+          {product?.images && product.images.filter((img: string) => img).length > 1 && (
+            <div className="flex flex-col gap-2" style={{ flexShrink: 0 }}>
+              {product.images.filter((img: string) => img).map((img: string, index: number) => (
                 <button
                   key={index}
                   onClick={() => setMainImage(img)}
                   style={{
-                    width: '72px',
-                    height: '72px',
+                    width: '60px',
+                    height: '60px',
                     borderRadius: '8px',
                     border: mainImage === img ? '2px solid #053D2D' : '2px solid #e5e7eb',
                     overflow: 'hidden',
@@ -178,22 +161,45 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={img} alt="" className="w-full h-full object-cover" />
                 </button>
-              ))
-            }
+              ))}
+            </div>
+          )}
+
+          {/* Main image */}
+          <div
+            className="flex-1 overflow-hidden bg-gray-100"
+            style={{ borderRadius: '12px', height: '480px' }}
+          >
+            {mainImage ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={mainImage}
+                alt={product?.name}
+                className="w-full h-full object-cover"
+                style={{ borderRadius: '12px' }}
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-gray-400">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-16 h-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={0.8} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
-      {/* MIDDLE - Product Info */}
-      <div className="flex flex-col gap-4" style={{ flexShrink: 0, width: '380px' }}>
+      {/* MIDDLE — product info */}
+      <div className="flex flex-col" style={{ flex: 1 }}>
 
         {/* Product Name */}
-        <h1 className="text-3xl font-bold text-gray-900">
+        <h1 className="text-3xl font-bold text-gray-900 pb-4">
           {product?.name ?? "Loading..."}
         </h1>
+        <div className="border-b border-gray-200" />
 
         {/* Star Rating */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 py-4">
           {[1,2,3,4,5].map(star => (
             <svg key={star} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="2">
               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
@@ -201,14 +207,10 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
           ))}
           <span className="text-gray-400 text-sm ml-1">(0 reviews)</span>
         </div>
+        <div className="border-b border-gray-200" />
 
-        {/* Description */}
-        <p className="text-gray-600 text-sm leading-relaxed">
-          {product?.description ?? ""}
-        </p>
-
-        {/* Price */}
-        <div>
+        {/* Price + Cuts */}
+        <div className="py-4">
           {isPerPound ? (
             <div>
               <p className="text-3xl font-bold" style={{ color: '#053D2D' }}>
@@ -249,10 +251,41 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
             </p>
           )}
         </div>
+        <div className="border-b border-gray-200" />
+
+        {/* Description */}
+        <p className="text-gray-600 text-sm leading-relaxed py-4">
+          {product?.description ?? ""}
+        </p>
+        <div className="border-b border-gray-200" />
+
+        {/* Fulfillment Badges */}
+        {(offersPickup || offersDelivery || offersShipping) && (
+          <div className="py-4 flex flex-wrap gap-2">
+            {offersPickup && (
+              <span className="font-medium rounded-full flex items-center gap-0.5"
+                style={{ fontSize: '12px', backgroundColor: '#dcfce7', color: '#15803d', padding: '4px 12px' }}>
+                🚗 Farm Pickup
+              </span>
+            )}
+            {offersDelivery && (
+              <span className="font-medium rounded-full flex items-center gap-0.5"
+                style={{ fontSize: '12px', backgroundColor: '#dbeafe', color: '#1d4ed8', padding: '4px 12px' }}>
+                🚚 Local Delivery
+              </span>
+            )}
+            {offersShipping && (
+              <span className="font-medium rounded-full flex items-center gap-0.5"
+                style={{ fontSize: '12px', backgroundColor: '#ede9fe', color: '#6d28d9', padding: '4px 12px' }}>
+                📦 Ships Nationwide
+              </span>
+            )}
+          </div>
+        )}
 
         {/* Quantity Selector */}
         {!isPerPound && (
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 pb-4">
             <span className="text-gray-700 font-medium">Quantity:</span>
             <div className="flex items-center gap-3">
               <button
@@ -274,7 +307,7 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
 
         {/* Add to Cart Button */}
         <button
-          className={`w-full py-4 rounded-xl text-white font-semibold text-lg flex items-center justify-center gap-2 transition-colors ${
+          className={`w-full py-4 rounded-full text-white font-semibold text-lg flex items-center justify-center gap-2 transition-colors ${
             added ? 'bg-[#1a4a2e]' : canAddToCart ? 'hover:opacity-90' : 'bg-gray-300 cursor-not-allowed opacity-60'
           }`}
           style={canAddToCart && !added ? { backgroundColor: '#7a1515' } : {}}
@@ -304,8 +337,8 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
 
         {/* Store Info Card */}
         {seller && (
-          <div className="border border-gray-200 rounded-xl p-4">
-            <h3 className="font-bold text-gray-900 text-lg">{seller.farm_name}</h3>
+          <div className="mt-4 rounded-xl p-4" style={{ backgroundColor: '#f9fafb' }}>
+            <h3 className="font-bold text-gray-900 text-base">{seller.farm_name}</h3>
             <p className="text-gray-500 text-sm mt-1">{seller.description ?? ""}</p>
             <Link
               href={`/store/${seller.slug}`}
@@ -318,8 +351,8 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
         )}
       </div>
 
-      {/* RIGHT - More from this seller 2x2 grid */}
-      <div className="flex flex-col gap-4" style={{ width: '280px', flexShrink: 0 }}>
+      {/* RIGHT — More from this seller 2×2 grid */}
+      <div className="flex flex-col gap-4" style={{ width: '300px', flexShrink: 0 }}>
         <h3 className="font-semibold text-gray-700 text-base">More from this seller</h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
           {relatedProducts.slice(0, 4).map((rp) => (
