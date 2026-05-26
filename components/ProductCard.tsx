@@ -44,7 +44,7 @@ export default function ProductCard({ product, storeSlug, hideFarmInfo, onAddToC
       <Link href={productLink}>
         <div
           className="overflow-hidden bg-gray-200"
-          style={{ height: '200px', borderRadius: '8px' }}
+          style={{ height: '280px', borderRadius: '8px' }}
         >
           {product.images?.[0] ? (
             <img
@@ -62,7 +62,7 @@ export default function ProductCard({ product, storeSlug, hideFarmInfo, onAddToC
       </Link>
 
       {/* Content */}
-      <div className="p-4 flex flex-col flex-1 gap-2">
+      <div className="flex flex-col gap-2 pt-3 pb-4 px-1">
 
         {/* Product Name */}
         <Link href={productLink}>

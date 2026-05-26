@@ -33,7 +33,7 @@ export default function ProductGrid({
       style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(4, 1fr)',
-        gap: '16px',
+        gap: '24px',
         width: '100%'
       }}
     >
