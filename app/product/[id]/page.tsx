@@ -2,9 +2,6 @@ import { Suspense } from "react";
 import Footer from "@/components/layout/Footer";
 import ProductNavbar from "@/components/product/ProductNavbar";
 import ProductDetail from "@/components/product/ProductDetail";
-import SimilarItems from "@/components/product/SimilarItems";
-import ReviewsSection from "@/components/product/ReviewsSection";
-import SimilarStores from "@/components/product/SimilarStores";
 
 interface ProductPageProps {
   params: { id: string };
@@ -25,9 +22,6 @@ export default function ProductPage({ params }: ProductPageProps) {
         }>
           <ProductDetail productId={params.id} />
         </Suspense>
-        <SimilarItems />
-        <ReviewsSection />
-        <SimilarStores />
       </main>
       <Footer />
     </div>
