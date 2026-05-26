@@ -131,14 +131,14 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
   const canAddToCart = !isPerPound || !!selectedUnit;
 
   return (
-    <div className="w-full px-6 py-8 flex gap-6">
+    <div className="w-full px-6 py-8 flex gap-8 items-start">
 
-      {/* LEFT - Product Images */}
-      <div className="flex flex-col gap-3" style={{ width: '38%' }}>
+      {/* LEFT - Product Image - flexible width */}
+      <div className="flex flex-col gap-3 flex-1">
         {/* Main Image */}
         <div
           className="w-full overflow-hidden bg-gray-100"
-          style={{ borderRadius: '12px', height: '420px' }}
+          style={{ borderRadius: '12px', aspectRatio: '1/1' }}
         >
           {mainImage ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -166,20 +166,17 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
                 <button
                   key={index}
                   onClick={() => setMainImage(img)}
-                  className="overflow-hidden flex-shrink-0"
                   style={{
-                    width: '80px',
-                    height: '80px',
+                    width: '72px',
+                    height: '72px',
                     borderRadius: '8px',
-                    border: mainImage === img ? '2px solid #053D2D' : '2px solid transparent'
+                    border: mainImage === img ? '2px solid #053D2D' : '2px solid #e5e7eb',
+                    overflow: 'hidden',
+                    flexShrink: 0
                   }}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={img}
-                    alt={`${product.name} ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
+                  <img src={img} alt="" className="w-full h-full object-cover" />
                 </button>
               ))
             }
@@ -187,8 +184,8 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
         )}
       </div>
 
-      {/* MIDDLE - Product Info */}
-      <div className="flex flex-col gap-4" style={{ width: '37%' }}>
+      {/* MIDDLE - Product Info - fixed width centered */}
+      <div className="flex flex-col gap-4" style={{ width: '420px', flexShrink: 0 }}>
 
         {/* Product Name */}
         <h1 className="text-3xl font-bold text-gray-900">
@@ -230,11 +227,11 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
                       <button
                         key={unit.id}
                         onClick={() => setSelectedUnit(unit)}
-                        className={`flex justify-between items-center px-4 py-3 rounded-xl border-2 transition-colors ${
-                          selectedUnit?.id === unit.id
-                            ? 'border-green-900 bg-green-50'
-                            : 'border-gray-200 hover:border-green-400'
-                        }`}
+                        className="flex justify-between items-center px-4 py-3 rounded-xl border-2 transition-colors"
+                        style={{
+                          borderColor: selectedUnit?.id === unit.id ? '#053D2D' : '#e5e7eb',
+                          backgroundColor: selectedUnit?.id === unit.id ? '#f0fdf4' : 'white'
+                        }}
                       >
                         <span className="font-medium">{unit.weight_lbs} lbs</span>
                         <span className="font-bold" style={{ color: '#053D2D' }}>
@@ -321,36 +318,38 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
         )}
       </div>
 
-      {/* RIGHT - More from this seller */}
-      <div style={{ width: '25%' }}>
-        <h3 className="font-semibold text-gray-700 mb-3">More from this seller</h3>
-        <div className="flex flex-col gap-3">
+      {/* RIGHT - More from this seller 2x2 grid */}
+      <div className="flex flex-col gap-4" style={{ width: '280px', flexShrink: 0 }}>
+        <h3 className="font-semibold text-gray-700 text-base">More from this seller</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
           {relatedProducts.slice(0, 4).map((rp) => (
             <Link
               key={rp.id}
               href={`/product/${rp.id}`}
-              className="flex gap-3 items-start group"
+              className="flex flex-col group"
             >
               <div
-                className="overflow-hidden flex-shrink-0"
-                style={{ width: '70px', height: '70px', borderRadius: '8px' }}
+                className="w-full overflow-hidden bg-gray-100"
+                style={{ borderRadius: '8px', aspectRatio: '1/1' }}
               >
                 {rp.images?.[0] ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={rp.images[0]}
                     alt={rp.name}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 ) : (
-                  <div className="w-full h-full bg-gray-200" />
+                  <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                    <span className="text-gray-400 text-xs">No image</span>
+                  </div>
                 )}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-800 group-hover:text-green-900 line-clamp-2">
+              <div className="mt-1.5">
+                <p className="text-xs font-semibold text-gray-800 line-clamp-2 group-hover:text-green-900">
                   {rp.name}
                 </p>
-                <p className="text-xs text-gray-500 mt-0.5">
+                <p className="text-xs font-bold mt-0.5" style={{ color: '#053D2D' }}>
                   {rp.pricing_type === 'per_pound'
                     ? `$${rp.price_per_pound}/lb`
                     : `$${rp.price}/${rp.unit || 'each'}`
@@ -358,13 +357,12 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
                 </p>
                 <div className="flex items-center gap-0.5 mt-0.5">
                   {[1,2,3,4,5].map(s => (
-                    <svg key={s} width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="2">
+                    <svg key={s} width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="2">
                       <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
                     </svg>
                   ))}
                 </div>
-                <div className="flex justify-between items-center mt-1">
-                  <span></span>
+                <div className="flex justify-end mt-1">
                   <button
                     className="relative text-white p-1 rounded-full"
                     style={{ backgroundColor: '#b91c1c' }}
