@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useCart } from "@/lib/context/CartContext";
 import { fetchFromSupabase, SUPABASE_URL, supabaseHeaders } from "@/lib/api";
+import ProductCard from "@/components/ProductCard";
 
 interface Seller {
   slug: string;
@@ -22,6 +23,7 @@ interface Product {
   seller_id: string;
   pricing_type?: string;
   price_per_pound?: number | null;
+  category_id?: string | null;
 }
 
 interface ProductUnit {
@@ -57,6 +59,12 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
   const [mainImage, setMainImage]       = useState<string>('');
   const [productUnits, setProductUnits] = useState<ProductUnit[]>([]);
   const [selectedUnit, setSelectedUnit] = useState<ProductUnit | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [similarProducts, setSimilarProducts] = useState<any[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [similarStores, setSimilarStores]     = useState<any[]>([]);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewText, setReviewText]     = useState('');
   const { addToCart } = useCart();
 
   useEffect(() => {
@@ -64,7 +72,7 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
       try {
         // Step 1: fetch product
         const products = await fetchFromSupabase<Product[]>(
-          `products?id=eq.${productId}&select=id,name,description,price,unit,images,seller_id,pricing_type,price_per_pound`
+          `products?id=eq.${productId}&select=id,name,description,price,unit,images,seller_id,pricing_type,price_per_pound,category_id`
         );
         if (!products?.length) return;
         const productData = products[0];
@@ -93,6 +101,42 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
             const unitsData = await unitsRes.json();
             setProductUnits(Array.isArray(unitsData) ? unitsData : []);
           }
+        }
+
+        // Step 5: fetch similar products (same category)
+        if (productData.category_id) {
+          const similarRes = await fetch(
+            `${SUPABASE_URL}/rest/v1/products?category_id=eq.${productData.category_id}&id=neq.${productData.id}&status=eq.active&select=*&limit=4&order=created_at.desc`,
+            { headers: supabaseHeaders }
+          );
+          if (similarRes.ok) {
+            const similarData = await similarRes.json();
+            if (Array.isArray(similarData) && similarData.length > 0) {
+              const sellersRes = await fetch(
+                `${SUPABASE_URL}/rest/v1/sellers?select=id,farm_name,slug,fulfillment`,
+                { headers: supabaseHeaders }
+              );
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const sellersMap: Record<string, any> = {};
+              if (sellersRes.ok) {
+                const sellersData = await sellersRes.json();
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                if (Array.isArray(sellersData)) sellersData.forEach((s: any) => { sellersMap[s.id] = s; });
+              }
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              setSimilarProducts(similarData.map((p: any) => ({ ...p, sellers: sellersMap[p.seller_id] || null })));
+            }
+          }
+        }
+
+        // Step 6: fetch similar stores (other approved sellers)
+        const storesRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/sellers?status=eq.approved&id=neq.${productData.seller_id}&select=id,farm_name,slug,banner_url,logo_url,city,state,description,tagline&limit=4`,
+          { headers: supabaseHeaders }
+        );
+        if (storesRes.ok) {
+          const storesData = await storesRes.json();
+          setSimilarStores(Array.isArray(storesData) ? storesData : []);
         }
       } catch (err) {
         console.error("ProductDetail load error:", err);
@@ -138,6 +182,7 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
   const offersShipping = Array.isArray(seller?.fulfillment) && seller.fulfillment.includes('Shipping');
 
   return (
+    <>
     <div className="w-full px-6 py-8 flex gap-8 items-start">
 
       {/* LEFT — sticky image column */}
@@ -488,5 +533,151 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
       </div>
 
     </div>
+
+      {/* ── SECTION 1: Similar Products ─────────────────────────────── */}
+      {similarProducts.length > 0 && (
+        <div className="w-full px-6 py-8 border-t border-gray-100">
+          <h2 className="font-raleway text-2xl font-semibold text-gray-900 mb-6">
+            Similar Items
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px' }}>
+            {similarProducts.map((p: any) => (
+              <ProductCard
+                key={p.id}
+                product={p}
+                onAddToCart={(p) => {
+                  addToCart({
+                    id:    p.id,
+                    name:  p.name,
+                    price: `$${Number(p.pricing_type === 'per_pound' ? (p.price_per_pound ?? 0) : (p.price ?? 0)).toFixed(2)}`,
+                    quantity: 1,
+                  });
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── SECTION 2: Reviews ──────────────────────────────────────── */}
+      <div className="w-full px-6 py-8 border-t border-gray-100">
+        <h2 className="font-raleway text-2xl font-semibold text-gray-900 mb-6">
+          What People Think of This Product
+        </h2>
+
+        <div className="flex gap-8">
+          {/* Reviews list */}
+          <div className="flex-1">
+            <div className="bg-gray-50 rounded-xl p-8 text-center">
+              <div className="flex justify-center gap-1 mb-3">
+                {[1,2,3,4,5].map(star => (
+                  <svg key={star} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="2">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                  </svg>
+                ))}
+              </div>
+              <p className="text-gray-500 font-medium">No reviews yet</p>
+              <p className="text-gray-400 text-sm mt-1">Be the first to review this product</p>
+            </div>
+          </div>
+
+          {/* Write a review */}
+          <div className="w-80 flex-shrink-0">
+            <h3 className="font-raleway font-semibold text-gray-900 mb-4">Share Your Thoughts</h3>
+
+            <div className="mb-4">
+              <p className="text-sm text-gray-600 mb-2">Your Rating</p>
+              <div className="flex gap-1">
+                {[1,2,3,4,5].map(star => (
+                  <button key={star} onClick={() => setReviewRating(star)} className="transition-colors">
+                    <svg width="28" height="28" viewBox="0 0 24 24"
+                      fill={star <= reviewRating ? '#f59e0b' : 'none'}
+                      stroke={star <= reviewRating ? '#f59e0b' : '#d1d5db'}
+                      strokeWidth="2">
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                    </svg>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <textarea
+              value={reviewText}
+              onChange={e => setReviewText(e.target.value)}
+              placeholder="Write your review here..."
+              rows={4}
+              className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none mb-4"
+            />
+
+            <button
+              onClick={() => {
+                if (!reviewRating) { alert('Please select a star rating'); return; }
+                if (!reviewText.trim()) { alert('Please write a review'); return; }
+                alert('Reviews coming soon! Thank you for your feedback.');
+                setReviewRating(0);
+                setReviewText('');
+              }}
+              className="w-full py-3 rounded-xl text-white font-semibold"
+              style={{ backgroundColor: '#053D2D' }}
+            >
+              Submit Review
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── SECTION 3: Similar Stores ───────────────────────────────── */}
+      {similarStores.length > 0 && (
+        <div className="w-full px-6 py-8 border-t border-gray-100">
+          <h2 className="font-raleway text-2xl font-semibold text-gray-900 mb-6">
+            Similar Stores
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px' }}>
+            {similarStores.map((store: any) => (
+              <Link
+                key={store.id}
+                href={`/store/${store.slug}`}
+                className="group rounded-xl overflow-hidden hover:shadow-md transition-shadow border border-gray-100"
+              >
+                {/* Banner */}
+                <div className="w-full overflow-hidden bg-gray-200" style={{ height: '120px' }}>
+                  {store.banner_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={store.banner_url}
+                      alt={store.farm_name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: '#053D2D' }}>
+                      <span className="text-white font-raleway font-bold text-lg">
+                        {store.farm_name?.charAt(0)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                {/* Info */}
+                <div className="p-3">
+                  {store.logo_url && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={store.logo_url} alt={store.farm_name} className="w-10 h-10 object-contain mb-2" />
+                  )}
+                  <h3 className="font-raleway font-semibold text-gray-900 text-sm">{store.farm_name}</h3>
+                  {store.city && store.state && (
+                    <p className="text-xs text-gray-500 mt-0.5">{store.city}, {store.state}</p>
+                  )}
+                  {store.tagline && (
+                    <p className="text-xs text-gray-400 mt-1 line-clamp-2">{store.tagline}</p>
+                  )}
+                  <span className="mt-2 inline-block text-xs font-medium px-3 py-1 rounded-full text-white" style={{ backgroundColor: '#053D2D' }}>
+                    Visit Store
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+    </>
   );
 }
