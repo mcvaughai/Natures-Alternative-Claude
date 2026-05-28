@@ -7,11 +7,14 @@ import { getAdminSession, getValidAdminSession, getAuthHeaders } from "@/lib/ses
 
 const SUPABASE_URL = "https://ezryfycxfmtffobyfjfa.supabase.co";
 
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6cnlmeWN4Zm10ZmZvYnlmamZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MjQ1MDEsImV4cCI6MjA5MjQwMDUwMX0.woObRrj3MMUf6eAFVbkvDNUsQfQ-elmlDqPADBT9aZs";
+
 interface Banner {
   id: string;
   title: string;
   subtitle: string;
   image_url: string | null;
+  background_image_url: string | null;
   link_url: string | null;
   is_active: boolean;
   position: number;
@@ -21,14 +24,15 @@ interface Banner {
 type EditingBanner = Partial<Banner> & { _new?: boolean };
 
 export default function BannersPage() {
-  const [authorized, setAuthorized] = useState(false);
-  const [banners, setBanners]       = useState<Banner[]>([]);
-  const [loading, setLoading]       = useState(true);
-  const [fetchError, setFetchError] = useState("");
-  const [saving, setSaving]         = useState(false);
-  const [success, setSuccess]       = useState("");
-  const [editing, setEditing]       = useState<EditingBanner | null>(null);
-  const [deleting, setDeleting]     = useState<string | null>(null);
+  const [authorized, setAuthorized]           = useState(false);
+  const [banners, setBanners]                 = useState<Banner[]>([]);
+  const [loading, setLoading]                 = useState(true);
+  const [fetchError, setFetchError]           = useState("");
+  const [saving, setSaving]                   = useState(false);
+  const [success, setSuccess]                 = useState("");
+  const [editing, setEditing]                 = useState<EditingBanner | null>(null);
+  const [deleting, setDeleting]               = useState<string | null>(null);
+  const [uploadingBannerImage, setUploadingBannerImage] = useState<string | null>(null);
 
   /* ── Auth check ─────────────────────────────────────────── */
   useEffect(() => {
@@ -85,6 +89,47 @@ export default function BannersPage() {
     }
   };
 
+  /* ── Upload banner image ─────────────────────────────────── */
+  const uploadBannerImage = async (file: File, bannerId: string) => {
+    setUploadingBannerImage(bannerId);
+    try {
+      const session = await getValidAdminSession();
+      if (!session) return;
+
+      const fileExt = file.name.split(".").pop();
+      const fileName = `banner-${bannerId}-${Date.now()}.${fileExt}`;
+
+      const uploadRes = await fetch(
+        `${SUPABASE_URL}/storage/v1/object/platform-assets/${fileName}`,
+        {
+          method: "POST",
+          headers: {
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${session.access_token}`,
+            "Content-Type": file.type,
+            "x-upsert": "true",
+          },
+          body: file,
+        }
+      );
+
+      if (!uploadRes.ok) {
+        const err = await uploadRes.text();
+        alert("Upload failed: " + err);
+        return;
+      }
+
+      const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/platform-assets/${fileName}`;
+      setEditing(prev => prev ? { ...prev, background_image_url: publicUrl } : prev);
+      setSuccess("Image uploaded!");
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (err: unknown) {
+      alert("Upload error: " + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setUploadingBannerImage(null);
+    }
+  };
+
   /* ── Save (create or update) ─────────────────────────────── */
   const handleSave = async () => {
     if (!editing) return;
@@ -97,12 +142,13 @@ export default function BannersPage() {
       const headers = { ...getAuthHeaders(session.access_token), Prefer: "return=representation" };
 
       const payload = {
-        title:     editing.title?.trim() ?? "",
-        subtitle:  editing.subtitle?.trim() ?? "",
-        image_url: editing.image_url?.trim() || null,
-        link_url:  editing.link_url?.trim() || null,
-        is_active: editing.is_active ?? true,
-        position:  editing.position ?? (banners.length + 1),
+        title:                editing.title?.trim() ?? "",
+        subtitle:             editing.subtitle?.trim() ?? "",
+        image_url:            editing.image_url?.trim() || null,
+        background_image_url: editing.background_image_url || null,
+        link_url:             editing.link_url?.trim() || null,
+        is_active:            editing.is_active ?? true,
+        position:             editing.position ?? (banners.length + 1),
       };
 
       if (editing._new) {
@@ -197,7 +243,7 @@ export default function BannersPage() {
             <div className="flex items-center justify-between">
               <h1 className="text-xl font-bold text-gray-900">Banner Manager</h1>
               <button
-                onClick={() => setEditing({ _new: true, title: "", subtitle: "", image_url: "", link_url: "", is_active: true, position: banners.length + 1 })}
+                onClick={() => setEditing({ _new: true, title: "", subtitle: "", image_url: "", background_image_url: null, link_url: "", is_active: true, position: banners.length + 1 })}
                 className="flex items-center gap-2 bg-[#1a4a2e] hover:bg-[#2d6b47] text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -417,8 +463,63 @@ export default function BannersPage() {
                 />
               </div>
 
+              {/* Banner Background Image — upload */}
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">Image URL</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Banner Background Image
+                </label>
+
+                {/* Image Preview */}
+                <div
+                  className="w-full h-32 rounded-xl overflow-hidden mb-3 flex items-center justify-center border-2 border-dashed border-gray-300"
+                  style={{
+                    backgroundImage: editing.background_image_url
+                      ? `url(${editing.background_image_url})`
+                      : "none",
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                    backgroundColor: "#053D2D",
+                  }}
+                >
+                  {!editing.background_image_url && (
+                    <p className="text-white text-sm opacity-70">No image uploaded</p>
+                  )}
+                </div>
+
+                {/* Upload + Remove buttons */}
+                <div className="flex gap-3">
+                  <label className="cursor-pointer bg-green-900 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-800 inline-block">
+                    {uploadingBannerImage === (editing.id ?? "new") ? "Uploading..." : "Upload Image"}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      disabled={uploadingBannerImage === (editing.id ?? "new")}
+                      onChange={e => {
+                        if (e.target.files?.[0]) {
+                          uploadBannerImage(e.target.files[0], editing.id ?? "new");
+                        }
+                      }}
+                    />
+                  </label>
+                  {editing.background_image_url && (
+                    <button
+                      type="button"
+                      onClick={() => setEditing(prev => prev ? { ...prev, background_image_url: null } : prev)}
+                      className="px-4 py-2 text-sm text-red-500 border border-red-200 rounded-lg hover:bg-red-50"
+                    >
+                      Remove Image
+                    </button>
+                  )}
+                </div>
+                <p className="text-xs text-gray-400 mt-1">
+                  Image will overlay on top of background color. Recommended size: 800x200px
+                </p>
+              </div>
+
+              {/* Image URL (manual fallback) */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1.5">Image URL <span className="text-gray-400 font-normal">(or paste a URL directly)</span></label>
                 <input
                   type="url"
                   value={editing.image_url ?? ""}
