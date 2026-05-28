@@ -77,6 +77,7 @@ export default function NaturalCleaningPage() {
       name: product.name,
       description: product.description ?? '',
       price: `$${Number(product.price).toFixed(2)}`,
+      image: product.images?.[0],
     })
   }
 

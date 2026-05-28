@@ -138,6 +138,7 @@ export default function StoreShopPage() {
       name: product.name,
       description: product.description ?? '',
       price: `$${Number(product.price).toFixed(2)}`,
+      image: product.images?.[0],
     })
   }
 

@@ -25,7 +25,17 @@ function CartItemRow({ item }: { item: CartItem }) {
   return (
     <div className="flex gap-4 py-5">
       {/* Image */}
-      <ImgPlaceholder className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl shrink-0" />
+      <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl shrink-0 overflow-hidden bg-gray-200">
+        {item.image ? (
+          <img
+            src={item.image}
+            alt={item.name}
+            className="w-full h-full object-cover rounded-xl"
+          />
+        ) : (
+          <ImgPlaceholder className="w-full h-full rounded-xl" />
+        )}
+      </div>
 
       {/* Content */}
       <div className="flex-1 min-w-0">
