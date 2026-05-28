@@ -85,7 +85,7 @@ export default function HeroBanner() {
 
               {/* Dark overlay for text readability when image is set */}
               {bgImage && (
-                <div className="absolute inset-0" style={{ backgroundColor: "rgba(0,0,0,0.4)" }} />
+                <div className="absolute inset-0" style={{ backgroundColor: "rgba(0,0,0,0.2)" }} />
               )}
 
               {/* Text content — z-10 to sit above overlay */}
