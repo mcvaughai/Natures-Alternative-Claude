@@ -7,9 +7,9 @@ const SUPABASE_URL = "https://ezryfycxfmtffobyfjfa.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6cnlmeWN4Zm10ZmZvYnlmamZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MjQ1MDEsImV4cCI6MjA5MjQwMDUwMX0.woObRrj3MMUf6eAFVbkvDNUsQfQ-elmlDqPADBT9aZs";
 
 const FALLBACK_BANNERS = [
-  { id: "f1", title: "Fresh Produce Delivered Daily", subtitle: "Straight from the farm to your door", image_url: null, link_url: "/explore" },
-  { id: "f2", title: "Seasonal Specials", subtitle: "Limited harvest — shop before it's gone", image_url: null, link_url: "/explore" },
-  { id: "f3", title: "Farm-Fresh Meat & Dairy", subtitle: "Pasture-raised, antibiotic-free", image_url: null, link_url: "/explore" },
+  { id: "f1", title: "Fresh Produce Delivered Daily", subtitle: "Straight from the farm to your door", image_url: null, background_image_url: null, link_url: "/explore" },
+  { id: "f2", title: "Seasonal Specials", subtitle: "Limited harvest — shop before it's gone", image_url: null, background_image_url: null, link_url: "/explore" },
+  { id: "f3", title: "Farm-Fresh Meat & Dairy", subtitle: "Pasture-raised, antibiotic-free", image_url: null, background_image_url: null, link_url: "/explore" },
 ];
 
 interface Banner {
@@ -17,6 +17,7 @@ interface Banner {
   title: string;
   subtitle: string;
   image_url: string | null;
+  background_image_url: string | null;
   link_url: string | null;
   is_active: boolean;
   position: number;
@@ -60,25 +61,35 @@ export default function HeroBanner() {
     <section className="w-full px-6 py-6">
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {banners.map((banner) => {
+          // Prefer uploaded background_image_url, fall back to image_url
+          const bgImage = banner.background_image_url || banner.image_url;
+
           const inner = (
-            <div className="relative rounded-2xl overflow-hidden h-52 sm:h-60 flex items-end cursor-pointer hover:opacity-90 transition-opacity bg-gray-300">
-              {/* Background image or placeholder */}
-              {banner.image_url ? (
-                <img
-                  src={banner.image_url}
-                  alt={banner.title}
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center text-gray-400 bg-gray-300">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-16 h-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div
+              className="relative overflow-hidden rounded-2xl h-52 sm:h-60 flex items-end cursor-pointer group hover:opacity-95 transition-opacity"
+              style={{
+                backgroundColor: "#053D2D",
+                backgroundImage: bgImage ? `url(${bgImage})` : "none",
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }}
+            >
+              {/* Placeholder icon when no image */}
+              {!bgImage && (
+                <div className="absolute inset-0 flex items-center justify-center opacity-20">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-16 h-16 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={0.8} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                 </div>
               )}
 
-              {/* Text overlay */}
-              <div className="relative z-10 w-full p-5 bg-gradient-to-t from-black/60 to-transparent">
+              {/* Dark overlay for text readability when image is set */}
+              {bgImage && (
+                <div className="absolute inset-0" style={{ backgroundColor: "rgba(0,0,0,0.4)" }} />
+              )}
+
+              {/* Text content — z-10 to sit above overlay */}
+              <div className="relative z-10 w-full p-5 bg-gradient-to-t from-black/50 to-transparent">
                 <p className="text-white font-bold text-base sm:text-lg leading-tight font-raleway">{banner.title}</p>
                 {banner.subtitle && (
                   <p className="text-white/80 text-xs mt-0.5 font-urbanist">{banner.subtitle}</p>

@@ -396,25 +396,48 @@ export default function BannersPage() {
             {banners.some(b => b.is_active) && (
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
                 <p className="text-sm font-semibold text-gray-700 mb-1">Live Preview</p>
-                <p className="text-xs text-gray-400 mb-4">This is how active banners look on the homepage (up to 3 are shown).</p>
+                <p className="text-xs text-gray-400 mb-4">This is how active banners look on the homepage (up to 3 are shown). Updates in real time while editing.</p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {banners.filter(b => b.is_active).slice(0, 3).map(banner => (
-                    <div key={banner.id} className="relative bg-gray-300 rounded-xl overflow-hidden h-32 flex items-end">
-                      {banner.image_url ? (
-                        <img src={banner.image_url} alt={banner.title} className="absolute inset-0 w-full h-full object-cover" />
-                      ) : (
-                        <div className="absolute inset-0 flex items-center justify-center text-gray-400">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={0.8} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                          </svg>
+                  {banners.filter(b => b.is_active).slice(0, 3).map(banner => {
+                    // Show live editing state for the banner currently being edited
+                    const isBeingEdited = editing?.id === banner.id;
+                    const previewBgImage = isBeingEdited
+                      ? (editing.background_image_url || banner.background_image_url || banner.image_url)
+                      : (banner.background_image_url || banner.image_url);
+                    const previewTitle    = isBeingEdited ? (editing.title    ?? banner.title)    : banner.title;
+                    const previewSubtitle = isBeingEdited ? (editing.subtitle ?? banner.subtitle) : banner.subtitle;
+
+                    return (
+                      <div
+                        key={banner.id}
+                        className="relative overflow-hidden rounded-xl flex items-end"
+                        style={{
+                          backgroundColor: "#053D2D",
+                          minHeight: "100px",
+                          backgroundImage: previewBgImage ? `url(${previewBgImage})` : "none",
+                          backgroundSize: "cover",
+                          backgroundPosition: "center",
+                        }}
+                      >
+                        {/* Dark overlay when image is set */}
+                        {previewBgImage && (
+                          <div className="absolute inset-0" style={{ backgroundColor: "rgba(0,0,0,0.35)" }} />
+                        )}
+                        {/* Placeholder icon when no image */}
+                        {!previewBgImage && (
+                          <div className="absolute inset-0 flex items-center justify-center opacity-20">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={0.8} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                          </div>
+                        )}
+                        <div className="relative z-10 w-full px-3 py-2.5 bg-gradient-to-t from-black/60 to-transparent">
+                          <p className="text-white font-bold text-xs leading-tight">{previewTitle}</p>
+                          {previewSubtitle && <p className="text-white/80 text-[10px] mt-0.5">{previewSubtitle}</p>}
                         </div>
-                      )}
-                      <div className="relative z-10 w-full px-3 py-2.5 bg-gradient-to-t from-black/60 to-transparent">
-                        <p className="text-white font-bold text-xs leading-tight">{banner.title}</p>
-                        {banner.subtitle && <p className="text-white/80 text-[10px] mt-0.5">{banner.subtitle}</p>}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
