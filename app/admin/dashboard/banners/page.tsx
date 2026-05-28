@@ -99,6 +99,7 @@ export default function BannersPage() {
       const fileExt = file.name.split(".").pop();
       const fileName = `banner-${bannerId}-${Date.now()}.${fileExt}`;
 
+      // 1. Upload file to Storage
       const uploadRes = await fetch(
         `${SUPABASE_URL}/storage/v1/object/platform-assets/${fileName}`,
         {
@@ -120,8 +121,44 @@ export default function BannersPage() {
       }
 
       const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/platform-assets/${fileName}`;
+
+      // 2. Update editing state immediately so the preview refreshes
       setEditing(prev => prev ? { ...prev, background_image_url: publicUrl } : prev);
-      setSuccess("Image uploaded!");
+
+      // 3. Only auto-save to DB when editing an existing banner (not a new unsaved one)
+      if (bannerId !== "new") {
+        const saveRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/homepage_banners?id=eq.${bannerId}`,
+          {
+            method: "PATCH",
+            headers: {
+              apikey: SUPABASE_ANON_KEY,
+              Authorization: `Bearer ${session.access_token}`,
+              "Content-Type": "application/json",
+              Prefer: "return=representation",
+            },
+            body: JSON.stringify({
+              background_image_url: publicUrl,
+              updated_at: new Date().toISOString(),
+            }),
+          }
+        );
+
+        if (saveRes.ok) {
+          // Reflect the new URL in the banner list so the live preview updates too
+          setBanners(prev => prev.map(b =>
+            b.id === bannerId ? { ...b, background_image_url: publicUrl } : b
+          ));
+          setSuccess("Image uploaded and saved!");
+        } else {
+          const err = await saveRes.text();
+          alert("Image uploaded but failed to save URL: " + err);
+        }
+      } else {
+        // New banner — URL is in editing state; it will be saved when user clicks Create
+        setSuccess("Image uploaded! Click Create Banner to save.");
+      }
+
       setTimeout(() => setSuccess(""), 3000);
     } catch (err: unknown) {
       alert("Upload error: " + (err instanceof Error ? err.message : String(err)));
