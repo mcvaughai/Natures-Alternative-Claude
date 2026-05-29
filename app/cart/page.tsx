@@ -32,7 +32,7 @@ export default function CartPage() {
   const fetchSellerData = async () => {
     try {
       const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/sellers?select=id,farm_name,slug,fulfillment,pickup_hours,pickup_address`,
+        `${SUPABASE_URL}/rest/v1/sellers?select=id,farm_name,slug,fulfillment,pickup_hours,pickup_address,logo_url`,
         { headers }
       )
       const data = await res.json()
@@ -132,8 +132,22 @@ export default function CartPage() {
                       className="px-5 py-4 flex items-center justify-between"
                       style={{ backgroundColor: '#f8faf8' }}
                     >
-                      <div className="flex items-center gap-2">
-                        <span className="text-xl">🏪</span>
+                      <div className="flex items-center gap-3">
+                        {/* Seller logo or initial fallback */}
+                        {seller?.logo_url ? (
+                          <img
+                            src={seller.logo_url}
+                            alt={seller.farm_name}
+                            className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                          />
+                        ) : (
+                          <div
+                            className="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-sm"
+                            style={{ backgroundColor: '#053D2D' }}
+                          >
+                            {(seller?.farm_name || '?').charAt(0).toUpperCase()}
+                          </div>
+                        )}
                         <div>
                           <Link
                             href={seller?.slug ? `/store/${seller.slug}` : '#'}
