@@ -202,7 +202,7 @@ export default function CartPage() {
                           <img
                             src={seller.logo_url}
                             alt={seller.farm_name}
-                            className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                            className="w-10 h-10 object-contain flex-shrink-0"
                           />
                         ) : (
                           <div
