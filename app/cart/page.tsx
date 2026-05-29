@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import { useCart } from '@/lib/context/CartContext'
+import ProductCard from '@/components/ProductCard'
 
 const SUPABASE_URL = 'https://ezryfycxfmtffobyfjfa.supabase.co'
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6cnlmeWN4Zm10ZmZvYnlmamZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MjQ1MDEsImV4cCI6MjA5MjQwMDUwMX0.woObRrj3MMUf6eAFVbkvDNUsQfQ-elmlDqPADBT9aZs'
@@ -21,7 +22,6 @@ export default function CartPage() {
   const [fulfillmentChoices, setFulfillmentChoices] = useState<{[key: string]: string}>({})
   const [loading, setLoading]                   = useState(true)
   const [upsellProducts, setUpsellProducts]     = useState<any[]>([])
-  const [upsellAdded, setUpsellAdded]           = useState<{[key: string]: boolean}>({})
 
   useEffect(() => {
     if (cartItems.length > 0) {
@@ -89,10 +89,10 @@ export default function CartPage() {
         }
       }
 
-      // Merge seller data and cap at 8
+      // Merge seller data under the `sellers` key that ProductCard expects, cap at 8
       const merged = products.slice(0, 8).map((p: any) => ({
         ...p,
-        seller: sellersMap[p.seller_id] || null,
+        sellers: sellersMap[p.seller_id] || null,
       }))
       setUpsellProducts(merged)
     } catch (err) {
@@ -110,8 +110,6 @@ export default function CartPage() {
       seller_id:   product.seller_id,
       unit:        product.unit,
     })
-    setUpsellAdded(prev => ({ ...prev, [product.id]: true }))
-    setTimeout(() => setUpsellAdded(prev => ({ ...prev, [product.id]: false })), 1500)
   }
 
   // Group cart items by seller
@@ -490,107 +488,19 @@ export default function CartPage() {
             <p className="text-gray-400 text-sm ml-4">Fresh picks from our farms</p>
           </div>
 
-          {/* Scrollable product row */}
+          {/* Scrollable product row — each card is a standard ProductCard */}
           <div
             className="flex gap-4 overflow-x-auto pb-2"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
-            {upsellProducts.map((product: any) => {
-              const priceDisplay = product.pricing_type === 'per_pound'
-                ? `$${Number(product.price_per_pound).toFixed(2)}/lb`
-                : `$${Number(product.price).toFixed(2)}${product.unit ? `/${product.unit}` : ''}`
-              const isAdded = upsellAdded[product.id]
-
-              return (
-                <div
-                  key={product.id}
-                  className="flex-shrink-0 bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm"
-                  style={{ width: '180px' }}
-                >
-                  {/* Image */}
-                  <Link href={`/product/${product.id}`}>
-                    <div className="overflow-hidden bg-gray-100" style={{ height: '160px' }}>
-                      {product.images?.[0] ? (
-                        <img
-                          src={product.images[0]}
-                          alt={product.name}
-                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                          </svg>
-                        </div>
-                      )}
-                    </div>
-                  </Link>
-
-                  {/* Card content */}
-                  <div className="p-3">
-                    <Link href={`/product/${product.id}`}>
-                      <p
-                        className="font-medium text-gray-900 leading-snug mb-1 hover:text-green-900 transition-colors"
-                        style={{ fontSize: '13px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
-                      >
-                        {product.name}
-                      </p>
-                    </Link>
-
-                    {product.seller && (
-                      <Link
-                        href={product.seller.slug ? `/store/${product.seller.slug}` : '#'}
-                        className="block text-xs mb-2 hover:underline truncate"
-                        style={{ color: '#00674B' }}
-                      >
-                        {product.seller.farm_name}
-                      </Link>
-                    )}
-
-                    {/* Price + Add button */}
-                    <div className="flex items-center justify-between mt-1">
-                      <span className="font-bold text-sm" style={{ color: '#053D2D' }}>
-                        {priceDisplay}
-                      </span>
-
-                      <div className="relative">
-                        {isAdded && (
-                          <div
-                            className="absolute pointer-events-none font-bold text-green-500"
-                            style={{ top: '-18px', right: 0, fontSize: '11px', animation: 'floatUp 1.5s ease-out forwards' }}
-                          >
-                            +1
-                          </div>
-                        )}
-                        <button
-                          onClick={() => handleUpsellAdd(product)}
-                          className="text-white p-1.5 flex-shrink-0 transition-all duration-300 flex items-center justify-center"
-                          style={{
-                            backgroundColor: isAdded ? '#16a34a' : '#b91c1c',
-                            borderRadius: '50%',
-                            width: '30px',
-                            height: '30px',
-                            transform: isAdded ? 'scale(1.15)' : 'scale(1)',
-                          }}
-                          aria-label="Add to cart"
-                        >
-                          {isAdded ? (
-                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                              <polyline points="20 6 9 17 4 12"/>
-                            </svg>
-                          ) : (
-                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
-                              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
-                            </svg>
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
+            {upsellProducts.map((product: any) => (
+              <div key={product.id} className="flex-shrink-0" style={{ width: '220px' }}>
+                <ProductCard
+                  product={product}
+                  onAddToCart={handleUpsellAdd}
+                />
+              </div>
+            ))}
           </div>
         </section>
       )}
