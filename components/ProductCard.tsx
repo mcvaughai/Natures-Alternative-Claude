@@ -11,6 +11,7 @@ interface ProductCardProps {
     images?: string[]
     pricing_type?: string
     price_per_pound?: number
+    seller_id?: string
     sellers?: {
       farm_name?: string
       slug?: string
@@ -40,7 +41,7 @@ export default function ProductCard({ product, storeSlug, hideFarmInfo, onAddToC
   const handleQuickAdd = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    if (onAddToCart) onAddToCart(product)
+    if (onAddToCart) onAddToCart({ ...product, seller_id: product.seller_id })
     setAdded(true)
     setTimeout(() => setAdded(false), 1500)
   }

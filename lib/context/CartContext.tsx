@@ -8,6 +8,8 @@ export interface CartItem {
   priceEach: number;
   quantity: number;
   image?: string;
+  seller_id?: string;
+  unit?: string;
 }
 
 export interface AddToCartItem {
@@ -17,6 +19,8 @@ export interface AddToCartItem {
   price?: string;   // "$4.99" format
   quantity?: number;
   image?: string;
+  seller_id?: string;
+  unit?: string;
 }
 
 interface CartContextValue {
@@ -99,6 +103,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
           priceEach,
           quantity: addQty,
           image: incoming.image,
+          seller_id: incoming.seller_id,
+          unit: incoming.unit,
         },
       ];
     });

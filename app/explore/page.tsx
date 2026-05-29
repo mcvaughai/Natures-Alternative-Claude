@@ -51,6 +51,8 @@ export default function ExplorePage() {
       description: product.description ?? "",
       price: `$${Number(product.price).toFixed(2)}`,
       image: product.images?.[0],
+      seller_id: product.seller_id,
+      unit: product.unit,
     });
   }
 
