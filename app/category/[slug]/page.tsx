@@ -126,18 +126,22 @@ export default function CategoryPage() {
             </>
           )}
           <div className="relative z-10 text-center px-4">
-            <h1
-              className="font-raleway font-bold text-white"
-              style={{ fontSize: "40px", lineHeight: "1.2" }}
-            >
-              {heroBanner?.title || displayName}
-            </h1>
-            <p
-              className="mt-3 text-white mx-auto"
-              style={{ fontSize: "16px", opacity: 0.85, maxWidth: "600px" }}
-            >
-              {heroBanner?.subtitle || "Fresh from local natural farms near you"}
-            </p>
+            {(heroBanner ? heroBanner.title : displayName) && (
+              <h1
+                className="font-raleway font-bold text-white"
+                style={{ fontSize: "40px", lineHeight: "1.2" }}
+              >
+                {heroBanner ? heroBanner.title : displayName}
+              </h1>
+            )}
+            {(heroBanner ? heroBanner.subtitle : "Fresh from local natural farms near you") && (
+              <p
+                className="mt-3 text-white mx-auto"
+                style={{ fontSize: "16px", opacity: 0.85, maxWidth: "600px" }}
+              >
+                {heroBanner ? heroBanner.subtitle : "Fresh from local natural farms near you"}
+              </p>
+            )}
           </div>
         </div>
 

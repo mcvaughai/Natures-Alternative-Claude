@@ -107,7 +107,7 @@ export default function MeatPoultryPage() {
             <>
               <Image
                 src={heroBanner.background_image_url}
-                alt={heroBanner?.title || CATEGORY_NAME}
+                alt={heroBanner ? (heroBanner.title || CATEGORY_NAME) : CATEGORY_NAME}
                 fill
                 className="object-cover"
                 priority
@@ -119,18 +119,22 @@ export default function MeatPoultryPage() {
             </>
           )}
           <div className="relative z-10 text-center px-4">
-            <h1
-              className="font-raleway font-bold text-white"
-              style={{ fontSize: '40px', lineHeight: '1.2' }}
-            >
-              {heroBanner?.title || CATEGORY_NAME}
-            </h1>
-            <p
-              className="mt-3 text-white mx-auto"
-              style={{ fontSize: '16px', opacity: 0.85, maxWidth: '600px' }}
-            >
-              {heroBanner?.subtitle || CATEGORY_DESC}
-            </p>
+            {(heroBanner ? heroBanner.title : CATEGORY_NAME) && (
+              <h1
+                className="font-raleway font-bold text-white"
+                style={{ fontSize: '40px', lineHeight: '1.2' }}
+              >
+                {heroBanner ? heroBanner.title : CATEGORY_NAME}
+              </h1>
+            )}
+            {(heroBanner ? heroBanner.subtitle : CATEGORY_DESC) && (
+              <p
+                className="mt-3 text-white mx-auto"
+                style={{ fontSize: '16px', opacity: 0.85, maxWidth: '600px' }}
+              >
+                {heroBanner ? heroBanner.subtitle : CATEGORY_DESC}
+              </p>
+            )}
           </div>
         </div>
 
