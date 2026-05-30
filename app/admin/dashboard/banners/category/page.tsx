@@ -159,7 +159,7 @@ export default function CategoryBannersPage() {
       // Fields that always get written on an update
       const updatePayload = {
         category_name:        editing.category_name ?? "",
-        title:                editing.title?.trim() || editing.category_name || "",
+        title:                editing.title?.trim() ?? "",
         subtitle:             editing.subtitle?.trim() ?? "",
         background_image_url: editing.background_image_url ?? "",
         overlay_opacity:      editing.overlay_opacity ?? 0.5,
