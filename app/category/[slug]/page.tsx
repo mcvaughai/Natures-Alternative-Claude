@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
@@ -30,10 +31,11 @@ export default function CategoryPage() {
   const params = useParams();
   const slug = params?.slug as string;
 
-  const [products, setProducts]       = useState<Product[]>([]);
+  const [products, setProducts]         = useState<Product[]>([]);
   const [categoryName, setCategoryName] = useState("");
-  const [loading, setLoading]         = useState(true);
-  const [error, setError]             = useState("");
+  const [loading, setLoading]           = useState(true);
+  const [error, setError]               = useState("");
+  const [heroBanner, setHeroBanner]     = useState<any>(null);
 
   useEffect(() => {
     if (slug) {
@@ -78,6 +80,16 @@ export default function CategoryPage() {
       console.log("Products:", productsData);
 
       setProducts(productsData || []);
+
+      // Fetch category hero banner
+      const bannerRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/category_banners?category_slug=eq.${slug}&is_active=eq.true&select=*&limit=1`,
+        { headers: HEADERS }
+      );
+      const bannerData = await bannerRes.json();
+      if (Array.isArray(bannerData) && bannerData.length > 0) {
+        setHeroBanner(bannerData[0]);
+      }
     } catch (err: unknown) {
       const e = err as { message?: string };
       console.error("Error:", err);
@@ -91,9 +103,40 @@ export default function CategoryPage() {
     <div>
       <Navbar />
       <main>
-        <div className="bg-green-900 text-white py-10 text-center">
-          <h1 className="text-4xl font-bold">{categoryName || slug}</h1>
-          <p className="mt-2 text-green-100">Fresh from local natural farms near you</p>
+        {/* Hero — 320px tall, full width */}
+        <div
+          className="relative w-full flex items-center justify-center overflow-hidden"
+          style={{ height: '320px', backgroundColor: '#053D2D' }}
+        >
+          {heroBanner?.background_image_url && (
+            <>
+              <Image
+                src={heroBanner.background_image_url}
+                alt={heroBanner.title || categoryName || slug}
+                fill
+                className="object-cover"
+                priority
+              />
+              <div
+                className="absolute inset-0"
+                style={{ backgroundColor: `rgba(5,61,45,${heroBanner.overlay_opacity ?? 0.5})` }}
+              />
+            </>
+          )}
+          <div className="relative z-10 text-center px-4">
+            <h1
+              className="font-bold text-white"
+              style={{ fontSize: '40px', lineHeight: '1.2' }}
+            >
+              {heroBanner?.title || categoryName || slug}
+            </h1>
+            <p
+              className="mt-3 text-white mx-auto"
+              style={{ fontSize: '16px', opacity: 0.85, maxWidth: '600px' }}
+            >
+              {heroBanner?.subtitle || 'Fresh from local natural farms near you'}
+            </p>
+          </div>
         </div>
 
         <div className="p-6 bg-white min-h-screen">
