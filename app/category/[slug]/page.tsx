@@ -2,86 +2,74 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import Link from "next/link";
 import Image from "next/image";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import FilterSidebar, { FilterProvider, ActiveFiltersBar } from "@/components/FilterSidebar";
+import { useCart } from "@/lib/context/CartContext";
+import ProductGrid from "@/components/ProductGrid";
 
 const SUPABASE_URL = "https://ezryfycxfmtffobyfjfa.supabase.co";
 const SUPABASE_ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6cnlmeWN4Zm10ZmZvYnlmamZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MjQ1MDEsImV4cCI6MjA5MjQwMDUwMX0.woObRrj3MMUf6eAFVbkvDNUsQfQ-elmlDqPADBT9aZs";
-
 const HEADERS = {
   apikey: SUPABASE_ANON_KEY,
   Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
   "Content-Type": "application/json",
 };
 
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  description: string;
-  stock_qty: number;
-  unit: string;
-  images: string[];
-}
-
 export default function CategoryPage() {
   const params = useParams();
   const slug = params?.slug as string;
 
-  const [products, setProducts]         = useState<Product[]>([]);
+  const { addToCart } = useCart();
+  const [products, setProducts]         = useState<any[]>([]);
   const [categoryName, setCategoryName] = useState("");
   const [loading, setLoading]           = useState(true);
-  const [error, setError]               = useState("");
   const [heroBanner, setHeroBanner]     = useState<any>(null);
 
   useEffect(() => {
-    if (slug) {
-      fetchData();
-    }
+    if (slug) fetchProducts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
 
-  async function fetchData() {
+  async function fetchProducts() {
     setLoading(true);
-    setError("");
-
     try {
-      console.log("Fetching category:", slug);
-
-      // Step 1: fetch category by slug
-      const categoryResponse = await fetch(
-        `${SUPABASE_URL}/rest/v1/categories?slug=eq.${slug}&select=id,name,slug`,
+      // Step 1: resolve category id + name
+      const catRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/categories?slug=eq.${slug}&select=id,name`,
         { headers: HEADERS }
       );
-
-      console.log("Category response status:", categoryResponse.status);
-      const categories = await categoryResponse.json();
-      console.log("Categories:", categories);
-
-      if (!categories || categories.length === 0) {
-        setError("Category not found");
+      const categories = await catRes.json();
+      if (!Array.isArray(categories) || categories.length === 0) {
+        setProducts([]);
         return;
       }
+      const { id: categoryId, name } = categories[0];
+      setCategoryName(name);
 
-      const category = categories[0];
-      setCategoryName(category.name);
-
-      // Step 2: fetch products — correct columns: status (not is_active), stock_qty (not stock_quantity)
-      const productsResponse = await fetch(
-        `${SUPABASE_URL}/rest/v1/products?category_id=eq.${category.id}&status=eq.active&select=id,name,price,description,stock_qty,unit,images`,
+      // Step 2: fetch active products for this category
+      const productsRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/products?category_id=eq.${categoryId}&status=eq.active&select=id,name,price,unit,description,images,seller_id&order=created_at.desc`,
         { headers: HEADERS }
       );
+      const data = await productsRes.json();
+      const prods = Array.isArray(data) ? data : [];
 
-      console.log("Products response status:", productsResponse.status);
-      const productsData = await productsResponse.json();
-      console.log("Products:", productsData);
+      // Step 3: fetch all sellers and merge by seller_id
+      const sellersRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/sellers?select=id,farm_name,slug,fulfillment`,
+        { headers: HEADERS }
+      );
+      const sellersData = await sellersRes.json();
+      const sellersMap: any = {};
+      if (Array.isArray(sellersData)) {
+        sellersData.forEach((s: any) => { sellersMap[s.id] = s; });
+      }
+      setProducts(prods.map((p: any) => ({ ...p, sellers: sellersMap[p.seller_id] || null })));
 
-      setProducts(productsData || []);
-
-      // Fetch category hero banner
+      // Step 4: fetch category hero banner
       const bannerRes = await fetch(
         `${SUPABASE_URL}/rest/v1/category_banners?category_slug=eq.${slug}&is_active=eq.true&select=*&limit=1`,
         { headers: HEADERS }
@@ -90,29 +78,43 @@ export default function CategoryPage() {
       if (Array.isArray(bannerData) && bannerData.length > 0) {
         setHeroBanner(bannerData[0]);
       }
-    } catch (err: unknown) {
-      const e = err as { message?: string };
-      console.error("Error:", err);
-      setError("Failed to load: " + (e?.message ?? "unknown error"));
+    } catch (err) {
+      console.error("Category fetch error:", err);
+      setProducts([]);
     } finally {
       setLoading(false);
     }
   }
 
+  function handleAddToCart(product: any) {
+    addToCart({
+      id: product.id,
+      name: product.name,
+      description: product.description ?? "",
+      price: `$${Number(product.price).toFixed(2)}`,
+      image: product.images?.[0],
+      seller_id: product.seller_id,
+      unit: product.unit,
+    });
+  }
+
+  // Derive a display name from the slug as last-resort fallback
+  const displayName = categoryName || slug?.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase()) || "";
+
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <Navbar />
-      <main className="flex-1" style={{ paddingTop: '133px' }}>
-        {/* Hero — 320px tall, full width */}
+      <main className="flex-1">
+        {/* Hero — 320px, full width */}
         <div
           className="relative w-full flex items-center justify-center overflow-hidden"
-          style={{ height: '320px', backgroundColor: '#053D2D' }}
+          style={{ height: "320px", backgroundColor: "#053D2D" }}
         >
           {heroBanner?.background_image_url && (
             <>
               <Image
                 src={heroBanner.background_image_url}
-                alt={heroBanner.title || categoryName || slug}
+                alt={heroBanner.title || displayName}
                 fill
                 className="object-cover"
                 priority
@@ -125,91 +127,49 @@ export default function CategoryPage() {
           )}
           <div className="relative z-10 text-center px-4">
             <h1
-              className="font-bold text-white"
-              style={{ fontSize: '40px', lineHeight: '1.2' }}
+              className="font-raleway font-bold text-white"
+              style={{ fontSize: "40px", lineHeight: "1.2" }}
             >
-              {heroBanner?.title || categoryName || slug}
+              {heroBanner?.title || displayName}
             </h1>
             <p
               className="mt-3 text-white mx-auto"
-              style={{ fontSize: '16px', opacity: 0.85, maxWidth: '600px' }}
+              style={{ fontSize: "16px", opacity: 0.85, maxWidth: "600px" }}
             >
-              {heroBanner?.subtitle || 'Fresh from local natural farms near you'}
+              {heroBanner?.subtitle || "Fresh from local natural farms near you"}
             </p>
           </div>
         </div>
 
-        <div className="p-6 bg-white min-h-screen">
-          {loading && (
-            <div className="text-center py-20">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-900 mx-auto" />
-              <p className="mt-4 text-gray-500">Loading products...</p>
-            </div>
-          )}
-
-          {!loading && error && (
-            <div className="text-center py-20">
-              <h3 className="text-xl font-bold text-red-600">Error</h3>
-              <p className="text-gray-500 mt-2">{error}</p>
-              <button
-                onClick={fetchData}
-                className="mt-4 bg-green-900 text-white px-6 py-2 rounded-full"
-              >
-                Try Again
-              </button>
-            </div>
-          )}
-
-          {!loading && !error && products.length === 0 && (
-            <div className="text-center py-20">
-              <h3 className="text-xl font-bold text-green-900">
-                No products in this category yet
-              </h3>
-              <p className="text-gray-500 mt-2">
-                Check back soon as more farms join!
-              </p>
-              <Link
-                href="/explore"
-                className="mt-4 inline-block bg-green-900 text-white px-6 py-2 rounded-full"
-              >
-                Browse All Products
-              </Link>
-            </div>
-          )}
-
-          {!loading && !error && products.length > 0 && (
-            <div>
-              <p className="text-gray-500 mb-6">
-                Showing {products.length} products in {categoryName}
-              </p>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {products.map((product) => (
-                  <Link
-                    key={product.id}
-                    href={`/product/${product.id}`}
-                    className="bg-white rounded-lg overflow-hidden shadow hover:shadow-md transition-shadow"
-                  >
-                    <div className="h-48 bg-gray-200">
-                      {product.images?.[0] && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={product.images[0]}
-                          alt={product.name}
-                          className="w-full h-full object-cover"
-                        />
-                      )}
-                    </div>
-                    <div className="p-3">
-                      <h4 className="font-semibold text-sm">{product.name}</h4>
-                      <p className="text-green-900 font-bold mt-1">
-                        ${product.price}/{product.unit || "each"}
+        {/* Two-column layout */}
+        <div className="w-full px-6 py-8">
+          <FilterProvider>
+            <div className="flex flex-col lg:flex-row gap-8 items-start">
+              <FilterSidebar category={slug} />
+              <div className="flex-1 min-w-0">
+                <ActiveFiltersBar />
+                {loading ? (
+                  <div className="flex items-center justify-center py-20">
+                    <div className="w-6 h-6 rounded-full border-2 border-[#1a4a2e] border-t-transparent animate-spin" />
+                  </div>
+                ) : (
+                  <>
+                    {products.length > 0 && (
+                      <p className="text-sm text-gray-500 mb-4">
+                        Showing <span className="font-semibold text-gray-700">{products.length}</span> products
                       </p>
-                    </div>
-                  </Link>
-                ))}
+                    )}
+                    <ProductGrid
+                      products={products}
+                      onAddToCart={handleAddToCart}
+                      emptyMessage={`No products in ${displayName} yet`}
+                      emptySubMessage="Check back soon as more farms join the platform!"
+                    />
+                  </>
+                )}
               </div>
             </div>
-          )}
+          </FilterProvider>
         </div>
       </main>
       <Footer />
