@@ -100,9 +100,9 @@ export default function CategoryPage() {
   }
 
   return (
-    <div>
+    <div className="min-h-screen bg-white flex flex-col">
       <Navbar />
-      <main>
+      <main className="flex-1" style={{ paddingTop: '133px' }}>
         {/* Hero — 320px tall, full width */}
         <div
           className="relative w-full flex items-center justify-center overflow-hidden"
