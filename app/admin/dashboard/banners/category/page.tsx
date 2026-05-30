@@ -141,7 +141,7 @@ export default function CategoryBannersPage() {
     }
   };
 
-  /* ── Save (upsert) ──────────────────────────────────────────── */
+  /* ── Save (PATCH if exists, POST if new) ───────────────────── */
   const handleSave = async () => {
     if (!editing?.category_slug) return;
     setSaving(true);
@@ -149,13 +149,15 @@ export default function CategoryBannersPage() {
     try {
       const session = await getValidAdminSession();
       if (!session) return;
-      const headers = {
+      const baseHeaders = {
         ...getAuthHeaders(session.access_token),
-        Prefer: "resolution=merge-duplicates,return=representation",
+        "Content-Type": "application/json",
       };
 
-      const payload: Partial<CategoryBanner> = {
-        category_slug:        editing.category_slug,
+      const existingRecord = banners[editing.category_slug];
+
+      // Fields that always get written on an update
+      const updatePayload = {
         category_name:        editing.category_name ?? "",
         title:                editing.title?.trim() || editing.category_name || "",
         subtitle:             editing.subtitle?.trim() ?? "",
@@ -165,11 +167,26 @@ export default function CategoryBannersPage() {
         updated_at:           new Date().toISOString(),
       };
 
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/category_banners`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(payload),
-      });
+      let res: Response;
+
+      if (existingRecord) {
+        // Record exists → PATCH by category_slug filter
+        res = await fetch(
+          `${SUPABASE_URL}/rest/v1/category_banners?category_slug=eq.${editing.category_slug}`,
+          {
+            method: "PATCH",
+            headers: baseHeaders,
+            body: JSON.stringify(updatePayload),
+          }
+        );
+      } else {
+        // No record yet → POST (INSERT)
+        res = await fetch(`${SUPABASE_URL}/rest/v1/category_banners`, {
+          method: "POST",
+          headers: baseHeaders,
+          body: JSON.stringify({ ...updatePayload, category_slug: editing.category_slug }),
+        });
+      }
 
       if (!res.ok) {
         const err = await res.text();
