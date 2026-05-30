@@ -24,6 +24,7 @@ export default function NaturalSkincarePage() {
   const { addToCart } = useCart()
   const [products, setProducts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [heroBanner, setHeroBanner] = useState<any>(null)
 
   useEffect(() => {
     fetchProducts()
@@ -63,6 +64,15 @@ export default function NaturalSkincarePage() {
         sellers: sellersMap[p.seller_id] || null
       }))
       setProducts(productsWithSellers)
+      // Fetch category hero banner
+      const bannerRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/category_banners?category_slug=eq.${CATEGORY_SLUG}&is_active=eq.true&select=*&limit=1`,
+        { headers: HEADERS }
+      )
+      const bannerData = await bannerRes.json()
+      if (Array.isArray(bannerData) && bannerData.length > 0) {
+        setHeroBanner(bannerData[0])
+      }
     } catch (err) {
       console.error('Category fetch error:', err)
       setProducts([])
@@ -88,10 +98,23 @@ export default function NaturalSkincarePage() {
       <Navbar />
       <main className="flex-1">
         {/* Hero */}
-        <section className="bg-[#1a4a2e] py-14 text-center">
-          <div className="max-w-2xl mx-auto px-4">
-            <h1 className="font-raleway text-4xl sm:text-5xl font-bold text-white mb-3">{CATEGORY_NAME}</h1>
-            <p className="text-[#f5f0e8] opacity-90">{CATEGORY_DESC}</p>
+        <section
+          className="relative py-14 text-center overflow-hidden"
+          style={{
+            backgroundColor: '#053D2D',
+            backgroundImage: heroBanner?.background_image_url ? `url(${heroBanner.background_image_url})` : 'none',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        >
+          {heroBanner?.background_image_url && (
+            <div className="absolute inset-0" style={{ backgroundColor: `rgba(5,61,45,${heroBanner.overlay_opacity ?? 0.5})` }} />
+          )}
+          <div className="relative z-10 max-w-2xl mx-auto px-4">
+            <h1 className="font-raleway text-4xl sm:text-5xl font-bold text-white mb-3">
+              {heroBanner?.title || CATEGORY_NAME}
+            </h1>
+            <p className="text-[#f5f0e8] opacity-90">{heroBanner?.subtitle || CATEGORY_DESC}</p>
           </div>
         </section>
 
