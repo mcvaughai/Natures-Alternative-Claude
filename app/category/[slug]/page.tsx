@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import Image from "next/image";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import FilterSidebar, { FilterProvider, ActiveFiltersBar } from "@/components/FilterSidebar";
@@ -26,7 +25,6 @@ export default function CategoryPage() {
   const [products, setProducts]         = useState<any[]>([]);
   const [categoryName, setCategoryName] = useState("");
   const [loading, setLoading]           = useState(true);
-  const [heroBanner, setHeroBanner]     = useState<any>(null);
 
   useEffect(() => {
     if (slug) fetchProducts();
@@ -68,16 +66,6 @@ export default function CategoryPage() {
         sellersData.forEach((s: any) => { sellersMap[s.id] = s; });
       }
       setProducts(prods.map((p: any) => ({ ...p, sellers: sellersMap[p.seller_id] || null })));
-
-      // Step 4: fetch category hero banner
-      const bannerRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/category_banners?category_slug=eq.${slug}&is_active=eq.true&select=*&limit=1`,
-        { headers: HEADERS }
-      );
-      const bannerData = await bannerRes.json();
-      if (Array.isArray(bannerData) && bannerData.length > 0) {
-        setHeroBanner(bannerData[0]);
-      }
     } catch (err) {
       console.error("Category fetch error:", err);
       setProducts([]);
@@ -105,44 +93,14 @@ export default function CategoryPage() {
     <div className="min-h-screen bg-white flex flex-col">
       <Navbar />
       <main className="flex-1">
-        {/* Hero — 200px, full width */}
-        <div
-          className="relative w-full flex items-center justify-center overflow-hidden"
-          style={{ height: "200px", backgroundColor: "#053D2D" }}
-        >
-          {heroBanner?.background_image_url && (
-            <>
-              <Image
-                src={heroBanner.background_image_url}
-                alt={heroBanner.title || displayName}
-                fill
-                className="object-cover"
-                priority
-              />
-              <div
-                className="absolute inset-0"
-                style={{ backgroundColor: `rgba(5,61,45,${heroBanner.overlay_opacity ?? 0.5})` }}
-              />
-            </>
-          )}
-          <div className="relative z-10 text-center px-4">
-            {(heroBanner ? heroBanner.title : displayName) && (
-              <h1
-                className="font-raleway font-bold text-white"
-                style={{ fontSize: "40px", lineHeight: "1.2" }}
-              >
-                {heroBanner ? heroBanner.title : displayName}
-              </h1>
-            )}
-            {(heroBanner ? heroBanner.subtitle : "Fresh from local natural farms near you") && (
-              <p
-                className="mt-3 text-white mx-auto"
-                style={{ fontSize: "16px", opacity: 0.85, maxWidth: "600px" }}
-              >
-                {heroBanner ? heroBanner.subtitle : "Fresh from local natural farms near you"}
-              </p>
-            )}
-          </div>
+        {/* Page title */}
+        <div className="w-full px-6 py-6 bg-white">
+          <h1
+            className="font-raleway font-bold"
+            style={{ fontSize: "30px", color: "#111827" }}
+          >
+            {displayName}
+          </h1>
         </div>
 
         {/* Two-column layout */}
