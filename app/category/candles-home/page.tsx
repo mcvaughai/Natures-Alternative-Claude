@@ -88,9 +88,22 @@ export default function CandlesHomePage() {
       <Navbar />
       <main className="flex-1">
         {/* Page title */}
-        <div className="w-full px-6 py-6 bg-white">
+        <div
+          className="w-full px-6 py-8 relative overflow-hidden"
+          style={{ background: 'linear-gradient(135deg, #f0f7f3 0%, #ffffff 60%)' }}
+        >
+          {/* Watermark icon */}
+          <div
+            className="absolute right-12 top-1/2 -translate-y-1/2 pointer-events-none select-none"
+            style={{ opacity: 0.07 }}
+          >
+        <svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 24 24" fill="none">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="#1a4a2e"/>
+          <path d="M9 22V12h6v10" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" fill="none"/>
+        </svg>
+          </div>
           <h1
-            className="font-raleway font-bold"
+            className="font-raleway font-bold category-header-title relative z-10"
             style={{ fontSize: '30px', color: '#111827' }}
           >
             {CATEGORY_NAME}
