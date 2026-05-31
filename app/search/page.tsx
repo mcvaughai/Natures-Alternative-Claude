@@ -8,13 +8,22 @@ import FilterSidebar, { FilterProvider, ActiveFiltersBar } from "@/components/Fi
 import GridHeader from "@/components/explore/GridHeader";
 import { fetchFromSupabase } from "@/lib/api";
 import ProductGrid from "@/components/ProductGrid";
+import { useCart } from "@/lib/context/CartContext";
 
 interface Product {
   id: string;
   name: string;
   description: string;
   price: number;
+  unit: string;
   images: string[];
+  seller_id: string;
+  sellers?: {
+    id: string;
+    farm_name: string;
+    slug: string;
+    fulfillment: any;
+  } | null;
 }
 
 function SearchResults() {
@@ -23,6 +32,7 @@ function SearchResults() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState("");
+  const { addToCart } = useCart();
 
   useEffect(() => {
     fetchResults();
@@ -34,17 +44,45 @@ function SearchResults() {
     setError("");
     try {
       const endpoint = query
-        ? `products?name=ilike.*${encodeURIComponent(query)}*&status=eq.active&select=id,name,description,price,images&order=created_at.desc`
-        : "products?status=eq.active&select=id,name,description,price,images&order=created_at.desc";
+        ? `products?name=ilike.*${encodeURIComponent(query)}*&status=eq.active&select=id,name,description,price,unit,images,seller_id&order=created_at.desc`
+        : "products?status=eq.active&select=id,name,description,price,unit,images,seller_id&order=created_at.desc";
 
       const data = await fetchFromSupabase<Product[]>(endpoint);
-      setProducts(data ?? []);
+      const rows = Array.isArray(data) ? data : [];
+
+      // Merge seller data so fulfillment badges and farm name render on cards
+      const sellerIds = [...new Set(rows.map((p) => p.seller_id).filter(Boolean))];
+
+      if (sellerIds.length > 0) {
+        const sellersData = await fetchFromSupabase<any[]>(
+          "sellers?select=id,farm_name,slug,fulfillment"
+        );
+        const sellersMap: Record<string, any> = {};
+        if (Array.isArray(sellersData)) {
+          sellersData.forEach((s: any) => { sellersMap[s.id] = s; });
+        }
+        setProducts(rows.map((p) => ({ ...p, sellers: sellersMap[p.seller_id] ?? null })));
+      } else {
+        setProducts(rows);
+      }
     } catch (err) {
       console.error("Search fetch error:", err);
       setError("Failed to load results.");
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleAddToCart(product: Product) {
+    addToCart({
+      id: product.id,
+      name: product.name,
+      description: product.description ?? "",
+      price: `$${Number(product.price).toFixed(2)}`,
+      image: product.images?.[0],
+      seller_id: product.seller_id,
+      unit: product.unit,
+    });
   }
 
   return (
@@ -88,6 +126,7 @@ function SearchResults() {
                   {products.length > 0 && <GridHeader resultCount={products.length} />}
                   <ProductGrid
                     products={products}
+                    onAddToCart={handleAddToCart}
                     emptyMessage={query ? `No products found for "${query}"` : "No products available yet"}
                     emptySubMessage={query ? "Try a different search." : "Check back soon!"}
                   />
