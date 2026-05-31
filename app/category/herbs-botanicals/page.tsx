@@ -98,10 +98,10 @@ export default function HerbsBotanicalsPage() {
     <div className="min-h-screen bg-white flex flex-col">
       <Navbar />
       <main className="flex-1">
-        {/* Hero — 320px, full width */}
+        {/* Hero — 200px, full width */}
         <div
           className="relative w-full flex items-center justify-center overflow-hidden"
-          style={{ height: '320px', backgroundColor: '#053D2D' }}
+          style={{ height: '200px', backgroundColor: '#053D2D' }}
         >
           {heroBanner?.background_image_url && (
             <>
