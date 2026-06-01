@@ -20,6 +20,7 @@ const headers = {
 export default function HomePage() {
   const [banners, setBanners] = useState<any[]>([]);
   const [heroBgUrl, setHeroBgUrl] = useState<string | null>(null);
+  const [heroOverlayOpacity, setHeroOverlayOpacity] = useState(0.75);
 
   useEffect(() => {
     fetchBanners();
@@ -42,12 +43,13 @@ export default function HomePage() {
   async function fetchHeroBg() {
     try {
       const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/homepage_banners?title=eq.hero&is_active=eq.true&select=background_image_url`,
+        `${SUPABASE_URL}/rest/v1/homepage_banners?title=eq.hero&is_active=eq.true&select=background_image_url,overlay_opacity`,
         { headers }
       );
       const data = await res.json();
-      if (Array.isArray(data) && data[0]?.background_image_url) {
-        setHeroBgUrl(data[0].background_image_url);
+      if (Array.isArray(data) && data[0]) {
+        if (data[0].background_image_url) setHeroBgUrl(data[0].background_image_url);
+        if (data[0].overlay_opacity != null) setHeroOverlayOpacity(Number(data[0].overlay_opacity));
       }
     } catch (err) {
       console.error("Error fetching hero bg:", err);
@@ -72,7 +74,7 @@ export default function HomePage() {
         {heroBgUrl ? (
           <div
             className="absolute inset-0"
-            style={{ backgroundColor: "rgba(5, 61, 45, 0.75)" }}
+            style={{ backgroundColor: `rgba(5, 61, 45, ${heroOverlayOpacity})` }}
           />
         ) : (
           <div

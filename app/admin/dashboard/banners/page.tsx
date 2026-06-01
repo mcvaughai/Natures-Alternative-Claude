@@ -39,7 +39,10 @@ export default function BannersPage() {
   // INSERT INTO homepage_banners (title, subtitle, background_image_url, is_active, position)
   // VALUES ('hero', 'Homepage hero banner', '', true, 0)
   // ON CONFLICT DO NOTHING;
+  //
+  // Also run: ALTER TABLE homepage_banners ADD COLUMN IF NOT EXISTS overlay_opacity NUMERIC DEFAULT 0.75;
   const [heroImageUrl, setHeroImageUrl]       = useState("");
+  const [heroOpacity, setHeroOpacity]         = useState(0.75);
   const [heroSaving, setHeroSaving]           = useState(false);
   const [heroSuccess, setHeroSuccess]         = useState("");
   const [heroError, setHeroError]             = useState("");
@@ -60,12 +63,13 @@ export default function BannersPage() {
       const session = await getValidAdminSession();
       if (!session) return;
       const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/homepage_banners?title=eq.hero&select=background_image_url`,
+        `${SUPABASE_URL}/rest/v1/homepage_banners?title=eq.hero&select=background_image_url,overlay_opacity`,
         { headers: getAuthHeaders(session.access_token) }
       );
       const data = await res.json();
-      if (Array.isArray(data) && data[0]?.background_image_url) {
-        setHeroImageUrl(data[0].background_image_url);
+      if (Array.isArray(data) && data[0]) {
+        if (data[0].background_image_url) setHeroImageUrl(data[0].background_image_url);
+        if (data[0].overlay_opacity != null) setHeroOpacity(Number(data[0].overlay_opacity));
       }
     } catch (err) {
       console.error("Failed to fetch hero banner:", err);
@@ -98,7 +102,11 @@ export default function BannersPage() {
         await fetch(`${SUPABASE_URL}/rest/v1/homepage_banners?title=eq.hero`, {
           method: "PATCH",
           headers: authHeaders,
-          body: JSON.stringify({ background_image_url: heroImageUrl, updated_at: new Date().toISOString() }),
+          body: JSON.stringify({
+            background_image_url: heroImageUrl,
+            overlay_opacity: heroOpacity,
+            updated_at: new Date().toISOString(),
+          }),
         });
       } else {
         await fetch(`${SUPABASE_URL}/rest/v1/homepage_banners`, {
@@ -108,6 +116,7 @@ export default function BannersPage() {
             title: "hero",
             subtitle: "Homepage hero banner",
             background_image_url: heroImageUrl,
+            overlay_opacity: heroOpacity,
             is_active: true,
             position: 0,
           }),
@@ -406,9 +415,9 @@ export default function BannersPage() {
                 <p className="text-xs text-gray-400 mt-0.5">Controls the background image of the homepage hero section.</p>
               </div>
               <div className="px-5 py-5 space-y-4">
-                {/* Current image preview */}
+                {/* Current image preview — live opacity preview */}
                 <div
-                  className="w-full rounded-xl overflow-hidden border border-gray-200 flex items-center justify-center"
+                  className="w-full rounded-xl overflow-hidden border border-gray-200 relative"
                   style={{
                     height: "160px",
                     backgroundColor: "#053D2D",
@@ -418,18 +427,26 @@ export default function BannersPage() {
                   }}
                 >
                   {heroImageUrl ? (
-                    <div className="w-full h-full flex items-end justify-start p-4"
-                      style={{ background: "rgba(5,61,45,0.45)" }}>
-                      <span className="text-white text-xs font-semibold bg-black/30 px-2 py-1 rounded-lg">
-                        Current hero background
-                      </span>
-                    </div>
+                    <>
+                      {/* Live overlay preview using current slider value */}
+                      <div
+                        className="absolute inset-0"
+                        style={{ backgroundColor: `rgba(5, 61, 45, ${heroOpacity})` }}
+                      />
+                      <div className="absolute bottom-3 left-3">
+                        <span className="text-white text-xs font-semibold bg-black/30 px-2 py-1 rounded-lg">
+                          Current hero background
+                        </span>
+                      </div>
+                    </>
                   ) : (
-                    <div className="text-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-white opacity-30 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                      </svg>
-                      <p className="text-white text-xs opacity-40">No image set — showing solid green background</p>
+                    <div className="absolute inset-0 flex items-center justify-center text-center">
+                      <div>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-white opacity-30 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        <p className="text-white text-xs opacity-40">No image set — showing solid green background</p>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -463,6 +480,39 @@ export default function BannersPage() {
                   </div>
                   <p className="text-xs text-gray-400 mt-1.5">
                     Recommended size: 1440 × 700px. Use a high quality landscape photo.
+                  </p>
+                </div>
+
+                {/* Overlay opacity slider */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-semibold text-gray-600">
+                      Overlay Darkness
+                    </label>
+                    <span className="text-xs font-bold text-gray-700 tabular-nums w-10 text-right">
+                      {Math.round(heroOpacity * 100)}%
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    value={heroOpacity}
+                    onChange={e => setHeroOpacity(Number(e.target.value))}
+                    className="w-full h-2 rounded-full appearance-none cursor-pointer"
+                    style={{
+                      background: `linear-gradient(to right, #053D2D ${heroOpacity * 100}%, #e5e7eb ${heroOpacity * 100}%)`,
+                      accentColor: "#053D2D",
+                    }}
+                  />
+                  <div className="flex justify-between text-[10px] text-gray-400 mt-1">
+                    <span>0% — Image only</span>
+                    <span>50% — Balanced</span>
+                    <span>100% — Solid green</span>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Drag to adjust the dark green overlay on the hero image. The preview above updates live.
                   </p>
                 </div>
 
