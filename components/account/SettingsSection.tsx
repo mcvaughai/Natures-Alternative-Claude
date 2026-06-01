@@ -1,43 +1,42 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+const SUPABASE_URL = "https://ezryfycxfmtffobyfjfa.supabase.co";
+const SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6cnlmeWN4Zm10ZmZvYnlmamZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MjQ1MDEsImV4cCI6MjA5MjQwMDUwMX0.woObRrj3MMUf6eAFVbkvDNUsQfQ-elmlDqPADBT9aZs";
+
+const getHeaders = (token: string) => ({
+  apikey: SUPABASE_ANON_KEY,
+  Authorization: `Bearer ${token}`,
+  "Content-Type": "application/json",
+});
 
 // ── Shared primitives ─────────────────────────────────────────────────────────
 const inputCls =
   "w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a4a2e]/30 focus:border-[#1a4a2e] transition";
 
 function CardShell({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-      {children}
-    </div>
-  );
+  return <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">{children}</div>;
 }
-
 function CardTitle({ children }: { children: React.ReactNode }) {
   return <h2 className="text-base font-bold text-gray-900 mb-5">{children}</h2>;
 }
-
-function Field({
-  label,
-  id,
-  children,
-}: {
-  label: string;
-  id?: string;
-  children: React.ReactNode;
-}) {
+function Field({ label, id, children }: { label: string; id?: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1.5" htmlFor={id}>
-        {label}
-      </label>
+      <label className="block text-sm font-medium text-gray-700 mb-1.5" htmlFor={id}>{label}</label>
       {children}
     </div>
   );
 }
 
-function PasswordInput({ id, placeholder }: { id: string; placeholder: string }) {
+function PasswordInput({ id, placeholder, value, onChange }: {
+  id: string;
+  placeholder: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
   const [show, setShow] = useState(false);
   return (
     <div className="relative">
@@ -45,6 +44,8 @@ function PasswordInput({ id, placeholder }: { id: string; placeholder: string })
         id={id}
         type={show ? "text" : "password"}
         placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
         className={inputCls + " pr-11"}
       />
       <button
@@ -68,7 +69,6 @@ function PasswordInput({ id, placeholder }: { id: string; placeholder: string })
   );
 }
 
-// ── Toggle switch ─────────────────────────────────────────────────────────────
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
   return (
     <button
@@ -76,83 +76,208 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#1a4a2e]/30 ${
-        checked ? "bg-[#1a4a2e]" : "bg-gray-300"
-      }`}
+      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#1a4a2e]/30 ${checked ? "bg-[#1a4a2e]" : "bg-gray-300"}`}
     >
-      <span
-        className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
-          checked ? "translate-x-6" : "translate-x-1"
-        }`}
-      />
+      <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${checked ? "translate-x-6" : "translate-x-1"}`} />
     </button>
   );
 }
 
-// ── Profile Settings ──────────────────────────────────────────────────────────
-function ProfileCard() {
+// ── Profile Card ──────────────────────────────────────────────────────────────
+function ProfileCard({ session }: { session: any }) {
+  const [profile, setProfile]         = useState({ first_name: "", last_name: "", email: "", phone: "", zip_code: "" });
+  const [loading, setLoading]         = useState(true);
+  const [saving, setSaving]           = useState(false);
+  const [successMessage, setSuccess]  = useState("");
+
+  useEffect(() => {
+    if (!session) return;
+    fetchProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session]);
+
+  async function fetchProfile() {
+    try {
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/profiles?id=eq.${session.user_id}&select=*`,
+        { headers: getHeaders(session.access_token) }
+      );
+      const data = await res.json();
+      if (Array.isArray(data) && data[0]) {
+        const p = data[0];
+        setProfile({
+          first_name: p.first_name || "",
+          last_name:  p.last_name  || "",
+          email:      p.email      || session.email || "",
+          phone:      p.phone      || "",
+          zip_code:   p.zip_code   || "",
+        });
+      } else {
+        setProfile((prev) => ({ ...prev, email: session.email || "" }));
+      }
+    } catch (err) {
+      console.error("Error fetching profile:", err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function saveProfile() {
+    setSaving(true);
+    try {
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/profiles?id=eq.${session.user_id}`,
+        {
+          method: "PATCH",
+          headers: { ...getHeaders(session.access_token), Prefer: "return=representation" },
+          body: JSON.stringify({
+            first_name:  profile.first_name,
+            last_name:   profile.last_name,
+            phone:       profile.phone,
+            zip_code:    profile.zip_code,
+            updated_at:  new Date().toISOString(),
+          }),
+        }
+      );
+      if (res.ok) {
+        setSuccess("Profile saved successfully!");
+        setTimeout(() => setSuccess(""), 3000);
+      } else {
+        alert("Failed to save profile.");
+      }
+    } catch (err: any) {
+      alert("Error saving: " + err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function set(key: keyof typeof profile) {
+    return (e: React.ChangeEvent<HTMLInputElement>) =>
+      setProfile((prev) => ({ ...prev, [key]: e.target.value }));
+  }
+
   return (
     <CardShell>
       <CardTitle>Profile Information</CardTitle>
-      <div className="space-y-4">
-        {/* Avatar */}
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 shrink-0">
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
+      {successMessage && (
+        <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-xl text-sm mb-4">
+          ✅ {successMessage}
+        </div>
+      )}
+      {loading ? (
+        <div className="flex items-center justify-center py-8">
+          <div className="w-5 h-5 rounded-full border-2 border-[#1a4a2e] border-t-transparent animate-spin" />
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {/* Avatar */}
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-full bg-[#1a4a2e] flex items-center justify-center text-white font-bold text-xl shrink-0">
+              {profile.first_name?.charAt(0) || profile.email?.charAt(0) || "?"}
+            </div>
+            <button className="text-sm font-semibold text-[#1a4a2e] border border-[#1a4a2e] px-4 py-2 rounded-xl hover:bg-[#1a4a2e]/5 transition-colors">
+              Change Photo
+            </button>
           </div>
-          <button className="text-sm font-semibold text-[#1a4a2e] border border-[#1a4a2e] px-4 py-2 rounded-xl hover:bg-[#1a4a2e]/5 transition-colors">
-            Change Photo
-          </button>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="First Name" id="firstName">
-            <input id="firstName" type="text" defaultValue="John" className={inputCls} />
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="First Name" id="firstName">
+              <input id="firstName" type="text" value={profile.first_name} onChange={set("first_name")} className={inputCls} />
+            </Field>
+            <Field label="Last Name" id="lastName">
+              <input id="lastName" type="text" value={profile.last_name} onChange={set("last_name")} className={inputCls} />
+            </Field>
+          </div>
+          <Field label="Email Address" id="email">
+            <input id="email" type="email" value={profile.email} readOnly className={inputCls + " bg-gray-50 cursor-not-allowed"} />
           </Field>
-          <Field label="Last Name" id="lastName">
-            <input id="lastName" type="text" defaultValue="Doe" className={inputCls} />
+          <Field label="Phone Number" id="phone">
+            <input id="phone" type="tel" value={profile.phone} onChange={set("phone")} placeholder="(555) 123-4567" className={inputCls} />
           </Field>
+          <Field label="Zip Code" id="zip">
+            <input id="zip" type="text" value={profile.zip_code} onChange={set("zip_code")} maxLength={10} placeholder="77001" className={inputCls} />
+          </Field>
+          <div className="pt-1">
+            <button
+              onClick={saveProfile}
+              disabled={saving}
+              className="bg-[#1a4a2e] hover:bg-[#2d6b47] text-white font-semibold px-6 py-2.5 rounded-xl transition-colors text-sm disabled:opacity-60"
+            >
+              {saving ? "Saving..." : "Save Changes"}
+            </button>
+          </div>
         </div>
-        <Field label="Email Address" id="email">
-          <input id="email" type="email" defaultValue="john@email.com" className={inputCls} />
-        </Field>
-        <Field label="Phone Number" id="phone">
-          <input id="phone" type="tel" defaultValue="(555) 123-4567" className={inputCls} />
-        </Field>
-        <Field label="Zip Code" id="zip">
-          <input id="zip" type="text" defaultValue="77001" maxLength={10} className={inputCls} />
-        </Field>
-
-        <div className="pt-1">
-          <button className="bg-[#1a4a2e] hover:bg-[#2d6b47] text-white font-semibold px-6 py-2.5 rounded-xl transition-colors text-sm">
-            Save Changes
-          </button>
-        </div>
-      </div>
+      )}
     </CardShell>
   );
 }
 
-// ── Password ──────────────────────────────────────────────────────────────────
-function PasswordCard() {
+// ── Password Card ─────────────────────────────────────────────────────────────
+function PasswordCard({ session }: { session: any }) {
+  const [currentPw, setCurrentPw] = useState("");
+  const [newPw, setNewPw]         = useState("");
+  const [confirmPw, setConfirmPw] = useState("");
+  const [updating, setUpdating]   = useState(false);
+  const [success, setSuccess]     = useState("");
+
+  async function updatePassword() {
+    if (!newPw || newPw !== confirmPw) {
+      alert("New passwords do not match");
+      return;
+    }
+    if (newPw.length < 6) {
+      alert("Password must be at least 6 characters");
+      return;
+    }
+    setUpdating(true);
+    try {
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+        method: "PUT",
+        headers: getHeaders(session.access_token),
+        body: JSON.stringify({ password: newPw }),
+      });
+      if (res.ok) {
+        setSuccess("Password updated successfully!");
+        setCurrentPw("");
+        setNewPw("");
+        setConfirmPw("");
+        setTimeout(() => setSuccess(""), 3000);
+      } else {
+        const err = await res.json();
+        alert("Failed to update password: " + (err.message ?? "Unknown error"));
+      }
+    } catch (err: any) {
+      alert("Error: " + err.message);
+    } finally {
+      setUpdating(false);
+    }
+  }
+
   return (
     <CardShell>
       <CardTitle>Change Password</CardTitle>
+      {success && (
+        <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-xl text-sm mb-4">
+          ✅ {success}
+        </div>
+      )}
       <div className="space-y-4">
         <Field label="Current Password" id="currentPassword">
-          <PasswordInput id="currentPassword" placeholder="Enter current password" />
+          <PasswordInput id="currentPassword" placeholder="Enter current password" value={currentPw} onChange={setCurrentPw} />
         </Field>
         <Field label="New Password" id="newPassword">
-          <PasswordInput id="newPassword" placeholder="Create new password" />
+          <PasswordInput id="newPassword" placeholder="Create new password" value={newPw} onChange={setNewPw} />
         </Field>
         <Field label="Confirm New Password" id="confirmPassword">
-          <PasswordInput id="confirmPassword" placeholder="Re-enter new password" />
+          <PasswordInput id="confirmPassword" placeholder="Re-enter new password" value={confirmPw} onChange={setConfirmPw} />
         </Field>
         <div className="pt-1">
-          <button className="bg-[#1a4a2e] hover:bg-[#2d6b47] text-white font-semibold px-6 py-2.5 rounded-xl transition-colors text-sm">
-            Update Password
+          <button
+            onClick={updatePassword}
+            disabled={updating || !session}
+            className="bg-[#1a4a2e] hover:bg-[#2d6b47] text-white font-semibold px-6 py-2.5 rounded-xl transition-colors text-sm disabled:opacity-60"
+          >
+            {updating ? "Updating..." : "Update Password"}
           </button>
         </div>
       </div>
@@ -160,20 +285,19 @@ function PasswordCard() {
   );
 }
 
-// ── Notifications ─────────────────────────────────────────────────────────────
+// ── Notifications Card ────────────────────────────────────────────────────────
 const NOTIFICATION_PREFS = [
-  { key: "orderConfirmations",     label: "Order confirmations",                   defaultOn: true  },
-  { key: "orderStatusUpdates",     label: "Order status updates",                  defaultOn: true  },
-  { key: "newsletter",             label: "Newsletter and promotions",              defaultOn: false },
-  { key: "newProductsFromFarms",   label: "New products from followed farms",       defaultOn: true  },
-  { key: "specialDeals",           label: "Special deals and discounts",            defaultOn: false },
+  { key: "orderConfirmations",   label: "Order confirmations",              defaultOn: true  },
+  { key: "orderStatusUpdates",   label: "Order status updates",             defaultOn: true  },
+  { key: "newsletter",           label: "Newsletter and promotions",        defaultOn: false },
+  { key: "newProductsFromFarms", label: "New products from followed farms", defaultOn: true  },
+  { key: "specialDeals",         label: "Special deals and discounts",      defaultOn: false },
 ];
 
 function NotificationsCard() {
   const [prefs, setPrefs] = useState<Record<string, boolean>>(
     Object.fromEntries(NOTIFICATION_PREFS.map((p) => [p.key, p.defaultOn]))
   );
-
   return (
     <CardShell>
       <CardTitle>Notification Preferences</CardTitle>
@@ -192,7 +316,7 @@ function NotificationsCard() {
   );
 }
 
-// ── Membership ────────────────────────────────────────────────────────────────
+// ── Membership Card ───────────────────────────────────────────────────────────
 function MembershipCard() {
   return (
     <CardShell>
@@ -216,7 +340,7 @@ function MembershipCard() {
   );
 }
 
-// ── Danger Zone ───────────────────────────────────────────────────────────────
+// ── Danger Zone Card ──────────────────────────────────────────────────────────
 function DangerZoneCard() {
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-red-200 p-6">
@@ -236,11 +360,18 @@ function DangerZoneCard() {
 
 // ── Main export ───────────────────────────────────────────────────────────────
 export default function SettingsSection() {
+  const [session, setSession] = useState<any>(null);
+
+  useEffect(() => {
+    const sessionStr = localStorage.getItem("customer_session");
+    if (sessionStr) setSession(JSON.parse(sessionStr));
+  }, []);
+
   return (
     <div className="space-y-5">
       <h1 className="text-xl font-bold text-gray-900">Account Settings</h1>
-      <ProfileCard />
-      <PasswordCard />
+      <ProfileCard session={session} />
+      <PasswordCard session={session} />
       <NotificationsCard />
       <MembershipCard />
       <DangerZoneCard />
