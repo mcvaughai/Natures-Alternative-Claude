@@ -3,16 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import SectionHeader from "@/components/shared/SectionHeader";
 import FarmCard, { FarmCardData } from "@/components/shared/FarmCard";
-import { fetchFromSupabase } from "@/lib/api";
-
-interface SellerRow {
-  slug: string;
-  farm_name: string;
-  city: string;
-  state: string;
-  description: string;
-  fulfillment: string[] | null;
-}
+import { SUPABASE_URL, supabaseHeaders } from "@/lib/api";
 
 function mapFulfillment(raw: string[] | null): string[] {
   return (raw ?? []).map((f) => {
@@ -27,26 +18,80 @@ export default function FeaturedStores() {
   const [farms, setFarms] = useState<FarmCardData[]>([]);
 
   useEffect(() => {
-    fetchFromSupabase<SellerRow[]>(
-      "sellers?status=eq.approved&select=slug,farm_name,city,state,description,fulfillment&limit=4"
-    )
-      .then((data) => {
-        if (!data?.length) return;
-        setFarms(
-          data.map((s) => ({
-            id:           s.slug,
-            name:         s.farm_name,
-            location:     [s.city, s.state].filter(Boolean).join(", "),
-            description:  s.description ?? "",
-            categories:   [],
-            fulfillment:  mapFulfillment(s.fulfillment),
+    async function load() {
+      try {
+        // Step 1: fetch approved sellers with banner
+        const sellersRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/sellers?status=eq.approved&select=id,slug,farm_name,city,state,description,fulfillment,banner_url,logo_url&limit=4`,
+          { headers: supabaseHeaders }
+        );
+        const sellers = await sellersRes.json();
+        if (!Array.isArray(sellers) || sellers.length === 0) return;
+
+        const sellerIds: string[] = sellers.map((s: any) => s.id);
+
+        // Step 2: fetch active products for all these sellers
+        const idFilter = sellerIds.map((id) => `seller_id=eq.${id}`).join(",");
+        const productsRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/products?status=eq.active&or=(${idFilter})&select=id,seller_id,category_id`,
+          { headers: supabaseHeaders }
+        );
+        const productsData = await productsRes.json();
+
+        // Step 3: fetch all categories for name lookup
+        const catsRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/categories?select=id,name`,
+          { headers: supabaseHeaders }
+        );
+        const catsData = await catsRes.json();
+        const catsMap: Record<string, string> = {};
+        if (Array.isArray(catsData)) {
+          catsData.forEach((c: any) => { catsMap[c.id] = c.name; });
+        }
+
+        // Step 4: aggregate product count + category ids per seller
+        const productsBySeller: Record<string, { count: number; categoryIds: Set<string> }> = {};
+        if (Array.isArray(productsData)) {
+          productsData.forEach((p: any) => {
+            if (!productsBySeller[p.seller_id]) {
+              productsBySeller[p.seller_id] = { count: 0, categoryIds: new Set() };
+            }
+            productsBySeller[p.seller_id].count++;
+            if (p.category_id) {
+              productsBySeller[p.seller_id].categoryIds.add(p.category_id);
+            }
+          });
+        }
+
+        // Step 5: build FarmCardData with real values
+        const farmCards: FarmCardData[] = sellers.map((seller: any) => {
+          const sellerProducts = productsBySeller[seller.id] ?? { count: 0, categoryIds: new Set() };
+          const categories = [...sellerProducts.categoryIds]
+            .map((id) => catsMap[id])
+            .filter(Boolean)
+            .slice(0, 3);
+
+          return {
+            id:           seller.slug,
+            name:         seller.farm_name,
+            location:     [seller.city, seller.state].filter(Boolean).join(", "),
+            description:  seller.description ?? "",
+            bannerUrl:    seller.banner_url ?? "",
             rating:       0,
             reviewCount:  0,
-            productCount: 0,
-          }))
-        );
-      })
-      .catch((err) => console.error("FeaturedStores fetch error:", err));
+            productCount: sellerProducts.count,
+            categories,
+            fulfillment:  mapFulfillment(seller.fulfillment),
+            featured:     false,
+          };
+        });
+
+        setFarms(farmCards);
+      } catch (err) {
+        console.error("FeaturedStores fetch error:", err);
+      }
+    }
+    load();
   }, []);
 
   if (farms.length === 0) return null;
