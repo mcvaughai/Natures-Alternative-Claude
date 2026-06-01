@@ -1,13 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import AccountSidebar from "@/components/account/AccountSidebar";
 import AutoHarvestCard from "@/components/AutoHarvestCard";
 import CreateAutoHarvestModal from "@/components/CreateAutoHarvestModal";
-import { useAuth } from "@/lib/authContext";
 
 // ─── Mock data ────────────────────────────────────────────────────────────────
 
@@ -72,14 +70,15 @@ function HowItWorksStep({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AutoHarvestPage() {
-  const router = useRouter();
-  const { user, loading } = useAuth();
   const [showModal, setShowModal] = useState(false);
   const [hasLists] = useState(true); // set to false to see empty state
 
   useEffect(() => {
-    if (!loading && !user) router.replace("/login");
-  }, [loading, user, router]);
+    const sessionStr = localStorage.getItem("customer_session");
+    if (!sessionStr) {
+      window.location.href = "/login";
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
