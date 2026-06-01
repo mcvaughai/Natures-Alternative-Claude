@@ -19,21 +19,38 @@ const headers = {
 
 export default function HomePage() {
   const [banners, setBanners] = useState<any[]>([]);
+  const [heroBgUrl, setHeroBgUrl] = useState<string | null>(null);
 
   useEffect(() => {
     fetchBanners();
+    fetchHeroBg();
   }, []);
 
   async function fetchBanners() {
     try {
       const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/homepage_banners?is_active=eq.true&select=*&order=position.asc`,
+        `${SUPABASE_URL}/rest/v1/homepage_banners?is_active=eq.true&title=neq.hero&select=*&order=position.asc`,
         { headers }
       );
       const data = await res.json();
       setBanners(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Error fetching banners:", err);
+    }
+  }
+
+  async function fetchHeroBg() {
+    try {
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/homepage_banners?title=eq.hero&is_active=eq.true&select=background_image_url`,
+        { headers }
+      );
+      const data = await res.json();
+      if (Array.isArray(data) && data[0]?.background_image_url) {
+        setHeroBgUrl(data[0].background_image_url);
+      }
+    } catch (err) {
+      console.error("Error fetching hero bg:", err);
     }
   }
 
@@ -46,16 +63,25 @@ export default function HomePage() {
         className="relative w-full flex items-center"
         style={{
           minHeight: "580px",
-          background: "linear-gradient(135deg, #053D2D 0%, #00674B 50%, #1a5c3a 100%)",
+          background: heroBgUrl
+            ? `url(${heroBgUrl}) center/cover no-repeat`
+            : "linear-gradient(135deg, #053D2D 0%, #00674B 50%, #1a5c3a 100%)",
         }}
       >
-        {/* Subtle pattern overlay */}
-        <div
-          className="absolute inset-0 opacity-10"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          }}
-        />
+        {/* Dark overlay when background image is set, otherwise subtle pattern */}
+        {heroBgUrl ? (
+          <div
+            className="absolute inset-0"
+            style={{ backgroundColor: "rgba(5, 61, 45, 0.75)" }}
+          />
+        ) : (
+          <div
+            className="absolute inset-0 opacity-10"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+            }}
+          />
+        )}
 
         <div className="relative z-10 w-full px-12 py-16 flex items-center justify-between">
           {/* Left — Text */}

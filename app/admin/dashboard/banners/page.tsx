@@ -34,6 +34,16 @@ export default function BannersPage() {
   const [deleting, setDeleting]               = useState<string | null>(null);
   const [uploadingBannerImage, setUploadingBannerImage] = useState<string | null>(null);
 
+  // ── Hero banner state ─────────────────────────────────────
+  // NOTE: Run this SQL in Supabase to seed the hero row if it doesn't exist:
+  // INSERT INTO homepage_banners (title, subtitle, background_image_url, is_active, position)
+  // VALUES ('hero', 'Homepage hero banner', '', true, 0)
+  // ON CONFLICT DO NOTHING;
+  const [heroImageUrl, setHeroImageUrl]       = useState("");
+  const [heroSaving, setHeroSaving]           = useState(false);
+  const [heroSuccess, setHeroSuccess]         = useState("");
+  const [heroError, setHeroError]             = useState("");
+
   /* ── Auth check ─────────────────────────────────────────── */
   useEffect(() => {
     const session = getAdminSession();
@@ -43,6 +53,74 @@ export default function BannersPage() {
     }
     setAuthorized(true);
   }, []);
+
+  /* ── Fetch hero banner ───────────────────────────────────── */
+  const fetchHeroBanner = useCallback(async () => {
+    try {
+      const session = await getValidAdminSession();
+      if (!session) return;
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/homepage_banners?title=eq.hero&select=background_image_url`,
+        { headers: getAuthHeaders(session.access_token) }
+      );
+      const data = await res.json();
+      if (Array.isArray(data) && data[0]?.background_image_url) {
+        setHeroImageUrl(data[0].background_image_url);
+      }
+    } catch (err) {
+      console.error("Failed to fetch hero banner:", err);
+    }
+  }, []);
+
+  /* ── Save hero banner ────────────────────────────────────── */
+  const saveHeroBanner = async () => {
+    setHeroSaving(true);
+    setHeroSuccess("");
+    setHeroError("");
+    try {
+      const session = await getValidAdminSession();
+      if (!session) return;
+      const authHeaders = {
+        ...getAuthHeaders(session.access_token),
+        "Content-Type": "application/json",
+        Prefer: "return=representation",
+      };
+
+      // Check if record exists
+      const checkRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/homepage_banners?title=eq.hero&select=id`,
+        { headers: getAuthHeaders(session.access_token) }
+      );
+      const checkData = await checkRes.json();
+      const exists = Array.isArray(checkData) && checkData.length > 0;
+
+      if (exists) {
+        await fetch(`${SUPABASE_URL}/rest/v1/homepage_banners?title=eq.hero`, {
+          method: "PATCH",
+          headers: authHeaders,
+          body: JSON.stringify({ background_image_url: heroImageUrl, updated_at: new Date().toISOString() }),
+        });
+      } else {
+        await fetch(`${SUPABASE_URL}/rest/v1/homepage_banners`, {
+          method: "POST",
+          headers: authHeaders,
+          body: JSON.stringify({
+            title: "hero",
+            subtitle: "Homepage hero banner",
+            background_image_url: heroImageUrl,
+            is_active: true,
+            position: 0,
+          }),
+        });
+      }
+      setHeroSuccess("Hero image updated successfully");
+      setTimeout(() => setHeroSuccess(""), 3000);
+    } catch (err: unknown) {
+      setHeroError("Failed to save: " + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setHeroSaving(false);
+    }
+  };
 
   /* ── Fetch banners ───────────────────────────────────────── */
   const fetchBanners = useCallback(async () => {
@@ -67,7 +145,12 @@ export default function BannersPage() {
     }
   }, []);
 
-  useEffect(() => { if (authorized) fetchBanners(); }, [authorized, fetchBanners]);
+  useEffect(() => {
+    if (authorized) {
+      fetchBanners();
+      fetchHeroBanner();
+    }
+  }, [authorized, fetchBanners, fetchHeroBanner]);
 
   /* ── Toggle active ───────────────────────────────────────── */
   const handleToggleActive = async (banner: Banner) => {
@@ -315,6 +398,103 @@ export default function BannersPage() {
                 {success}
               </div>
             )}
+
+            {/* ── Hero Banner Section ───────────────────────────── */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="px-5 py-4 border-b border-gray-100">
+                <p className="text-sm font-semibold text-gray-700">Hero Banner</p>
+                <p className="text-xs text-gray-400 mt-0.5">Controls the background image of the homepage hero section.</p>
+              </div>
+              <div className="px-5 py-5 space-y-4">
+                {/* Current image preview */}
+                <div
+                  className="w-full rounded-xl overflow-hidden border border-gray-200 flex items-center justify-center"
+                  style={{
+                    height: "160px",
+                    backgroundColor: "#053D2D",
+                    backgroundImage: heroImageUrl ? `url(${heroImageUrl})` : "none",
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                  }}
+                >
+                  {heroImageUrl ? (
+                    <div className="w-full h-full flex items-end justify-start p-4"
+                      style={{ background: "rgba(5,61,45,0.45)" }}>
+                      <span className="text-white text-xs font-semibold bg-black/30 px-2 py-1 rounded-lg">
+                        Current hero background
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="text-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-white opacity-30 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                      </svg>
+                      <p className="text-white text-xs opacity-40">No image set — showing solid green background</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* URL input + Preview button */}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                    Background Image URL
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      value={heroImageUrl}
+                      onChange={e => setHeroImageUrl(e.target.value)}
+                      placeholder="https://your-bucket.supabase.co/storage/v1/object/public/..."
+                      className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#053D2D]/30 focus:border-[#053D2D] transition"
+                    />
+                    {heroImageUrl && (
+                      <a
+                        href={heroImageUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-semibold text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors whitespace-nowrap"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                        </svg>
+                        Preview
+                      </a>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1.5">
+                    Recommended size: 1440 × 700px. Use a high quality landscape photo.
+                  </p>
+                </div>
+
+                {/* Feedback messages */}
+                {heroSuccess && (
+                  <div className="bg-green-50 border border-green-200 text-green-700 text-sm rounded-xl px-4 py-2.5">
+                    ✅ {heroSuccess}
+                  </div>
+                )}
+                {heroError && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-2.5">
+                    ❌ {heroError}
+                  </div>
+                )}
+
+                {/* Save button */}
+                <button
+                  onClick={saveHeroBanner}
+                  disabled={heroSaving}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-semibold transition-opacity disabled:opacity-60"
+                  style={{ backgroundColor: "#053D2D" }}
+                >
+                  {heroSaving && (
+                    <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
+                    </svg>
+                  )}
+                  {heroSaving ? "Saving..." : "Save Hero Image"}
+                </button>
+              </div>
+            </div>
 
             {/* Banner List */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
