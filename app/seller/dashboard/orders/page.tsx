@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import SellerLayout from "@/components/seller/SellerLayout";
-import { getValidSellerSession } from "@/lib/sessionHelper";
+import { getValidSellerSession, getAuthHeaders } from "@/lib/sessionHelper";
 
 const SUPABASE_URL = "https://ezryfycxfmtffobyfjfa.supabase.co";
 const SUPABASE_ANON_KEY =
@@ -94,8 +94,6 @@ export default function SellerOrdersPage() {
         { headers }
       );
       const rawOrders = await ordersRes.json();
-      console.log("Orders:", rawOrders);
-
       if (!Array.isArray(rawOrders) || rawOrders.length === 0) {
         setOrders([]);
         setStats({ pending: 0, confirmed: 0, completed: 0, totalRevenue: 0 });
@@ -156,6 +154,63 @@ export default function SellerOrdersPage() {
         alert("Error updating order: " + errText);
         return;
       }
+
+      // Deduct stock when order is completed
+      if (newStatus === "completed") {
+        const order = orders.find(o => o.id === orderId);
+        if (order && order.items) {
+          for (const item of order.items) {
+            const productRes = await fetch(
+              `${SUPABASE_URL}/rest/v1/products?id=eq.${item.product_id}&select=id,stock_quantity,pricing_type`,
+              { headers: getAuthHeaders(session.access_token) }
+            );
+            const productData = await productRes.json();
+            if (Array.isArray(productData) && productData[0]) {
+              const product = productData[0];
+              const currentStock = product.stock_quantity || 0;
+              const newStock = Math.max(0, currentStock - (item.quantity || 1));
+
+              await fetch(
+                `${SUPABASE_URL}/rest/v1/products?id=eq.${item.product_id}`,
+                {
+                  method: "PATCH",
+                  headers: { ...getAuthHeaders(session.access_token), "Content-Type": "application/json" },
+                  body: JSON.stringify({ stock_quantity: newStock, updated_at: new Date().toISOString() }),
+                }
+              );
+
+              if (product.pricing_type === "per_pound" && item.unit_id) {
+                await fetch(
+                  `${SUPABASE_URL}/rest/v1/product_units?id=eq.${item.unit_id}`,
+                  {
+                    method: "PATCH",
+                    headers: { ...getAuthHeaders(session.access_token), "Content-Type": "application/json" },
+                    body: JSON.stringify({ status: "sold" }),
+                  }
+                );
+              }
+
+              await fetch(
+                `${SUPABASE_URL}/rest/v1/inventory_history`,
+                {
+                  method: "POST",
+                  headers: { ...getAuthHeaders(session.access_token), "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    product_id:        item.product_id,
+                    seller_id:         session.seller_id,
+                    change_type:       "sale",
+                    change_amount:     -(item.quantity || 1),
+                    previous_quantity: currentStock,
+                    new_quantity:      newStock,
+                    notes:             `Order ${orderId} completed`,
+                  }),
+                }
+              );
+            }
+          }
+        }
+      }
+
       await fetchOrders(session);
       setSelected(prev => prev?.id === orderId ? { ...prev, status: newStatus as OrderStatus } : prev);
     } catch (err: unknown) {

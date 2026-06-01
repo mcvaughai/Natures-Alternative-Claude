@@ -6,6 +6,9 @@ import { usePathname } from "next/navigation";
 import { logoutSeller } from "@/lib/logout";
 import { getSellerSession } from "@/lib/sessionHelper";
 
+const SUPABASE_URL = "https://ezryfycxfmtffobyfjfa.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6cnlmeWN4Zm10ZmZvYnlmamZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MjQ1MDEsImV4cCI6MjA5MjQwMDUwMX0.woObRrj3MMUf6eAFVbkvDNUsQfQ-elmlDqPADBT9aZs";
+
 const NAV_ITEMS = [
   {
     label: "Dashboard",
@@ -85,10 +88,37 @@ const NAV_ITEMS = [
 export default function SellerSidebar() {
   const pathname = usePathname();
   const [farmName, setFarmName] = useState("My Farm");
+  const [pendingOrders, setPendingOrders] = useState(0);
 
   useEffect(() => {
     const session = getSellerSession();
     if (session?.farm_name) setFarmName(session.farm_name);
+  }, []);
+
+  useEffect(() => {
+    const checkPendingOrders = async () => {
+      try {
+        const session = getSellerSession();
+        if (!session) return;
+        const res = await fetch(
+          `${SUPABASE_URL}/rest/v1/orders?seller_id=eq.${session.seller_id}&status=eq.pending&select=id`,
+          {
+            headers: {
+              apikey: SUPABASE_ANON_KEY,
+              Authorization: `Bearer ${session.access_token}`,
+            },
+          }
+        );
+        const data = await res.json();
+        if (Array.isArray(data)) setPendingOrders(data.length);
+      } catch (err) {
+        console.error("Error checking pending orders:", err);
+      }
+    };
+
+    checkPendingOrders();
+    const interval = setInterval(checkPendingOrders, 120000);
+    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -106,6 +136,7 @@ export default function SellerSidebar() {
         <ul className="space-y-0.5">
           {NAV_ITEMS.map((item) => {
             const active = pathname === item.href;
+            const isOrders = item.label === "Orders";
             return (
               <li key={item.href}>
                 <Link
@@ -120,6 +151,14 @@ export default function SellerSidebar() {
                     {item.icon}
                   </span>
                   {item.label}
+                  {isOrders && pendingOrders > 0 && (
+                    <span
+                      className="ml-auto text-xs text-white font-bold px-2 py-0.5 rounded-full"
+                      style={{ backgroundColor: "#dc2626" }}
+                    >
+                      {pendingOrders}
+                    </span>
+                  )}
                 </Link>
               </li>
             );
