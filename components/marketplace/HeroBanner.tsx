@@ -29,7 +29,7 @@ export default function HeroBanner() {
 
   useEffect(() => {
     fetch(
-      `${SUPABASE_URL}/rest/v1/homepage_banners?is_active=eq.true&select=*&order=position.asc`,
+      `${SUPABASE_URL}/rest/v1/homepage_banners?is_active=eq.true&title=neq.hero&select=*&order=position.asc`,
       {
         headers: {
           apikey: SUPABASE_ANON_KEY,

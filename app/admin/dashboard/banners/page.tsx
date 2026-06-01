@@ -132,7 +132,7 @@ export default function BannersPage() {
       const headers = getAuthHeaders(session.access_token);
 
       const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/homepage_banners?select=*&order=position.asc`,
+        `${SUPABASE_URL}/rest/v1/homepage_banners?title=neq.hero&select=*&order=position.asc`,
         { headers }
       );
       if (!res.ok) { setFetchError(`Error ${res.status}`); return; }
