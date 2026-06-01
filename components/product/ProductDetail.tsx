@@ -145,7 +145,7 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
 
         // Step 7: fetch reviews for this product
         const reviewsRes = await fetch(
-          `${SUPABASE_URL}/rest/v1/reviews?product_id=eq.${productId}&select=*&order=created_at.desc`,
+          `${SUPABASE_URL}/rest/v1/reviews?product_id=eq.${productId}&select=*,profiles(first_name,last_name,avatar_url)&order=created_at.desc`,
           { headers: supabaseHeaders }
         );
         const reviewsData = await reviewsRes.json();
@@ -669,10 +669,17 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
                         className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
                         style={{ backgroundColor: '#053D2D' }}
                       >
-                        A
+                        {review.profiles?.first_name?.charAt(0) || 'A'}
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-gray-800">Anonymous</p>
+                        <p className="text-sm font-semibold text-gray-800">
+                          {review.profiles?.first_name && review.profiles?.last_name
+                            ? `${review.profiles.first_name} ${review.profiles.last_name}`
+                            : review.profiles?.first_name
+                            ? review.profiles.first_name
+                            : 'Anonymous'
+                          }
+                        </p>
                         <p className="text-xs text-gray-400">
                           {new Date(review.created_at).toLocaleDateString()}
                         </p>
