@@ -69,6 +69,7 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
   const [reviews, setReviews]                 = useState<any[]>([]);
   const [submittingReview, setSubmittingReview] = useState(false);
   const [reviewSuccess, setReviewSuccess]     = useState(false);
+  const [category, setCategory]               = useState<{ name: string; slug: string } | null>(null);
   const { addToCart } = useCart();
 
   useEffect(() => {
@@ -82,6 +83,18 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
         const productData = products[0];
         setProduct(productData);
         if (productData.images?.[0]) setMainImage(productData.images[0]);
+
+        // Step 1b: fetch category for breadcrumb
+        if (productData.category_id) {
+          const catRes = await fetch(
+            `${SUPABASE_URL}/rest/v1/categories?id=eq.${productData.category_id}&select=name,slug`,
+            { headers: supabaseHeaders }
+          );
+          if (catRes.ok) {
+            const catData = await catRes.json();
+            if (Array.isArray(catData) && catData[0]) setCategory(catData[0]);
+          }
+        }
 
         // Step 2: fetch seller
         const sellers = await fetchFromSupabase<Seller[]>(
@@ -252,6 +265,31 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
 
   return (
     <>
+    {/* Breadcrumb */}
+    <nav className="w-full px-6 py-3 flex items-center" style={{ fontSize: '13px' }}>
+      <Link href="/" style={{ color: '#6b7280' }} className="hover:underline whitespace-nowrap">
+        Home
+      </Link>
+      <span style={{ color: '#9ca3af', margin: '0 6px' }}>›</span>
+      {category ? (
+        <>
+          <Link
+            href={`/category/${category.slug}`}
+            style={{ color: '#6b7280' }}
+            className="hover:underline whitespace-nowrap"
+          >
+            {category.name}
+          </Link>
+          <span style={{ color: '#9ca3af', margin: '0 6px' }}>›</span>
+        </>
+      ) : null}
+      <span
+        style={{ color: '#6b7280', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+      >
+        {product?.name ?? ''}
+      </span>
+    </nav>
+
     <div className="w-full px-6 py-8 flex gap-8 items-start">
 
       {/* LEFT — sticky image column */}
