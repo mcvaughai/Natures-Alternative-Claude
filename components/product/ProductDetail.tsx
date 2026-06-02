@@ -266,7 +266,7 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
   return (
     <>
     {/* Breadcrumb */}
-    <nav className="w-full px-6 py-3 flex items-center" style={{ fontSize: '13px' }}>
+    <nav className="w-full px-6 py-5 flex items-center" style={{ fontSize: '13px', borderBottom: '0.5px solid #e5e7eb' }}>
       <Link href="/" style={{ color: '#6b7280' }} className="hover:underline whitespace-nowrap">
         Home
       </Link>
