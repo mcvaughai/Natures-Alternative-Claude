@@ -26,7 +26,7 @@ export default function CustomersPage() {
   const fetchCustomers = async (sess: any) => {
     try {
       const [profilesRes, ordersRes] = await Promise.all([
-        fetch(`${SUPABASE_URL}/rest/v1/profiles?select=*&order=created_at.desc`,
+        fetch(`${SUPABASE_URL}/rest/v1/profiles?role=eq.customer&select=*&order=created_at.desc`,
           { headers: getHeaders(sess.access_token) }),
         fetch(`${SUPABASE_URL}/rest/v1/orders?select=user_id,total_amount,status`,
           { headers: getHeaders(sess.access_token) }),
@@ -60,10 +60,11 @@ export default function CustomersPage() {
 
       const now = new Date();
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      // All returned profiles are customers (role=eq.customer filter applied)
       setStats({
-        total: profiles.length,
+        total:        profiles.length,
         newThisMonth: profiles.filter((p: any) => new Date(p.created_at) >= startOfMonth).length,
-        active: profiles.filter((p: any) => p.role !== 'suspended').length,
+        active:       profiles.length, // all fetched are role=customer
       });
     } catch (err) {
       console.error('Customers error:', err);
