@@ -2,7 +2,7 @@ import Image from "next/image";
 
 export default function Footer() {
   return (
-    <footer className="bg-[#1a4a2e] text-white relative overflow-hidden mt-10">
+    <footer className="bg-[#053D2D] text-white relative overflow-hidden mt-10">
 
       {/* ── Botanical decoration — left side ──────────────────── */}
       <div className="absolute left-0 top-0 bottom-0 w-32 sm:w-44 pointer-events-none select-none opacity-15">
