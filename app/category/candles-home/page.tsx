@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import FilterSidebar, { FilterProvider, ActiveFiltersBar } from '@/components/FilterSidebar'
@@ -18,7 +19,7 @@ const HEADERS = {
 
 const CATEGORY_SLUG = 'candles-home'
 const CATEGORY_NAME = 'Candles & Home'
-const CATEGORY_DESC = 'Hand-poured candles, beeswax products, and natural home goods'
+const CATEGORY_DESC = 'Handcrafted beeswax candles and natural home goods made by local artisans'
 
 export default function CandlesHomePage() {
   const { addToCart } = useCart()
@@ -92,22 +93,28 @@ export default function CandlesHomePage() {
           className="w-full px-6 py-8 relative overflow-hidden"
           style={{ background: 'linear-gradient(135deg, #f0f7f3 0%, #ffffff 60%)' }}
         >
-          {/* Watermark icon */}
-          <div
-            className="absolute right-12 top-1/2 -translate-y-1/2 pointer-events-none select-none"
-            style={{ opacity: 0.07 }}
-          >
-        <svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 24 24" fill="none">
-          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="#1a4a2e"/>
-          <path d="M9 22V12h6v10" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" fill="none"/>
-        </svg>
-          </div>
+          <nav className="flex items-center gap-1.5 mb-1" style={{ fontSize: '13px', color: '#6b7280' }}>
+
+            <Link href="/" className="hover:underline" style={{ color: '#6b7280' }}>Home</Link>
+
+            <span style={{ color: '#9ca3af' }}>›</span>
+
+            <span>{CATEGORY_NAME}</span>
+
+          </nav>
+
           <h1
             className="font-raleway font-bold category-header-title relative z-10"
             style={{ fontSize: '30px', color: '#111827' }}
           >
             {CATEGORY_NAME}
           </h1>
+
+          <p style={{ fontSize: '14px', color: '#6b7280', marginTop: '4px', maxWidth: '600px' }}>
+
+            {CATEGORY_DESC}
+
+          </p>
         </div>
 
         {/* Two-column layout */}

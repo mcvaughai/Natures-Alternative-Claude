@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import FilterSidebar, { FilterProvider, ActiveFiltersBar } from '@/components/FilterSidebar'
@@ -92,22 +93,28 @@ export default function FruitsVegetablesPage() {
           className="w-full px-6 py-8 relative overflow-hidden"
           style={{ background: 'linear-gradient(135deg, #f0f7f3 0%, #ffffff 60%)' }}
         >
-          {/* Watermark icon */}
-          <div
-            className="absolute right-12 top-1/2 -translate-y-1/2 pointer-events-none select-none"
-            style={{ opacity: 0.07 }}
-          >
-        <svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 24 24" fill="none">
-          <path d="M17 8C8 10 5.9 16.17 3.82 19.34L5.71 21l1-1C8.85 17.85 12 15 17 14c0 0-2.25-1.5-4-3 4-1 8 1 10 5-1-7-6-8-6-8z" fill="#1a4a2e"/>
-          <path d="M10.71 19.34C9.13 17.22 8 14.5 8 12c0-2.9 1-5.5 2.5-7.5" stroke="#1a4a2e" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
-        </svg>
-          </div>
+          <nav className="flex items-center gap-1.5 mb-1" style={{ fontSize: '13px', color: '#6b7280' }}>
+
+            <Link href="/" className="hover:underline" style={{ color: '#6b7280' }}>Home</Link>
+
+            <span style={{ color: '#9ca3af' }}>›</span>
+
+            <span>{CATEGORY_NAME}</span>
+
+          </nav>
+
           <h1
             className="font-raleway font-bold category-header-title relative z-10"
             style={{ fontSize: '30px', color: '#111827' }}
           >
             {CATEGORY_NAME}
           </h1>
+
+          <p style={{ fontSize: '14px', color: '#6b7280', marginTop: '4px', maxWidth: '600px' }}>
+
+            {CATEGORY_DESC}
+
+          </p>
         </div>
 
         {/* Two-column layout */}

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import FilterSidebar, { FilterProvider, ActiveFiltersBar } from '@/components/FilterSidebar'
@@ -18,7 +19,7 @@ const HEADERS = {
 
 const CATEGORY_SLUG = 'dairy-eggs'
 const CATEGORY_NAME = 'Dairy & Eggs'
-const CATEGORY_DESC = 'Fresh dairy and eggs from pasture-raised animals — no hormones, no fillers'
+const CATEGORY_DESC = 'Farm-fresh eggs, raw milk, artisan cheeses and cultured dairy from pasture-raised animals'
 
 export default function DairyEggsPage() {
   const { addToCart } = useCart()
@@ -92,21 +93,28 @@ export default function DairyEggsPage() {
           className="w-full px-6 py-8 relative overflow-hidden"
           style={{ background: 'linear-gradient(135deg, #f0f7f3 0%, #ffffff 60%)' }}
         >
-          {/* Watermark icon */}
-          <div
-            className="absolute right-12 top-1/2 -translate-y-1/2 pointer-events-none select-none"
-            style={{ opacity: 0.07 }}
-          >
-        <svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 24 24" fill="none">
-          <path d="M12 3C9 3 5 8.5 5 13.5a7 7 0 0 0 14 0C19 8.5 15 3 12 3z" fill="#1a4a2e"/>
-        </svg>
-          </div>
+          <nav className="flex items-center gap-1.5 mb-1" style={{ fontSize: '13px', color: '#6b7280' }}>
+
+            <Link href="/" className="hover:underline" style={{ color: '#6b7280' }}>Home</Link>
+
+            <span style={{ color: '#9ca3af' }}>›</span>
+
+            <span>{CATEGORY_NAME}</span>
+
+          </nav>
+
           <h1
             className="font-raleway font-bold category-header-title relative z-10"
             style={{ fontSize: '30px', color: '#111827' }}
           >
             {CATEGORY_NAME}
           </h1>
+
+          <p style={{ fontSize: '14px', color: '#6b7280', marginTop: '4px', maxWidth: '600px' }}>
+
+            {CATEGORY_DESC}
+
+          </p>
         </div>
 
         {/* Two-column layout */}
