@@ -4,106 +4,102 @@ import { useState, useEffect } from "react";
 import { getValidAdminSession } from "@/lib/sessionHelper";
 import AdminLayout from "@/components/admin/AdminLayout";
 
-type Range = "7d" | "30d" | "3m" | "year";
+const SUPABASE_URL = 'https://ezryfycxfmtffobyfjfa.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6cnlmeWN4Zm10ZmZvYnlmamZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MjQ1MDEsImV4cCI6MjA5MjQwMDUwMX0.woObRrj3MMUf6eAFVbkvDNUsQfQ-elmlDqPADBT9aZs';
 
-const RANGES: { label: string; value: Range }[] = [
-  { label:"Last 7 Days",    value:"7d"   },
-  { label:"Last 30 Days",   value:"30d"  },
-  { label:"Last 3 Months",  value:"3m"   },
-  { label:"This Year",      value:"year" },
-];
-
-const DATA: Record<Range, {
-  revenue: string; orders: number; newCustomers: number; newSellers: number;
-  topFarms: { name: string; orders: number; revenue: string; rating: string }[];
-  topProducts: { name: string; farm: string; units: number; revenue: string }[];
-  customerGrowth: { month: string; new: number; total: number }[];
-}> = {
-  "7d": {
-    revenue: "$312", orders: 8, newCustomers: 3, newSellers: 0,
-    topFarms: [
-      { name:"Example Farms",    orders:4, revenue:"$142", rating:"4.9" },
-      { name:"Green Valley Farm",orders:2, revenue:"$88",  rating:"4.8" },
-      { name:"Sunrise Organics", orders:1, revenue:"$45",  rating:"4.7" },
-      { name:"Heritage Acres",   orders:1, revenue:"$37",  rating:"4.8" },
-    ],
-    topProducts: [
-      { name:"Pancakes Mix",    farm:"Example Farms",    units:8, revenue:"$48" },
-      { name:"Fresh Eggs (12)", farm:"Example Farms",    units:5, revenue:"$40" },
-      { name:"Raw Honey 16oz",  farm:"Blue Ridge Honey", units:3, revenue:"$36" },
-    ],
-    customerGrowth: [{ month:"This Week", new: 3, total: 156 }],
-  },
-  "30d": {
-    revenue: "$1,240", orders: 24, newCustomers: 14, newSellers: 2,
-    topFarms: [
-      { name:"Example Farms",    orders:12, revenue:"$440", rating:"4.9" },
-      { name:"Green Valley Farm",orders:7,  revenue:"$320", rating:"4.8" },
-      { name:"Sunrise Organics", orders:3,  revenue:"$185", rating:"4.7" },
-      { name:"Heritage Acres",   orders:2,  revenue:"$295", rating:"4.8" },
-    ],
-    topProducts: [
-      { name:"Pancakes Mix",    farm:"Example Farms",    units:24, revenue:"$144" },
-      { name:"Fresh Eggs (12)", farm:"Example Farms",    units:18, revenue:"$144" },
-      { name:"Raw Honey 16oz",  farm:"Blue Ridge Honey", units:11, revenue:"$132" },
-      { name:"Grass-Fed Beef",  farm:"Heritage Acres",   units:9,  revenue:"$162" },
-    ],
-    customerGrowth: [
-      { month:"Nov", new:8,  total:142 },
-      { month:"Dec", new:14, total:156 },
-    ],
-  },
-  "3m": {
-    revenue: "$3,880", orders: 71, newCustomers: 44, newSellers: 5,
-    topFarms: [
-      { name:"Example Farms",    orders:34, revenue:"$1,240", rating:"4.9" },
-      { name:"Green Valley Farm",orders:18, revenue:"$890",   rating:"4.8" },
-      { name:"Sunrise Organics", orders:11, revenue:"$640",   rating:"4.7" },
-      { name:"Heritage Acres",   orders:8,  revenue:"$810",   rating:"4.8" },
-    ],
-    topProducts: [
-      { name:"Pancakes Mix",    farm:"Example Farms",    units:68, revenue:"$408" },
-      { name:"Fresh Eggs (12)", farm:"Example Farms",    units:55, revenue:"$440" },
-      { name:"Grass-Fed Beef",  farm:"Heritage Acres",   units:32, revenue:"$576" },
-      { name:"Raw Honey 16oz",  farm:"Blue Ridge Honey", units:29, revenue:"$348" },
-    ],
-    customerGrowth: [
-      { month:"Oct", new:12, total:112 },
-      { month:"Nov", new:18, total:130 },
-      { month:"Dec", new:14, total:156 },
-    ],
-  },
-  "year": {
-    revenue: "$12,400", orders: 124, newCustomers: 156, newSellers: 9,
-    topFarms: [
-      { name:"Example Farms",    orders:52, revenue:"$4,200", rating:"4.9" },
-      { name:"Green Valley Farm",orders:38, revenue:"$3,100", rating:"4.8" },
-      { name:"Sunrise Organics", orders:31, revenue:"$2,800", rating:"4.7" },
-      { name:"Heritage Acres",   orders:28, revenue:"$2,300", rating:"4.8" },
-    ],
-    topProducts: [
-      { name:"Pancakes Mix",    farm:"Example Farms",    units:144, revenue:"$864"   },
-      { name:"Fresh Eggs (12)", farm:"Example Farms",    units:108, revenue:"$864"   },
-      { name:"Grass-Fed Beef",  farm:"Heritage Acres",   units:72,  revenue:"$1,296" },
-      { name:"Raw Honey 16oz",  farm:"Blue Ridge Honey", units:66,  revenue:"$792"   },
-    ],
-    customerGrowth: [
-      { month:"Sep", new:8,  total:88  },
-      { month:"Oct", new:12, total:100 },
-      { month:"Nov", new:30, total:130 },
-      { month:"Dec", new:26, total:156 },
-    ],
-  },
-};
+const getHeaders = (token: string) => ({
+  'apikey': SUPABASE_ANON_KEY,
+  'Authorization': `Bearer ${token}`,
+  'Content-Type': 'application/json',
+});
 
 export default function AdminAnalyticsPage() {
+  const [stats, setStats] = useState({
+    totalRevenue: 0,
+    totalOrders: 0,
+    completedOrders: 0,
+    pendingOrders: 0,
+    totalCustomers: 0,
+    activeSellers: 0,
+  });
+  const [topSellers, setTopSellers] = useState<any[]>([]);
+  const [recentOrders, setRecentOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchAnalytics = async (sess: any) => {
+    try {
+      const [ordersRes, sellersRes, profilesRes] = await Promise.all([
+        fetch(`${SUPABASE_URL}/rest/v1/orders?select=*&order=created_at.desc`,
+          { headers: getHeaders(sess.access_token) }),
+        fetch(`${SUPABASE_URL}/rest/v1/sellers?select=id,farm_name,slug,status`,
+          { headers: getHeaders(sess.access_token) }),
+        fetch(`${SUPABASE_URL}/rest/v1/profiles?select=id,role,created_at`,
+          { headers: getHeaders(sess.access_token) }),
+      ]);
+
+      const orders = await ordersRes.json();
+      const sellers = await sellersRes.json();
+      const profiles = await profilesRes.json();
+
+      const ordersArr = Array.isArray(orders) ? orders : [];
+      const sellersArr = Array.isArray(sellers) ? sellers : [];
+      const profilesArr = Array.isArray(profiles) ? profiles : [];
+
+      const completedOrders = ordersArr.filter((o: any) => o.status === 'completed');
+      const totalRevenue = completedOrders.reduce((sum: number, o: any) =>
+        sum + (o.total_amount || 0), 0);
+
+      setStats({
+        totalRevenue,
+        totalOrders: ordersArr.length,
+        completedOrders: completedOrders.length,
+        pendingOrders: ordersArr.filter((o: any) => o.status === 'pending').length,
+        totalCustomers: profilesArr.filter((p: any) => p.role === 'customer').length,
+        activeSellers: sellersArr.filter((s: any) => s.status === 'approved').length,
+      });
+
+      setRecentOrders(ordersArr.slice(0, 5));
+
+      const revenuePerSeller: any = {};
+      completedOrders.forEach((o: any) => {
+        if (!revenuePerSeller[o.seller_id]) revenuePerSeller[o.seller_id] = 0;
+        revenuePerSeller[o.seller_id] += o.total_amount || 0;
+      });
+
+      const topSellersList = sellersArr
+        .map((s: any) => ({
+          ...s,
+          revenue: revenuePerSeller[s.id] || 0,
+          orderCount: ordersArr.filter((o: any) => o.seller_id === s.id).length,
+        }))
+        .sort((a: any, b: any) => b.revenue - a.revenue)
+        .slice(0, 5);
+
+      setTopSellers(topSellersList);
+    } catch (err) {
+      console.error('Analytics error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     getValidAdminSession();
+    const sessionStr = localStorage.getItem('admin_session');
+    if (!sessionStr) { window.location.href = '/admin/login'; return; }
+    const sess = JSON.parse(sessionStr);
+    fetchAnalytics(sess);
   }, []);
 
-
-  const [range, setRange] = useState<Range>("30d");
-  const d = DATA[range];
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: '#053D2D' }} />
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
@@ -111,23 +107,17 @@ export default function AdminAnalyticsPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-gray-900">Platform Analytics</h1>
-          <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-xl p-1 shadow-sm">
-            {RANGES.map(r => (
-              <button key={r.value} onClick={() => setRange(r.value)}
-                className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${range === r.value ? "bg-[#1a4a2e] text-white shadow-sm" : "text-gray-500 hover:text-gray-800"}`}>
-                {r.label}
-              </button>
-            ))}
-          </div>
         </div>
 
-        {/* Stats row */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Stats row — 6 cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
           {[
-            { label:"Total Revenue",   value: d.revenue,             color:"text-[#1a4a2e]" },
-            { label:"Total Orders",    value: String(d.orders),      color:"text-[#1a4a2e]" },
-            { label:"New Customers",   value: String(d.newCustomers),color:"text-[#1a4a2e]" },
-            { label:"New Sellers",     value: String(d.newSellers),  color:"text-[#1a4a2e]" },
+            { label: 'Total Revenue',      value: `$${stats.totalRevenue.toFixed(2)}`,       color: 'text-[#053D2D]' },
+            { label: 'Total Orders',       value: String(stats.totalOrders),                 color: 'text-[#053D2D]' },
+            { label: 'Completed Orders',   value: String(stats.completedOrders),             color: 'text-green-700' },
+            { label: 'Pending Orders',     value: String(stats.pendingOrders),               color: 'text-yellow-600' },
+            { label: 'Total Customers',    value: String(stats.totalCustomers),              color: 'text-[#053D2D]' },
+            { label: 'Active Sellers',     value: String(stats.activeSellers),               color: 'text-[#053D2D]' },
           ].map(s => (
             <div key={s.label} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
               <p className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-1">{s.label}</p>
@@ -136,103 +126,64 @@ export default function AdminAnalyticsPage() {
           ))}
         </div>
 
-        {/* Revenue chart */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <h2 className="text-base font-bold text-gray-900 mb-4">Platform Revenue Over Time</h2>
-          <div className="h-48 flex flex-col items-center justify-center gap-2 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-            </svg>
-            <p className="text-sm font-medium text-gray-400">Chart coming soon</p>
-            <p className="text-xs text-gray-400">Revenue visualization will appear here in the backend phase</p>
-          </div>
-        </div>
-
-        {/* Top farms + Top products */}
+        {/* Top Sellers + Recent Orders */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          {/* Top Sellers */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <h2 className="text-base font-bold text-gray-900 mb-4">Top Farms</h2>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-100">
-                    {["Farm","Orders","Revenue","Rating"].map(h => (
-                      <th key={h} className="text-left pb-3 text-xs font-semibold text-gray-400 uppercase tracking-wide pr-4 last:pr-0">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {d.topFarms.map((f, i) => (
-                    <tr key={f.name}>
-                      <td className="py-3 pr-4">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-gray-400 w-4">{i+1}</span>
-                          <span className="font-medium text-gray-800 whitespace-nowrap">{f.name}</span>
-                        </div>
-                      </td>
-                      <td className="py-3 pr-4 text-gray-700">{f.orders}</td>
-                      <td className="py-3 pr-4 font-semibold text-gray-800 tabular-nums">{f.revenue}</td>
-                      <td className="py-3 text-yellow-600 font-medium">★ {f.rating}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <h2 className="text-base font-bold text-gray-900 mb-4">Top Products</h2>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-100">
-                    {["Product","Farm","Units","Revenue"].map(h => (
-                      <th key={h} className="text-left pb-3 text-xs font-semibold text-gray-400 uppercase tracking-wide pr-4 last:pr-0">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {d.topProducts.map((p, i) => (
-                    <tr key={p.name}>
-                      <td className="py-3 pr-4">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-gray-400 w-4">{i+1}</span>
-                          <span className="font-medium text-gray-800 whitespace-nowrap">{p.name}</span>
-                        </div>
-                      </td>
-                      <td className="py-3 pr-4 text-gray-500 whitespace-nowrap">{p.farm}</td>
-                      <td className="py-3 pr-4 text-gray-700">{p.units}</td>
-                      <td className="py-3 font-semibold text-gray-800 tabular-nums">{p.revenue}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        {/* Customer growth */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <h2 className="text-base font-bold text-gray-900 mb-4">Customer Growth</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-gray-50 border-b border-gray-100">
-                  {["Month","New Customers","Total Customers"].map(h => (
-                    <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {d.customerGrowth.map(row => (
-                  <tr key={row.month} className="hover:bg-gray-50/50">
-                    <td className="px-4 py-3 font-medium text-gray-800">{row.month}</td>
-                    <td className="px-4 py-3 text-green-700 font-semibold">+{row.new}</td>
-                    <td className="px-4 py-3 text-gray-700 font-semibold">{row.total}</td>
-                  </tr>
+            <h2 className="text-base font-bold text-gray-900 mb-4">Top Sellers by Revenue</h2>
+            {topSellers.length === 0 ? (
+              <div className="text-center py-8 text-gray-400">
+                <p className="font-medium">No sales data yet</p>
+                <p className="text-sm mt-1">Revenue will appear here when orders are completed</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {topSellers.map((seller: any, i: number) => (
+                  <div key={seller.id} className="flex items-center gap-3 py-2 border-b border-gray-100 last:border-0">
+                    <span className="text-xs font-bold text-gray-400 w-4">{i + 1}</span>
+                    <span className="flex-1 text-sm font-medium text-gray-800 truncate">{seller.farm_name}</span>
+                    <span className="text-xs text-gray-400">{seller.orderCount} orders</span>
+                    <span className="text-sm font-bold" style={{ color: '#053D2D' }}>
+                      ${seller.revenue.toFixed(2)}
+                    </span>
+                  </div>
                 ))}
-              </tbody>
-            </table>
+              </div>
+            )}
+          </div>
+
+          {/* Recent Orders */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <h2 className="text-base font-bold text-gray-900 mb-4">Recent Orders</h2>
+            {recentOrders.length === 0 ? (
+              <div className="text-center py-8 text-gray-400">
+                <p className="font-medium">No orders yet</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {recentOrders.map((order: any) => (
+                  <div key={order.id} className="flex items-center gap-3 py-2 border-b border-gray-100 last:border-0">
+                    <span className="text-sm font-medium text-gray-800">
+                      #{order.order_number || order.id?.slice(0, 8)}
+                    </span>
+                    <span className="flex-1 text-xs text-gray-400">
+                      {new Date(order.created_at).toLocaleDateString()}
+                    </span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                      order.status === 'completed' ? 'bg-green-100 text-green-700' :
+                      order.status === 'pending'   ? 'bg-yellow-100 text-yellow-700' :
+                      order.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                      'bg-blue-100 text-blue-700'
+                    }`}>
+                      {order.status}
+                    </span>
+                    <span className="text-sm font-bold text-gray-800">
+                      ${order.total_amount?.toFixed(2) || '0.00'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
