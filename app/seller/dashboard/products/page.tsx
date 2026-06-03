@@ -17,7 +17,8 @@ interface DbProduct {
   price: number;
   price_per_pound: number | null;
   pricing_type: string | null;
-  stock_quantity: number | null;
+  stock_qty: number | null;
+  in_stock: boolean;
   unit: string | null;
   status: string;
   images: string[];
@@ -35,7 +36,7 @@ const inputCls = "w-full border border-gray-300 rounded-xl px-4 py-3 text-sm tex
 
 function getDisplayStatus(p: DbProduct): string {
   if (p.status === "draft") return "Draft";
-  if (p.stock_quantity !== null && p.stock_quantity === 0) return "Out of Stock";
+  if (p.pricing_type !== 'per_pound' && !p.in_stock) return "Out of Stock";
   return "Active";
 }
 
@@ -83,7 +84,7 @@ export default function ProductsPage() {
       const headers = session?.access_token ? getAuthHeaders(session.access_token) : supabaseHeaders;
 
       const response = await fetch(
-        `${SUPABASE_URL}/rest/v1/products?seller_id=eq.${sid}&select=id,name,description,price,price_per_pound,pricing_type,stock_quantity,unit,status,images,category_id,categories(name)&order=created_at.desc`,
+        `${SUPABASE_URL}/rest/v1/products?seller_id=eq.${sid}&select=id,name,description,price,price_per_pound,pricing_type,stock_qty,in_stock,unit,status,images,category_id,categories(name)&order=created_at.desc`,
         { headers }
       );
       if (!response.ok) return;
@@ -180,7 +181,7 @@ export default function ProductsPage() {
       name:        product.name,
       description: product.description ?? "",
       price:       product.price.toString(),
-      stock:       product.stock_quantity?.toString() ?? "",
+      stock:       product.stock_qty?.toString() ?? "",
       unit:        product.unit ?? "each",
     });
     setSelectedCategoryId(product.category_id ?? "");
@@ -234,7 +235,8 @@ export default function ProductsPage() {
               slug,
               description:    productForm.description.trim() || null,
               price:          pricingType === 'per_pound' ? parseFloat(pricePerPound) : parseFloat(productForm.price),
-              stock_quantity: productForm.stock ? parseInt(productForm.stock) : null,
+              stock_qty:      pricingType === 'per_pound' ? null : (productForm.stock ? parseInt(productForm.stock) : null),
+              in_stock:       pricingType === 'per_pound' ? true : (productForm.stock ? parseInt(productForm.stock) > 0 : true),
               unit:           productForm.unit || null,
               category_id:    selectedCategoryId || null,
               images:         productImages.filter(img => img !== ''),
@@ -283,7 +285,7 @@ export default function ProductsPage() {
       if (!session?.access_token) return;
 
       const authHeaders = { ...getAuthHeaders(session.access_token), Prefer: "return=representation" };
-      const stockQty = productForm.stock ? parseInt(productForm.stock) : null;
+      const stockQty = pricingType === 'per_pound' ? null : (productForm.stock ? parseInt(productForm.stock) : null);
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
@@ -300,7 +302,8 @@ export default function ProductsPage() {
               name:           productForm.name.trim(),
               description:    productForm.description.trim() || null,
               price:          pricingType === 'per_pound' ? parseFloat(pricePerPound) : parseFloat(productForm.price),
-              stock_quantity: stockQty,
+              stock_qty:      stockQty,
+              in_stock:       pricingType === 'per_pound' ? true : (stockQty !== null ? stockQty > 0 : true),
               unit:           productForm.unit || null,
               category_id:    selectedCategoryId || null,
               images:         productImages.filter(img => img !== ''),
@@ -538,18 +541,27 @@ export default function ProductsPage() {
 
               {/* ── Inventory ── */}
               <SectionLabel>Inventory</SectionLabel>
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Stock Quantity</label>
-                  <input type="number" placeholder="0" min="0" className={inputCls}
-                    value={productForm.stock} onChange={e => setProductForm(f => ({ ...f, stock: e.target.value }))} />
+              {pricingType === 'per_pound' ? (
+                <div className="mb-4 rounded-xl px-4 py-3 text-sm" style={{ backgroundColor: '#eff6ff', color: '#1d4ed8' }}>
+                  <p className="font-semibold mb-1">📦 Stock managed in Inventory tab</p>
+                  <p>For per-pound products add individual units with exact weights in the
+                    <a href="/seller/dashboard/inventory" className="underline font-medium ml-1">Inventory tab</a>
+                  </p>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Unit</label>
-                  <input type="text" placeholder="e.g. lb, each, dozen" className={inputCls}
-                    value={productForm.unit} onChange={e => setProductForm(f => ({ ...f, unit: e.target.value }))} />
+              ) : (
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Stock Quantity</label>
+                    <input type="number" placeholder="0" min="0" className={inputCls}
+                      value={productForm.stock} onChange={e => setProductForm(f => ({ ...f, stock: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Unit</label>
+                    <input type="text" placeholder="e.g. lb, each, dozen" className={inputCls}
+                      value={productForm.unit} onChange={e => setProductForm(f => ({ ...f, unit: e.target.value }))} />
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* ── Photos ── */}
               <SectionLabel>Photos</SectionLabel>
@@ -773,9 +785,29 @@ export default function ProductsPage() {
                             ? `$${Number(p.price_per_pound ?? p.price).toFixed(2)}/lb`
                             : `$${Number(p.price).toFixed(2)}`}
                         </td>
-                        <td className="px-4 py-3 text-gray-700">{p.stock_quantity ?? "—"}</td>
                         <td className="px-4 py-3">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[ds]}`}>{ds}</span>
+                          {p.pricing_type === 'per_pound' ? (
+                            <span className="text-sm text-gray-500">See Inventory</span>
+                          ) : (
+                            <span className={`text-sm font-medium ${
+                              (p.stock_qty || 0) <= 0 ? 'text-red-500' :
+                              (p.stock_qty || 0) <= 5 ? 'text-amber-500' : 'text-gray-700'
+                            }`}>
+                              {p.stock_qty || 0} {p.unit || 'units'}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          {(() => {
+                            const isInStock = p.pricing_type === 'per_pound' ? true : (p.stock_qty || 0) > 0;
+                            return p.pricing_type === 'per_pound' ? (
+                              <span className="text-xs px-2 py-1 rounded-full font-medium bg-blue-100 text-blue-700">By Weight</span>
+                            ) : isInStock ? (
+                              <span className="text-xs px-2 py-1 rounded-full font-medium bg-green-100 text-green-700">In Stock</span>
+                            ) : (
+                              <span className="text-xs px-2 py-1 rounded-full font-medium bg-red-100 text-red-700">Out of Stock</span>
+                            );
+                          })()}
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
