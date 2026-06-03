@@ -31,6 +31,7 @@ export default function StoreShopPage() {
   const [sortBy, setSortBy] = useState('newest')
   const [categories, setCategories] = useState<any[]>([])
   const [priceRange, setPriceRange] = useState({ min: '', max: '' })
+  const [selectedFulfillment, setSelectedFulfillment] = useState<string[]>([])
 
   useEffect(() => {
     if (slug) fetchData()
@@ -38,7 +39,7 @@ export default function StoreShopPage() {
 
   useEffect(() => {
     filterProducts()
-  }, [products, searchQuery, selectedCategory, sortBy, priceRange])
+  }, [products, searchQuery, selectedCategory, sortBy, priceRange, selectedFulfillment])
 
   async function fetchData() {
     setLoading(true)
@@ -48,7 +49,6 @@ export default function StoreShopPage() {
         { headers }
       )
       const stores = await storeRes.json()
-      console.log('Store data:', stores)
       if (!stores || stores.length === 0) return
       const storeData = stores[0]
       setStore(storeData)
@@ -58,12 +58,9 @@ export default function StoreShopPage() {
         { headers }
       )
       const productsData = await productsRes.json()
-      console.log('Products data:', productsData)
       const prods = Array.isArray(productsData) ? productsData : []
 
-      // Log all category_ids from products
       const categoryIds = [...new Set(prods.map((p: any) => p.category_id).filter(Boolean))]
-      console.log('Unique category IDs:', categoryIds)
 
       if (categoryIds.length > 0) {
         const categoriesRes = await fetch(
@@ -71,16 +68,10 @@ export default function StoreShopPage() {
           { headers }
         )
         const allCategories = await categoriesRes.json()
-        console.log('All categories response:', allCategories)
-        console.log('Is array?', Array.isArray(allCategories))
-
         const farmCategories = Array.isArray(allCategories)
           ? allCategories.filter((cat: any) => categoryIds.includes(cat.id))
           : []
-        console.log('Farm categories:', farmCategories)
         setCategories(farmCategories)
-      } else {
-        console.log('No category IDs found in products!')
       }
 
       // Attach seller data to products for fulfillment badges
@@ -119,6 +110,13 @@ export default function StoreShopPage() {
     }
     if (priceRange.max) {
       filtered = filtered.filter(p => p.price <= parseFloat(priceRange.max))
+    }
+
+    if (selectedFulfillment.length > 0) {
+      const storeFulfillment: string[] = store?.fulfillment || []
+      filtered = filtered.filter(() => {
+        return selectedFulfillment.some(f => storeFulfillment.includes(f))
+      })
     }
 
     if (sortBy === 'price-low') {
@@ -203,6 +201,7 @@ export default function StoreShopPage() {
                   setSelectedCategory('all')
                   setPriceRange({ min: '', max: '' })
                   setSortBy('newest')
+                  setSelectedFulfillment([])
                 }}
                 className="text-xs text-gray-400 hover:text-red-500"
               >
@@ -305,8 +304,19 @@ export default function StoreShopPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Fulfillment</label>
                 <div className="space-y-2">
                   {store.fulfillment.map((method: string) => (
-                    <label key={method} className="flex items-center gap-2">
-                      <input type="checkbox" className="accent-green-900" />
+                    <label key={method} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        className="accent-green-900"
+                        checked={selectedFulfillment.includes(method)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedFulfillment(prev => [...prev, method])
+                          } else {
+                            setSelectedFulfillment(prev => prev.filter(f => f !== method))
+                          }
+                        }}
+                      />
                       <span className="text-sm text-gray-600">{method}</span>
                     </label>
                   ))}

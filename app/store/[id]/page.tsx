@@ -18,19 +18,6 @@ const headers = {
   'Content-Type': 'application/json',
 }
 
-const PLACEHOLDER_REVIEWS = [
-  {
-    id: 1,
-    text: 'Amazing grass-fed beef! You can really taste the difference from store bought. My family loves the ribeye steaks.',
-    author: 'Sarah M.',
-  },
-  {
-    id: 2,
-    text: 'Best eggs I have ever had. The yolks are so rich and orange. Will never go back to grocery store eggs again!',
-    author: 'Mike R.',
-  },
-]
-
 function StarRating({ count = 5 }: { count?: number }) {
   return (
     <div className="flex gap-0.5">
@@ -79,6 +66,7 @@ export default function StorePage() {
   const [store, setStore] = useState<any>(null)
   const [products, setProducts] = useState<any[]>([])
   const [blogPosts, setBlogPosts] = useState<any[]>([])
+  const [reviews, setReviews] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [reviewText, setReviewText] = useState('')
@@ -105,7 +93,7 @@ export default function StorePage() {
       const storeData = stores[0]
       setStore(storeData)
 
-      const [productsRes, postsRes] = await Promise.all([
+      const [productsRes, postsRes, reviewsRes] = await Promise.all([
         fetch(
           `${SUPABASE_URL}/rest/v1/products?seller_id=eq.${storeData.id}&status=eq.active&select=*&order=created_at.asc&limit=4`,
           { headers }
@@ -114,15 +102,19 @@ export default function StorePage() {
           `${SUPABASE_URL}/rest/v1/farm_posts?seller_id=eq.${storeData.id}&is_published=eq.true&select=*&order=created_at.desc&limit=4`,
           { headers }
         ),
+        fetch(
+          `${SUPABASE_URL}/rest/v1/reviews?select=*&order=created_at.desc&limit=3`,
+          { headers }
+        ),
       ])
 
       const productsData = await productsRes.json()
       const postsData = await postsRes.json()
+      const reviewsData = await reviewsRes.json()
 
       if (!Array.isArray(productsData)) {
         setProducts([])
       } else {
-        // Attach seller data to products for fulfillment badges
         const productsWithSeller = productsData.map((product: any) => ({
           ...product,
           primaryImage: Array.isArray(product.images) ? (product.images[0] ?? null) : null,
@@ -136,6 +128,7 @@ export default function StorePage() {
       }
 
       setBlogPosts(Array.isArray(postsData) ? postsData : [])
+      setReviews(Array.isArray(reviewsData) ? reviewsData : [])
     } catch (err: any) {
       console.error('Store error:', err)
       setError('Error loading store')
@@ -321,6 +314,65 @@ export default function StorePage() {
             {store.city && store.state && (
               <p className="text-sm text-gray-500">📍 {store.city}, {store.state}</p>
             )}
+
+            {/* Fulfillment badges */}
+            {store.fulfillment && store.fulfillment.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {store.fulfillment.map((method: string) => (
+                  <span
+                    key={method}
+                    className="text-xs px-3 py-1 rounded-full font-medium"
+                    style={{
+                      backgroundColor: method === 'Farm Pickup' ? '#dcfce7' :
+                        method === 'Local Delivery' ? '#dbeafe' : '#ede9fe',
+                      color: method === 'Farm Pickup' ? '#15803d' :
+                        method === 'Local Delivery' ? '#1d4ed8' : '#6d28d9'
+                    }}
+                  >
+                    {method === 'Farm Pickup' ? '🚗 Farm Pickup' :
+                      method === 'Local Delivery' ? '🚚 Local Delivery' :
+                      '📦 Ships Nationwide'}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Social links */}
+            {(store.instagram_url || store.facebook_url || store.twitter_url) && (
+              <div className="flex gap-3">
+                {store.instagram_url && (
+                  <a
+                    href={store.instagram_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-400 hover:text-pink-500 transition-colors text-sm"
+                  >
+                    📷 Instagram
+                  </a>
+                )}
+                {store.facebook_url && (
+                  <a
+                    href={store.facebook_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-400 hover:text-blue-500 transition-colors text-sm"
+                  >
+                    👥 Facebook
+                  </a>
+                )}
+                {store.twitter_url && (
+                  <a
+                    href={store.twitter_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-400 hover:text-sky-500 transition-colors text-sm"
+                  >
+                    🐦 Twitter
+                  </a>
+                )}
+              </div>
+            )}
+
             <div>
               <Link
                 href={`/store/${slug}/about`}
@@ -346,14 +398,50 @@ export default function StorePage() {
 
           {/* Left: review cards */}
           <div className="space-y-5">
-            {PLACEHOLDER_REVIEWS.map((review) => (
-              <div key={review.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Review:</p>
-                <p className="text-gray-700 leading-relaxed mb-4">&ldquo;{review.text}&rdquo;</p>
-                <StarRating />
-                <p className="text-sm font-semibold text-gray-500 mt-3">{review.author}</p>
+            {reviews.length === 0 ? (
+              <div className="text-center py-8 bg-gray-50 rounded-xl">
+                <p className="text-gray-500 font-medium">No reviews yet</p>
+                <p className="text-gray-400 text-sm mt-1">
+                  Be the first to review a product from this farm
+                </p>
               </div>
-            ))}
+            ) : (
+              reviews.map((review: any) => (
+                <div key={review.id} className="bg-gray-50 rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold"
+                      style={{ backgroundColor: '#053D2D' }}
+                    >
+                      A
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-800">
+                        Verified Customer
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {new Date(review.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="flex gap-0.5 ml-auto">
+                      {[1, 2, 3, 4, 5].map(star => (
+                        <svg key={star} width="12" height="12" viewBox="0 0 24 24"
+                          fill={star <= review.rating ? '#f59e0b' : 'none'}
+                          stroke={star <= review.rating ? '#f59e0b' : '#d1d5db'}
+                          strokeWidth="2"
+                        >
+                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                        </svg>
+                      ))}
+                    </div>
+                  </div>
+                  {review.title && (
+                    <p className="text-sm font-semibold text-gray-800 mb-1">{review.title}</p>
+                  )}
+                  <p className="text-sm text-gray-600">{review.body}</p>
+                </div>
+              ))
+            )}
           </div>
 
           {/* Right: write a review */}
@@ -405,7 +493,7 @@ export default function StorePage() {
                 <div className="p-4">
                   <h4 className="font-bold text-sm text-gray-800 mb-1">Coming Soon</h4>
                   <p className="text-xs text-gray-500 leading-relaxed mb-3">Stay tuned for updates from our farm</p>
-                  <span className="text-[#1a4a2e] text-xs font-semibold group-hover:underline">
+                  <span className="text-[#053D2D] text-xs font-semibold group-hover:underline">
                     Read More →
                   </span>
                 </div>
@@ -442,7 +530,7 @@ export default function StorePage() {
                     <p className="text-xs text-gray-500 leading-relaxed mb-3 line-clamp-2">
                       {post.excerpt || post.content?.substring(0, 80) || 'Read the latest from our farm.'}
                     </p>
-                    <span className="text-[#1a4a2e] text-xs font-semibold group-hover:underline">
+                    <span className="text-[#053D2D] text-xs font-semibold group-hover:underline">
                       Read More →
                     </span>
                   </div>

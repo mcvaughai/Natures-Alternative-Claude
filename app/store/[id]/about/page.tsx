@@ -16,15 +16,31 @@ const apiHeaders = {
   'Content-Type': 'application/json',
 }
 
-const DEFAULT_PRACTICES = [
-  'No synthetic pesticides or herbicides',
-  'No GMO products',
-  'Regenerative farming methods',
-  'Pasture raised animals',
-  'Seasonal and rotational crops',
-  'No artificial hormones or antibiotics',
-  'Soil health monitoring and improvement',
-]
+const PRACTICE_LABELS: { [key: string]: string } = {
+  noSyntheticPesticides: 'No Synthetic Pesticides',
+  noGMO: 'Non-GMO',
+  grassFed: 'Grass Fed',
+  pastureRaised: 'Pasture Raised',
+  certified_organic: 'Certified Organic',
+  noAntibiotics: 'No Antibiotics',
+  noHormones: 'No Added Hormones',
+  regenerative: 'Regenerative Agriculture',
+  freeRange: 'Free Range',
+  wildCaught: 'Wild Caught',
+}
+
+function getPractices(practices: any): string[] {
+  if (!practices) return []
+  if (typeof practices === 'object' && !Array.isArray(practices)) {
+    return Object.entries(practices)
+      .filter(([, value]) => value === true)
+      .map(([key]) => PRACTICE_LABELS[key] || key)
+  }
+  if (Array.isArray(practices)) {
+    return practices.map((p: string) => PRACTICE_LABELS[p] || p)
+  }
+  return []
+}
 
 export default function StoreAboutPage() {
   const params = useParams()
@@ -92,20 +108,7 @@ export default function StoreAboutPage() {
   const ourStoryText = store.our_story_text || store.description || 'We are committed to providing the highest quality natural products, grown and raised with care on our farm.'
   const whoWeAreImage = store.who_we_are_image_url
 
-  /* farming_practices can be string[] or null */
-  let practices: string[] = DEFAULT_PRACTICES
-  if (store.farming_practices) {
-    try {
-      const parsed = typeof store.farming_practices === 'string'
-        ? JSON.parse(store.farming_practices)
-        : store.farming_practices
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        practices = parsed
-      }
-    } catch {
-      // keep defaults
-    }
-  }
+  const practicesList = getPractices(store.farming_practices)
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
@@ -162,18 +165,21 @@ export default function StoreAboutPage() {
           {/* ── Farming Practices ── */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
             <h2 className="text-2xl font-bold text-[#1a4a2e] mb-6">Our Farming Practices</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {practices.map((practice: string, i: number) => (
-                <div key={i} className="flex items-start gap-3">
-                  <div className="w-5 h-5 rounded-full bg-[#1a4a2e]/10 flex items-center justify-center shrink-0 mt-0.5">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 text-[#1a4a2e]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <span className="text-sm text-gray-700">{practice}</span>
-                </div>
-              ))}
-            </div>
+            {practicesList.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {practicesList.map((practice: string, index: number) => (
+                  <span
+                    key={index}
+                    className="px-3 py-1.5 rounded-full text-sm font-medium"
+                    style={{ backgroundColor: '#dcfce7', color: '#15803d' }}
+                  >
+                    ✓ {practice}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-400 text-sm">No farming practices listed yet</p>
+            )}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -188,16 +194,16 @@ export default function StoreAboutPage() {
               </div>
               <div className="space-y-2 text-sm text-gray-600">
                 <p className="font-medium text-gray-800">{store.farm_name}</p>
-                {(store.address || store.city || store.state) && (
+                {(store.location_address || store.city || store.state) && (
                   <p>
-                    {[store.address, store.city, store.state].filter(Boolean).join(', ')}
-                    {store.zip ? ` ${store.zip}` : ''}
+                    {[store.location_address, store.city, store.state].filter(Boolean).join(', ')}
+                    {store.zip_code ? ` ${store.zip_code}` : ''}
                   </p>
                 )}
-                {store.pickup_days && (
+                {store.pickup_hours && (
                   <>
                     <p className="text-[#1a4a2e] font-medium mt-3">Farm Pickup</p>
-                    <p>{store.pickup_days}</p>
+                    <p>{store.pickup_hours}</p>
                   </>
                 )}
               </div>
