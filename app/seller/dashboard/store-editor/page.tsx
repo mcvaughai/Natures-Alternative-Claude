@@ -877,7 +877,7 @@ export default function StoreEditorPage() {
                                   body: JSON.stringify({
                                     seller_id: session.seller_id,
                                     title: newPost.title,
-                                    slug: newPost.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+                                    slug: `${newPost.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}-${Date.now()}`,
                                     excerpt: newPost.excerpt || '',
                                     body: newPost.body || '',
                                     cover_image: newPost.cover_image || null,
