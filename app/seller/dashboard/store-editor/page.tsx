@@ -113,7 +113,7 @@ export default function StoreEditorPage() {
   // ── Blog ──────────────────────────────────────────────────────────────────
   const [blogPosts, setBlogPosts]           = useState<any[]>([]);
   const [showNewPostForm, setShowNewPostForm] = useState(false);
-  const [newPost, setNewPost] = useState({ title: "", excerpt: "", content: "", image_url: "" });
+  const [newPost, setNewPost] = useState({ title: "", excerpt: "", body: "", cover_image: "" });
   const [uploadingBlogImage, setUploadingBlogImage] = useState(false);
   const [savingPost, setSavingPost]         = useState(false);
 
@@ -302,7 +302,7 @@ export default function StoreEditorPage() {
       else if (isShopBanner) { setShopBannerUrl(publicUrl);     await saveField({ shop_banner_url: publicUrl }); }
       else if (isWhoWeAre)   { setWhoWeAreImageUrl(publicUrl);  await saveField({ who_we_are_image_url: publicUrl }); }
       else if (isAboutBanner){ setAboutPageBannerUrl(publicUrl); await saveField({ about_page_banner_url: publicUrl }); }
-      else if (isBlogImage)  { setNewPost(p => ({ ...p, image_url: publicUrl })); }
+      else if (isBlogImage)  { setNewPost(p => ({ ...p, cover_image: publicUrl })); }
       else                   { setBannerUrl(publicUrl);          await saveField({ banner_url: publicUrl }); }
 
       if (!isBlogImage) {
@@ -843,16 +843,16 @@ export default function StoreEditorPage() {
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Post Content</label>
-                          <textarea value={newPost.content}
-                            onChange={e => setNewPost({ ...newPost, content: e.target.value })}
+                          <textarea value={newPost.body}
+                            onChange={e => setNewPost({ ...newPost, body: e.target.value })}
                             rows={8} className={INPUT + " resize-none"}
                             placeholder="Write your full blog post here..."/>
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">Post Image</label>
                           <div className="w-full h-36 rounded-xl border-2 border-dashed border-gray-300 overflow-hidden bg-gray-50 mb-3 flex items-center justify-center relative">
-                            {newPost.image_url ? (
-                              <Image src={newPost.image_url} alt="Post" fill className="object-cover"/>
+                            {newPost.cover_image ? (
+                              <Image src={newPost.cover_image} alt="Post" fill className="object-cover"/>
                             ) : (
                               <p className="text-xs text-gray-400">No image uploaded</p>
                             )}
@@ -877,17 +877,19 @@ export default function StoreEditorPage() {
                                   body: JSON.stringify({
                                     seller_id: session.seller_id,
                                     title: newPost.title,
-                                    excerpt: newPost.excerpt,
-                                    content: newPost.content,
-                                    image_urls: newPost.image_url ? [newPost.image_url] : [],
-                                    post_type: "update",
-                                    is_published: true,
+                                    slug: newPost.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+                                    excerpt: newPost.excerpt || '',
+                                    body: newPost.body || '',
+                                    cover_image: newPost.cover_image || null,
+                                    published: true,
+                                    published_at: new Date().toISOString(),
+                                    tags: [],
                                   }),
                                 });
                                 if (res.ok) {
                                   const saved = await res.json();
                                   setBlogPosts(prev => [saved[0], ...prev]);
-                                  setNewPost({ title: "", excerpt: "", content: "", image_url: "" });
+                                  setNewPost({ title: "", excerpt: "", body: "", cover_image: "" });
                                   setShowNewPostForm(false);
                                   flash("success", "Blog post published!");
                                 } else {
@@ -905,7 +907,7 @@ export default function StoreEditorPage() {
                             {savingPost ? "Publishing..." : "Publish Post"}
                           </button>
                           <button
-                            onClick={() => { setNewPost({ title: "", excerpt: "", content: "", image_url: "" }); setShowNewPostForm(false); }}
+                            onClick={() => { setNewPost({ title: "", excerpt: "", body: "", cover_image: "" }); setShowNewPostForm(false); }}
                             className="border border-gray-300 text-gray-600 px-6 py-2 rounded-xl text-sm hover:bg-gray-50"
                           >
                             Cancel
@@ -928,8 +930,8 @@ export default function StoreEditorPage() {
                         <div key={post.id} className="bg-gray-50 rounded-xl border border-gray-200 p-4">
                           <div className="flex justify-between items-start gap-4">
                             <div className="flex gap-3 min-w-0">
-                              {post.image_urls?.[0] && (
-                                <img src={post.image_urls[0]} alt={post.title}
+                              {post.cover_image && (
+                                <img src={post.cover_image} alt={post.title}
                                   className="w-16 h-16 rounded-lg object-cover shrink-0"/>
                               )}
                               <div className="min-w-0">
@@ -939,8 +941,8 @@ export default function StoreEditorPage() {
                               </div>
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
-                              <span className={`text-xs px-2 py-1 rounded-full ${post.is_published ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
-                                {post.is_published ? "Published" : "Draft"}
+                              <span className={`text-xs px-2 py-1 rounded-full ${post.published ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+                                {post.published ? "Published" : "Draft"}
                               </span>
                               <button
                                 onClick={async () => {

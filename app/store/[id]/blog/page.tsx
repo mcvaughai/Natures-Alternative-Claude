@@ -59,7 +59,7 @@ export default function StoreBlogPage() {
       setStore(seller)
 
       const postsRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/farm_posts?seller_id=eq.${seller.id}&is_published=eq.true&select=*&order=created_at.desc`,
+        `${SUPABASE_URL}/rest/v1/farm_posts?seller_id=eq.${seller.id}&published=eq.true&select=*&order=created_at.desc`,
         { headers: apiHeaders }
       )
       const postsData = await postsRes.json()
@@ -131,14 +131,12 @@ export default function StoreBlogPage() {
           ) : (
             <>
               {/* ── Featured Post ── */}
-              {featuredPost && (() => {
-                const featuredImage = Array.isArray(featuredPost.image_urls) ? featuredPost.image_urls[0] : null
-                return (
+              {featuredPost && (
                   <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                     <div className="relative h-56 sm:h-72 bg-gray-200 flex items-center justify-center text-gray-400">
-                      {featuredImage ? (
+                      {featuredPost.cover_image ? (
                         <img
-                          src={featuredImage}
+                          src={featuredPost.cover_image}
                           alt={featuredPost.title || 'Featured post'}
                           className="absolute inset-0 w-full h-full object-cover"
                         />
@@ -148,7 +146,7 @@ export default function StoreBlogPage() {
                         </svg>
                       )}
                       <div className="absolute top-4 left-4">
-                        <span className="bg-[#1a4a2e] text-white text-xs font-semibold px-3 py-1.5 rounded-full">
+                        <span className="bg-[#053D2D] text-white text-xs font-semibold px-3 py-1.5 rounded-full">
                           Featured
                         </span>
                       </div>
@@ -156,10 +154,10 @@ export default function StoreBlogPage() {
                     <div className="p-6 sm:p-8">
                       <div className="flex items-center gap-3 text-xs text-gray-500 mb-3">
                         <span>{formatDate(featuredPost.created_at)}</span>
-                        {featuredPost.post_type && (
+                        {featuredPost.tags?.[0] && (
                           <>
                             <span>·</span>
-                            <span className="capitalize">{featuredPost.post_type}</span>
+                            <span className="capitalize">{featuredPost.tags[0]}</span>
                           </>
                         )}
                       </div>
@@ -167,36 +165,33 @@ export default function StoreBlogPage() {
                         {featuredPost.title || 'Farm Update'}
                       </h2>
                       <p className="text-gray-600 leading-relaxed mb-5">
-                        {featuredPost.excerpt || featuredPost.content?.substring(0, 200) || ''}
-                        {!featuredPost.excerpt && featuredPost.content?.length > 200 ? '…' : ''}
+                        {featuredPost.excerpt || featuredPost.body?.substring(0, 200) || ''}
+                        {!featuredPost.excerpt && featuredPost.body?.length > 200 ? '…' : ''}
                       </p>
                       <Link
                         href={`/store/${slug}/blog/${featuredPost.id}`}
-                        className="inline-block bg-[#1a4a2e] hover:bg-[#143d24] text-white font-semibold px-6 py-2.5 rounded-full text-sm transition-colors"
+                        className="inline-block bg-[#053D2D] hover:bg-[#0a5c43] text-white font-semibold px-6 py-2.5 rounded-full text-sm transition-colors"
                       >
                         Read More
                       </Link>
                     </div>
                   </div>
-                )
-              })()}
+              )}
 
               {/* ── Blog Grid ── */}
               {remainingPosts.length > 0 && (
                 <div>
                   <h2 className="text-xl font-bold text-gray-900 mb-5">More from the Farm</h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {remainingPosts.map((post: any) => {
-                      const postImage = Array.isArray(post.image_urls) ? post.image_urls[0] : null
-                      return (
+                    {remainingPosts.map((post: any) => (
                         <div
                           key={post.id}
                           className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow"
                         >
                           <div className="relative h-40 bg-gray-200 flex items-center justify-center text-gray-400">
-                            {postImage ? (
+                            {post.cover_image ? (
                               <img
-                                src={postImage}
+                                src={post.cover_image}
                                 alt={post.title || 'Blog post'}
                                 className="absolute inset-0 w-full h-full object-cover"
                               />
@@ -209,10 +204,10 @@ export default function StoreBlogPage() {
                           <div className="p-5">
                             <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
                               <span>{formatDate(post.created_at)}</span>
-                              {post.post_type && (
+                              {post.tags?.[0] && (
                                 <>
                                   <span>·</span>
-                                  <span className="capitalize">{post.post_type}</span>
+                                  <span className="capitalize">{post.tags[0]}</span>
                                 </>
                               )}
                             </div>
@@ -220,12 +215,12 @@ export default function StoreBlogPage() {
                               {post.title || 'Farm Update'}
                             </h3>
                             <p className="text-xs text-gray-500 leading-relaxed mb-4 line-clamp-3">
-                              {post.excerpt || post.content?.substring(0, 120) || ''}
-                              {!post.excerpt && post.content?.length > 120 ? '…' : ''}
+                              {post.excerpt || post.body?.substring(0, 120) || ''}
+                              {!post.excerpt && post.body?.length > 120 ? '…' : ''}
                             </p>
                             <Link
                               href={`/store/${slug}/blog/${post.id}`}
-                              className="text-[#1a4a2e] hover:text-[#143d24] font-semibold text-sm flex items-center gap-1 group"
+                              className="text-[#053D2D] hover:text-[#0a5c43] font-semibold text-sm flex items-center gap-1 group"
                             >
                               Read More
                               <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -234,8 +229,7 @@ export default function StoreBlogPage() {
                             </Link>
                           </div>
                         </div>
-                      )
-                    })}
+                    ))}
                   </div>
                 </div>
               )}

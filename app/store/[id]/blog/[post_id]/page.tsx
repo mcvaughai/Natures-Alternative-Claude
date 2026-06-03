@@ -48,7 +48,7 @@ export default function BlogPostPage() {
           { headers }
         ),
         fetch(
-          `${SUPABASE_URL}/rest/v1/farm_posts?seller_id=eq.${storeRecord.id}&is_published=eq.true&id=neq.${postId}&select=*&limit=3&order=created_at.desc`,
+          `${SUPABASE_URL}/rest/v1/farm_posts?seller_id=eq.${storeRecord.id}&published=eq.true&id=neq.${postId}&select=*&limit=3&order=created_at.desc`,
           { headers }
         ),
       ])
@@ -110,12 +110,12 @@ export default function BlogPostPage() {
 
         {/* Post Header */}
         <div className="mb-8">
-          {post.post_type && (
+          {post.tags?.[0] && (
             <span
-              className="inline-block text-xs font-semibold px-3 py-1 rounded-full mb-3"
+              className="inline-block text-xs font-semibold px-3 py-1 rounded-full mb-3 capitalize"
               style={{ backgroundColor: '#dcfce7', color: '#15803d' }}
             >
-              {post.post_type}
+              {post.tags[0]}
             </span>
           )}
           <h1 className="text-4xl font-bold text-gray-900 leading-tight mb-4">
@@ -145,10 +145,10 @@ export default function BlogPostPage() {
         </div>
 
         {/* Cover Image */}
-        {post.image_urls && post.image_urls[0] && (
+        {post.cover_image && (
           <div className="w-full overflow-hidden rounded-2xl mb-8" style={{ height: '400px' }}>
             <img
-              src={post.image_urls[0]}
+              src={post.cover_image}
               alt={post.title}
               className="w-full h-full object-cover"
             />
@@ -164,7 +164,7 @@ export default function BlogPostPage() {
 
         {/* Post Content */}
         <div className="text-gray-700 leading-relaxed space-y-4" style={{ fontSize: '17px', lineHeight: '1.8' }}>
-          {post.content?.split('\n').map((paragraph: string, index: number) => (
+          {post.body?.split('\n').map((paragraph: string, index: number) => (
             paragraph.trim() ? (
               <p key={index} className="text-gray-700">{paragraph}</p>
             ) : (
@@ -223,10 +223,10 @@ export default function BlogPostPage() {
                   href={`/store/${slug}/blog/${relPost.id}`}
                   className="group rounded-xl overflow-hidden border border-gray-100 hover:shadow-md transition-shadow"
                 >
-                  {relPost.image_urls?.[0] ? (
+                  {relPost.cover_image ? (
                     <div style={{ height: '120px', overflow: 'hidden' }}>
                       <img
-                        src={relPost.image_urls[0]}
+                        src={relPost.cover_image}
                         alt={relPost.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />

@@ -99,7 +99,7 @@ export default function StorePage() {
           { headers }
         ),
         fetch(
-          `${SUPABASE_URL}/rest/v1/farm_posts?seller_id=eq.${storeData.id}&is_published=eq.true&select=*&order=created_at.desc&limit=4`,
+          `${SUPABASE_URL}/rest/v1/farm_posts?seller_id=eq.${storeData.id}&published=eq.true&select=*&order=created_at.desc&limit=4`,
           { headers }
         ),
         fetch(
@@ -502,18 +502,16 @@ export default function StorePage() {
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-            {blogPosts.map((post: any) => {
-              const firstImage = Array.isArray(post.image_urls) ? post.image_urls[0] : null
-              return (
+            {blogPosts.map((post: any) => (
                 <Link
                   key={post.id}
                   href={`/store/${slug}/blog/${post.id}`}
                   className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group"
                 >
                   <div className="h-40 bg-gray-200 overflow-hidden flex items-center justify-center text-gray-400">
-                    {firstImage ? (
+                    {post.cover_image ? (
                       <img
-                        src={firstImage}
+                        src={post.cover_image}
                         alt={post.title || 'Blog post'}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
@@ -528,15 +526,14 @@ export default function StorePage() {
                       {post.title || 'Farm Update'}
                     </h4>
                     <p className="text-xs text-gray-500 leading-relaxed mb-3 line-clamp-2">
-                      {post.excerpt || post.content?.substring(0, 80) || 'Read the latest from our farm.'}
+                      {post.excerpt || post.body?.substring(0, 80) || 'Read the latest from our farm.'}
                     </p>
                     <span className="text-[#053D2D] text-xs font-semibold group-hover:underline">
                       Read More →
                     </span>
                   </div>
                 </Link>
-              )
-            })}
+            ))}
           </div>
         )}
       </section>
