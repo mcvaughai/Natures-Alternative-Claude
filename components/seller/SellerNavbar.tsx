@@ -6,12 +6,38 @@ import Image from "next/image";
 import { logoutSeller } from "@/lib/logout";
 import { getSellerSession } from "@/lib/sessionHelper";
 
+const SUPABASE_URL = "https://ezryfycxfmtffobyfjfa.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6cnlmeWN4Zm10ZmZvYnlmamZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MjQ1MDEsImV4cCI6MjA5MjQwMDUwMX0.woObRrj3MMUf6eAFVbkvDNUsQfQ-elmlDqPADBT9aZs";
+
 export default function SellerNavbar() {
   const [farmName, setFarmName] = useState("Seller");
+  const [storeUrl, setStoreUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const session = getSellerSession();
-    if (session?.farm_name) setFarmName(session.farm_name);
+    if (!session) return;
+    if (session.farm_name) setFarmName(session.farm_name);
+
+    const sellerId = session.seller_id;
+    if (!sellerId) return;
+
+    fetch(
+      `${SUPABASE_URL}/rest/v1/sellers?id=eq.${sellerId}&select=slug`,
+      {
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      }
+    )
+      .then(res => res.json())
+      .then(data => {
+        const slug = Array.isArray(data) && data[0]?.slug;
+        setStoreUrl(slug ? `/store/${slug}` : `/store/${sellerId}`);
+      })
+      .catch(() => {
+        setStoreUrl(`/store/${sellerId}`);
+      });
   }, []);
 
   return (
@@ -40,7 +66,7 @@ export default function SellerNavbar() {
 
         {/* View My Store */}
         <Link
-          href="/store/1"
+          href={storeUrl ?? "#"}
           className="hidden sm:flex items-center gap-1.5 text-green-200 hover:text-white transition-colors text-xs font-medium"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
