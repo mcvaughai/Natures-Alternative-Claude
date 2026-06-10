@@ -114,17 +114,6 @@ export default function SellerSidebar() {
   return (
     <aside className="w-56 flex flex-col shrink-0" style={{ backgroundColor: "#053D2D" }}>
 
-      {/* Farm info */}
-      <div className="p-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-        <p className="font-bold text-sm leading-tight truncate text-white">{farmName}</p>
-        <span
-          className="inline-flex items-center mt-1.5 px-2 py-0.5 text-[10px] font-bold rounded-full tracking-wide"
-          style={{ backgroundColor: "rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.75)" }}
-        >
-          ✓ Approved Seller
-        </span>
-      </div>
-
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-2">
         {NAV_GROUPS.map((group, gi) => (
@@ -180,21 +169,35 @@ export default function SellerSidebar() {
         ))}
       </nav>
 
-      {/* Bottom links */}
-      <div className="p-3 space-y-0.5" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-        <Link
-          href="/"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors"
-          style={{ color: "rgba(255,255,255,0.55)" }}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-          </svg>
-          Visit Marketplace
-        </Link>
+      {/* Bottom: avatar + farm name + marketplace + logout */}
+      <div className="p-3" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+        {/* Farm identity row */}
+        <div className="flex items-center gap-2.5 px-2 py-2 mb-1">
+          <div
+            className="shrink-0 flex items-center justify-center text-white font-semibold"
+            style={{
+              width: 28, height: 28, borderRadius: "50%",
+              backgroundColor: "rgba(255,255,255,0.15)",
+              fontSize: 12,
+            }}
+          >
+            {farmName.charAt(0).toUpperCase()}
+          </div>
+          <div className="min-w-0">
+            <p className="text-white truncate leading-tight" style={{ fontSize: 12 }}>{farmName}</p>
+            <Link
+              href="/"
+              className="truncate leading-tight hover:underline transition-colors"
+              style={{ fontSize: 10, color: "rgba(255,255,255,0.4)" }}
+            >
+              Visit Marketplace
+            </Link>
+          </div>
+        </div>
+        {/* Logout */}
         <button
           onClick={logoutSeller}
-          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-colors"
+          className="flex items-center gap-3 w-full px-3 py-2 rounded-xl text-sm font-medium transition-colors"
           style={{ color: "rgba(255,100,100,0.8)" }}
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
