@@ -41,9 +41,9 @@ export default function SellerNavbar() {
   }, []);
 
   return (
-    <header className="bg-[#053D2D] h-14 flex items-center px-4 sm:px-6 shrink-0 z-40 shadow-sm">
+    <header className="bg-[#053D2D] py-4 flex items-center px-4 sm:px-6 shrink-0 z-40 shadow-sm">
       {/* Logo */}
-      <div className="flex flex-col items-start mr-8 shrink-0">
+      <div className="mr-8 shrink-0">
         <Image
           src="/main_logo.png"
           alt="Natures Alternative Market Place"
@@ -51,7 +51,6 @@ export default function SellerNavbar() {
           height={50}
           className="object-contain"
         />
-        <span className="text-green-300 text-[11px] tracking-wide -mt-1">Seller Center</span>
       </div>
 
       <div className="flex-1" />
