@@ -134,18 +134,20 @@ export default function SellerSidebar() {
             )}
 
             {/* Items */}
-            <ul className="px-2 space-y-0.5">
+            <ul className="space-y-0.5">
               {group.items.map((item) => {
                 const active = pathname === item.href;
                 return (
                   <li key={item.href}>
                     <Link
                       href={item.href}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors"
+                      className="flex items-center gap-3 pl-3 pr-3 py-2.5 text-sm transition-colors"
                       style={{
                         backgroundColor: active ? "rgba(255,255,255,0.12)" : "transparent",
                         color: active ? "#ffffff" : "rgba(255,255,255,0.7)",
                         fontWeight: active ? 500 : 400,
+                        borderLeft: active ? "3px solid #ffffff" : "3px solid transparent",
+                        borderRadius: active ? "0 6px 6px 0" : "0 6px 6px 0",
                       }}
                     >
                       <span style={{ color: active ? "#ffffff" : "rgba(255,255,255,0.7)", display: "flex", alignItems: "center" }}>
