@@ -125,7 +125,7 @@ export default function SellerSidebar() {
     <aside className="w-56 bg-white border-r border-gray-100 flex flex-col shrink-0 shadow-sm">
       {/* Farm info */}
       <div className="p-4 border-b border-gray-100">
-        <p className="font-bold text-[#1a4a2e] text-sm leading-tight truncate">{farmName}</p>
+        <p className="font-bold text-[#053D2D] text-sm leading-tight truncate">{farmName}</p>
         <span className="inline-flex items-center mt-1.5 px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full tracking-wide">
           ✓ Approved Seller
         </span>
@@ -143,7 +143,7 @@ export default function SellerSidebar() {
                   href={item.href}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
                     active
-                      ? "bg-[#1a4a2e] text-white"
+                      ? "bg-[#053D2D] text-white"
                       : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                   }`}
                 >

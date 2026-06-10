@@ -9,13 +9,13 @@ const SUPABASE_ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6cnlmeWN4Zm10ZmZvYnlmamZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MjQ1MDEsImV4cCI6MjA5MjQwMDUwMX0.woObRrj3MMUf6eAFVbkvDNUsQfQ-elmlDqPADBT9aZs";
 
 const inputCls =
-  "w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a4a2e]/30 focus:border-[#1a4a2e] transition";
+  "w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#053D2D]/30 focus:border-[#053D2D] transition";
 
 function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
   return (
     <button
       onClick={onToggle}
-      className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${on ? "bg-[#1a4a2e]" : "bg-gray-300"}`}
+      className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${on ? "bg-[#053D2D]" : "bg-gray-300"}`}
     >
       <span
         className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white shadow transition-transform ${on ? "translate-x-5" : "translate-x-0"}`}
@@ -141,7 +141,7 @@ export default function FulfillmentPage() {
     return (
       <SellerLayout>
         <div className="flex items-center justify-center py-24">
-          <svg className="w-6 h-6 animate-spin text-[#1a4a2e]" fill="none" viewBox="0 0 24 24">
+          <svg className="w-6 h-6 animate-spin text-[#053D2D]" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
           </svg>
@@ -160,7 +160,7 @@ export default function FulfillmentPage() {
           <button
             onClick={saveFulfillmentSettings}
             disabled={saving}
-            className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold transition-all bg-[#1a4a2e] hover:bg-[#2d6b47] disabled:opacity-60 text-white"
+            className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold transition-all bg-[#053D2D] hover:bg-[#2d6b47] disabled:opacity-60 text-white"
           >
             {saving && (
               <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -194,8 +194,8 @@ export default function FulfillmentPage() {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="flex items-center justify-between p-5 border-b border-gray-100">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#1a4a2e]/10 flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-[#1a4a2e]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="w-10 h-10 rounded-xl bg-[#053D2D]/10 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-[#053D2D]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
@@ -359,8 +359,8 @@ export default function FulfillmentPage() {
           <h2 className="text-sm font-bold text-gray-900 mb-3">Active Fulfillment Methods</h2>
           <div className="flex flex-wrap gap-2">
             {offersPickup && (
-              <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-[#1a4a2e]/10 text-[#1a4a2e] px-3 py-1.5 rounded-full">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#1a4a2e]" />Pickup
+              <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-[#053D2D]/10 text-[#053D2D] px-3 py-1.5 rounded-full">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#053D2D]" />Pickup
               </span>
             )}
             {offersDelivery && (
@@ -384,7 +384,7 @@ export default function FulfillmentPage() {
           <button
             onClick={saveFulfillmentSettings}
             disabled={saving}
-            className="bg-[#1a4a2e] hover:bg-[#2d6b47] disabled:opacity-60 text-white px-8 py-3 rounded-xl text-sm font-semibold transition-colors"
+            className="bg-[#053D2D] hover:bg-[#2d6b47] disabled:opacity-60 text-white px-8 py-3 rounded-xl text-sm font-semibold transition-colors"
           >
             {saving ? "Saving..." : "Save Fulfillment Settings"}
           </button>

@@ -21,7 +21,7 @@ function StatCard({ label, value, sub, subColor = "text-gray-400", trend }: {
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
       <p className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-1">{label}</p>
-      <p className="text-3xl font-bold text-[#1a4a2e] mb-1">{value}</p>
+      <p className="text-3xl font-bold text-[#053D2D] mb-1">{value}</p>
       <p className={`text-xs ${subColor}`}>{sub}</p>
       {trend && <p className="text-xs text-green-600 font-medium mt-0.5">↑ {trend}</p>}
     </div>
@@ -86,7 +86,7 @@ export default function SellerDashboardPage() {
           <StatCard label="Active Products"  value={String(productCount)} sub="Listed" />
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
             <p className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-1">Pending Orders</p>
-            <p className="text-3xl font-bold text-[#1a4a2e] mb-1">0</p>
+            <p className="text-3xl font-bold text-[#053D2D] mb-1">0</p>
             <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-green-400" />
               <p className="text-xs text-green-600 font-medium">All caught up</p>
@@ -98,7 +98,7 @@ export default function SellerDashboardPage() {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-base font-bold text-gray-900">Recent Orders</h2>
-            <Link href="/seller/dashboard/orders" className="text-xs text-[#1a4a2e] font-semibold hover:underline">View All</Link>
+            <Link href="/seller/dashboard/orders" className="text-xs text-[#053D2D] font-semibold hover:underline">View All</Link>
           </div>
           <div className="text-center py-8 text-gray-400 text-sm">
             No orders yet. Share your store to get your first order!
@@ -111,16 +111,16 @@ export default function SellerDashboardPage() {
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-base font-bold text-gray-900">Your Products</h2>
-              <Link href="/seller/dashboard/products" className="text-xs text-[#1a4a2e] font-semibold hover:underline">Manage</Link>
+              <Link href="/seller/dashboard/products" className="text-xs text-[#053D2D] font-semibold hover:underline">Manage</Link>
             </div>
             {productCount === 0 ? (
               <div className="text-center py-6 text-gray-400 text-sm">
                 No active products yet.{" "}
-                <Link href="/seller/dashboard/products" className="text-[#1a4a2e] font-semibold hover:underline">Add your first product</Link>
+                <Link href="/seller/dashboard/products" className="text-[#053D2D] font-semibold hover:underline">Add your first product</Link>
               </div>
             ) : (
               <p className="text-sm text-gray-600">
-                You have <span className="font-semibold text-[#1a4a2e]">{productCount}</span> active product{productCount !== 1 ? "s" : ""} listed.
+                You have <span className="font-semibold text-[#053D2D]">{productCount}</span> active product{productCount !== 1 ? "s" : ""} listed.
               </p>
             )}
           </div>
@@ -137,7 +137,7 @@ export default function SellerDashboardPage() {
               ].map(s => (
                 <div key={s.label} className="bg-white rounded-xl p-4">
                   <p className="text-xs text-gray-500 mb-1">{s.label}</p>
-                  <p className="text-xl font-bold text-[#1a4a2e]">{s.value}</p>
+                  <p className="text-xl font-bold text-[#053D2D]">{s.value}</p>
                   <p className="text-xs text-gray-400 mt-0.5">{s.sub}</p>
                 </div>
               ))}
@@ -155,7 +155,7 @@ export default function SellerDashboardPage() {
           ].map(action => (
             <button key={action.label} onClick={() => router.push(action.href)}
               className={`flex flex-col items-center justify-center gap-2 p-5 rounded-2xl font-semibold text-sm transition-colors ${
-                action.dark ? "bg-[#1a4a2e] hover:bg-[#2d6b47] text-white shadow-sm" : "bg-white hover:shadow-md border border-gray-100 text-[#1a4a2e]"
+                action.dark ? "bg-[#053D2D] hover:bg-[#2d6b47] text-white shadow-sm" : "bg-white hover:shadow-md border border-gray-100 text-[#053D2D]"
               }`}>
               {action.icon}
               {action.label}

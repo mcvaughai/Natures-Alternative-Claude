@@ -44,7 +44,7 @@ interface RestockEntry {
   created_at: string;
 }
 
-const inputCls = "w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a4a2e]/30 focus:border-[#1a4a2e] transition";
+const inputCls = "w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#053D2D]/30 focus:border-[#053D2D] transition";
 
 function getStockStatus(p: InventoryProduct): "out" | "low" | "ok" {
   if (!p.in_stock || p.stock_qty === 0) return "out";
@@ -374,7 +374,7 @@ export default function InventoryPage() {
 
         {/* Success toast */}
         {successMessage && (
-          <div className="fixed top-5 right-5 z-50 bg-[#1a4a2e] text-white px-5 py-3 rounded-xl shadow-lg text-sm font-semibold flex items-center gap-2">
+          <div className="fixed top-5 right-5 z-50 bg-[#053D2D] text-white px-5 py-3 rounded-xl shadow-lg text-sm font-semibold flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7"/>
             </svg>
@@ -414,14 +414,14 @@ export default function InventoryPage() {
                 <div className="flex overflow-x-auto">
                   {FILTER_TABS.map(t => (
                     <button key={t} onClick={() => setTab(t)}
-                      className={`px-3 py-2 text-sm font-medium whitespace-nowrap rounded-lg mr-1 transition-colors ${tab === t ? "bg-[#1a4a2e] text-white" : "text-gray-500 hover:bg-gray-100"}`}>
+                      className={`px-3 py-2 text-sm font-medium whitespace-nowrap rounded-lg mr-1 transition-colors ${tab === t ? "bg-[#053D2D] text-white" : "text-gray-500 hover:bg-gray-100"}`}>
                       {t}
                     </button>
                   ))}
                 </div>
                 <div className="relative ml-auto">
                   <input type="search" placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)}
-                    className="border border-gray-200 rounded-xl pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a4a2e]/30 focus:border-[#1a4a2e] transition w-44" />
+                    className="border border-gray-200 rounded-xl pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#053D2D]/30 focus:border-[#053D2D] transition w-44" />
                   <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 104.5 4.5a7.5 7.5 0 0012.15 12.15z" />
                   </svg>
@@ -430,7 +430,7 @@ export default function InventoryPage() {
 
               {loading ? (
                 <div className="flex items-center justify-center py-16">
-                  <div className="w-6 h-6 rounded-full border-2 border-[#1a4a2e] border-t-transparent animate-spin" />
+                  <div className="w-6 h-6 rounded-full border-2 border-[#053D2D] border-t-transparent animate-spin" />
                 </div>
               ) : filtered.length === 0 ? (
                 <div className="text-center py-16 text-gray-400 text-sm">No products found.</div>
@@ -480,9 +480,9 @@ export default function InventoryPage() {
                               <td className="px-4 py-3 whitespace-nowrap">
                                 {p.pricing_type === "per_pound" ? (
                                   <div>
-                                    <span className="font-semibold text-[#1a4a2e]">${Number(pricePerPound).toFixed(2)}</span>
+                                    <span className="font-semibold text-[#053D2D]">${Number(pricePerPound).toFixed(2)}</span>
                                     <span className="text-gray-400 text-xs">/lb</span>
-                                    <span className="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 bg-[#1a4a2e]/10 text-[#1a4a2e] rounded-full">PER LB</span>
+                                    <span className="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 bg-[#053D2D]/10 text-[#053D2D] rounded-full">PER LB</span>
                                   </div>
                                 ) : (
                                   <span className="font-semibold text-gray-800">${Number(p.price).toFixed(2)}</span>
@@ -501,7 +501,7 @@ export default function InventoryPage() {
                                       const v = parseInt(e.target.value);
                                       if (!isNaN(v) && v >= 0) handleInlineStockUpdate(p.id, v);
                                     }}
-                                    className="w-14 text-center border border-gray-200 rounded-lg py-1 text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-[#1a4a2e]" />
+                                    className="w-14 text-center border border-gray-200 rounded-lg py-1 text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-[#053D2D]" />
                                   <button onClick={() => handleInlineStockUpdate(p.id, (p.stock_qty ?? 0) + 1)}
                                     className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 border border-gray-200 flex items-center justify-center text-gray-500 text-sm font-bold leading-none transition-colors">+</button>
                                   <span className="text-xs text-gray-400">{p.pricing_type === "per_pound" ? "slots" : (p.unit ?? "")}</span>
@@ -518,7 +518,7 @@ export default function InventoryPage() {
                                 <button
                                   onClick={() => setSelectedProduct(isSelected ? null : p)}
                                   className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors ${
-                                    isSelected ? "bg-[#1a4a2e] text-white border-[#1a4a2e]" : "text-[#1a4a2e] border-[#1a4a2e] hover:bg-[#1a4a2e]/5"
+                                    isSelected ? "bg-[#053D2D] text-white border-[#053D2D]" : "text-[#053D2D] border-[#053D2D] hover:bg-[#053D2D]/5"
                                   }`}>
                                   {isSelected ? "Close" : "Manage"}
                                 </button>
@@ -538,7 +538,7 @@ export default function InventoryPage() {
                                         if (!productUnits[p.id]) fetchProductUnits(p.id);
                                       }
                                     }}
-                                    className="w-full text-left px-4 py-2 bg-amber-50 hover:bg-amber-100 text-[#1a4a2e] text-sm font-medium transition-colors flex items-center gap-2"
+                                    className="w-full text-left px-4 py-2 bg-amber-50 hover:bg-amber-100 text-[#053D2D] text-sm font-medium transition-colors flex items-center gap-2"
                                   >
                                     <span>⚖️</span>
                                     <span>{isExpanded ? "▲ Hide" : "▼ Manage"} Individual Units</span>
@@ -556,11 +556,11 @@ export default function InventoryPage() {
                                 <td colSpan={6} className="bg-amber-50/40 px-4 pb-4 pt-2">
                                   {loadingUnits === p.id ? (
                                     <div className="flex items-center justify-center py-8">
-                                      <div className="w-6 h-6 rounded-full border-2 border-[#1a4a2e] border-t-transparent animate-spin" />
+                                      <div className="w-6 h-6 rounded-full border-2 border-[#053D2D] border-t-transparent animate-spin" />
                                     </div>
                                   ) : (
                                     <div className="bg-white rounded-xl p-4 border border-amber-200">
-                                      <h3 className="font-semibold text-[#1a4a2e] mb-1">
+                                      <h3 className="font-semibold text-[#053D2D] mb-1">
                                         Individual Units — {p.name}
                                       </h3>
                                       <p className="text-xs text-gray-500 mb-1">
@@ -701,7 +701,7 @@ export default function InventoryPage() {
                   <div className="min-w-0">
                     <p className="font-bold text-gray-800 text-sm leading-tight truncate">{selectedProduct.name}</p>
                     <p className="text-xs text-gray-400 mt-0.5">{selectedProduct.categories?.name ?? "No category"}</p>
-                    <p className="text-sm font-semibold text-[#1a4a2e] mt-1">
+                    <p className="text-sm font-semibold text-[#053D2D] mt-1">
                       {selectedProduct.pricing_type === "per_pound"
                         ? `$${Number(selectedProduct.price_per_pound ?? 0).toFixed(2)}/lb`
                         : `$${Number(selectedProduct.price).toFixed(2)}`}
@@ -734,7 +734,7 @@ export default function InventoryPage() {
                         className={inputCls + " text-sm py-2"} />
                     </div>
                     <button onClick={handleRestock} disabled={savingRestock || !restockQty}
-                      className="w-full bg-[#1a4a2e] hover:bg-[#2d6b47] disabled:opacity-50 text-white font-semibold py-2.5 rounded-xl transition-colors text-sm flex items-center justify-center gap-2">
+                      className="w-full bg-[#053D2D] hover:bg-[#2d6b47] disabled:opacity-50 text-white font-semibold py-2.5 rounded-xl transition-colors text-sm flex items-center justify-center gap-2">
                       {savingRestock ? <Spinner /> : (
                         <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/>
@@ -772,7 +772,7 @@ export default function InventoryPage() {
                       <p className="text-xs text-gray-400 mt-0.5">Only available during certain seasons</p>
                     </div>
                     <button type="button" onClick={() => setIsSeasonal(v => !v)}
-                      className={`relative rounded-full transition-colors ${isSeasonal ? "bg-[#1a4a2e]" : "bg-gray-300"}`}
+                      className={`relative rounded-full transition-colors ${isSeasonal ? "bg-[#053D2D]" : "bg-gray-300"}`}
                       style={{ minWidth: '2.5rem', width: '2.5rem', height: '1.375rem' }}>
                       <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${isSeasonal ? "translate-x-4" : "translate-x-0"}`} />
                     </button>
@@ -853,13 +853,13 @@ function UnitSlotRow({ slot, pricePerPound, onSave, onRemove }: UnitSlotRowProps
             placeholder="0.00"
             step="0.01"
             min="0"
-            className="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a4a2e]/30 focus:border-[#1a4a2e]"
+            className="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#053D2D]/30 focus:border-[#053D2D]"
           />
         )}
       </div>
 
       {/* Price */}
-      <span className={`text-sm font-bold ${slot.hasData ? "text-[#1a4a2e]" : calculatedPrice ? "text-[#1a4a2e]/70" : "text-gray-300"}`}>
+      <span className={`text-sm font-bold ${slot.hasData ? "text-[#053D2D]" : calculatedPrice ? "text-[#053D2D]/70" : "text-gray-300"}`}>
         {slot.hasData
           ? `$${Number(slot.unit!.price).toFixed(2)}`
           : calculatedPrice
@@ -886,7 +886,7 @@ function UnitSlotRow({ slot, pricePerPound, onSave, onRemove }: UnitSlotRowProps
               setSaving(false);
             }}
             disabled={!weight || saving}
-            className="text-xs bg-[#1a4a2e] hover:bg-[#2d6b47] text-white px-3 py-1 rounded-lg disabled:opacity-50 transition-colors"
+            className="text-xs bg-[#053D2D] hover:bg-[#2d6b47] text-white px-3 py-1 rounded-lg disabled:opacity-50 transition-colors"
           >
             {saving ? "…" : "Save"}
           </button>

@@ -72,7 +72,7 @@ export default function AnalyticsPage() {
     <SellerLayout>
       <div className="flex items-center justify-center py-24">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a4a2e] mx-auto" />
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#053D2D] mx-auto" />
           <p className="mt-4 text-gray-500">Loading analytics...</p>
         </div>
       </div>
@@ -93,22 +93,22 @@ export default function AnalyticsPage() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
             <p className="text-sm text-gray-500">Total Revenue</p>
-            <p className="text-3xl font-bold text-[#1a4a2e] mt-1">${totalRevenue.toFixed(2)}</p>
+            <p className="text-3xl font-bold text-[#053D2D] mt-1">${totalRevenue.toFixed(2)}</p>
             <p className="text-xs text-gray-400 mt-1">From completed orders</p>
           </div>
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
             <p className="text-sm text-gray-500">Total Orders</p>
-            <p className="text-3xl font-bold text-[#1a4a2e] mt-1">{totalOrders}</p>
+            <p className="text-3xl font-bold text-[#053D2D] mt-1">{totalOrders}</p>
             <p className="text-xs text-gray-400 mt-1">All time</p>
           </div>
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
             <p className="text-sm text-gray-500">Avg Order Value</p>
-            <p className="text-3xl font-bold text-[#1a4a2e] mt-1">${avgOrderValue.toFixed(2)}</p>
+            <p className="text-3xl font-bold text-[#053D2D] mt-1">${avgOrderValue.toFixed(2)}</p>
             <p className="text-xs text-gray-400 mt-1">Per completed order</p>
           </div>
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
             <p className="text-sm text-gray-500">Active Products</p>
-            <p className="text-3xl font-bold text-[#1a4a2e] mt-1">{activeProducts.length}</p>
+            <p className="text-3xl font-bold text-[#053D2D] mt-1">{activeProducts.length}</p>
             <p className="text-xs text-gray-400 mt-1">of {products.length} total</p>
           </div>
         </div>
@@ -202,7 +202,7 @@ export default function AnalyticsPage() {
                       <td className="py-3 text-sm text-gray-500">
                         {new Date(order.created_at).toLocaleDateString()}
                       </td>
-                      <td className="py-3 text-sm font-semibold text-[#1a4a2e]">
+                      <td className="py-3 text-sm font-semibold text-[#053D2D]">
                         ${(order.total_amount ?? 0).toFixed(2)}
                       </td>
                       <td className="py-3">
@@ -226,7 +226,7 @@ export default function AnalyticsPage() {
 
         {/* Growth note */}
         <div className="bg-green-50 border border-green-200 rounded-2xl p-5">
-          <h3 className="font-semibold text-[#1a4a2e] mb-1">📊 Analytics Growing With You</h3>
+          <h3 className="font-semibold text-[#053D2D] mb-1">📊 Analytics Growing With You</h3>
           <p className="text-sm text-green-700">
             Your analytics will become more detailed as you receive orders.
             Charts and graphs for revenue trends, top products and customer

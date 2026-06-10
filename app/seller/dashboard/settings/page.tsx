@@ -4,12 +4,12 @@ import { useState, useEffect } from "react";
 import SellerLayout from "@/components/seller/SellerLayout";
 import { getValidSellerSession } from "@/lib/sessionHelper";
 
-const inputCls = "w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a4a2e]/30 focus:border-[#1a4a2e] transition";
+const inputCls = "w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#053D2D]/30 focus:border-[#053D2D] transition";
 
 function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
   return (
     <button onClick={onToggle}
-      className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${on ? "bg-[#1a4a2e]" : "bg-gray-300"}`}>
+      className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${on ? "bg-[#053D2D]" : "bg-gray-300"}`}>
       <span className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white shadow transition-transform ${on ? "translate-x-5" : "translate-x-0"}`}/>
     </button>
   );
@@ -70,7 +70,7 @@ export default function SellerSettingsPage() {
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-gray-900">Settings</h1>
           <button onClick={handleSave}
-            className={`flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold transition-all ${saved ? "bg-green-600 text-white" : "bg-[#1a4a2e] hover:bg-[#2d6b47] text-white"}`}>
+            className={`flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold transition-all ${saved ? "bg-green-600 text-white" : "bg-[#053D2D] hover:bg-[#2d6b47] text-white"}`}>
             {saved ? (
               <>
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -88,9 +88,9 @@ export default function SellerSettingsPage() {
 
           {/* Avatar */}
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-[#1a4a2e] flex items-center justify-center text-white font-bold text-2xl shrink-0">J</div>
+            <div className="w-16 h-16 rounded-2xl bg-[#053D2D] flex items-center justify-center text-white font-bold text-2xl shrink-0">J</div>
             <div>
-              <button className="text-sm font-semibold text-[#1a4a2e] hover:underline">Change Photo</button>
+              <button className="text-sm font-semibold text-[#053D2D] hover:underline">Change Photo</button>
               <p className="text-xs text-gray-400 mt-0.5">JPG, PNG or GIF · Max 2MB</p>
             </div>
           </div>
@@ -121,7 +121,7 @@ export default function SellerSettingsPage() {
           <PasswordInput id="current-pw"  label="Current Password"/>
           <PasswordInput id="new-pw"      label="New Password" placeholder="Min 8 characters"/>
           <PasswordInput id="confirm-pw"  label="Confirm New Password"/>
-          <button className="text-sm font-semibold bg-[#1a4a2e] hover:bg-[#2d6b47] text-white px-5 py-2 rounded-xl transition-colors">
+          <button className="text-sm font-semibold bg-[#053D2D] hover:bg-[#2d6b47] text-white px-5 py-2 rounded-xl transition-colors">
             Update Password
           </button>
         </div>
@@ -151,14 +151,14 @@ export default function SellerSettingsPage() {
           <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Subscription Plan</h2>
           <div className="grid grid-cols-2 gap-4">
             {/* Starter — current */}
-            <div className="rounded-xl border-2 border-[#1a4a2e] p-4 relative">
-              <span className="absolute -top-2.5 left-4 bg-[#1a4a2e] text-white text-xs font-bold px-2.5 py-0.5 rounded-full">Current Plan</span>
+            <div className="rounded-xl border-2 border-[#053D2D] p-4 relative">
+              <span className="absolute -top-2.5 left-4 bg-[#053D2D] text-white text-xs font-bold px-2.5 py-0.5 rounded-full">Current Plan</span>
               <p className="text-base font-bold text-gray-900 mt-1">Starter</p>
-              <p className="text-2xl font-bold text-[#1a4a2e] mt-1">Free</p>
+              <p className="text-2xl font-bold text-[#053D2D] mt-1">Free</p>
               <ul className="mt-3 space-y-1.5">
                 {["Up to 20 products","Basic analytics","Email support"].map(f => (
                   <li key={f} className="flex items-center gap-2 text-xs text-gray-600">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-[#1a4a2e] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-[#053D2D] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7"/>
                     </svg>
                     {f}

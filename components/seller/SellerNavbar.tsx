@@ -15,7 +15,7 @@ export default function SellerNavbar() {
   }, []);
 
   return (
-    <header className="bg-[#1a4a2e] h-14 flex items-center px-4 sm:px-6 shrink-0 z-40 shadow-sm">
+    <header className="bg-[#053D2D] h-14 flex items-center px-4 sm:px-6 shrink-0 z-40 shadow-sm">
       {/* Logo */}
       <div className="flex flex-col items-start mr-8 shrink-0">
         <Image

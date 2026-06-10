@@ -11,7 +11,7 @@ const SUPABASE_ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6cnlmeWN4Zm10ZmZvYnlmamZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MjQ1MDEsImV4cCI6MjA5MjQwMDUwMX0.woObRrj3MMUf6eAFVbkvDNUsQfQ-elmlDqPADBT9aZs";
 
 const INPUT =
-  "w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a4a2e]/30 focus:border-[#1a4a2e] transition";
+  "w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#053D2D]/30 focus:border-[#053D2D] transition";
 
 const TABS = [
   "branding", "about", "contact", "social", "location",
@@ -330,7 +330,7 @@ export default function StoreEditorPage() {
     return (
       <SellerLayout>
         <div className="flex items-center justify-center py-24">
-          <svg className="w-6 h-6 animate-spin text-[#1a4a2e]" fill="none" viewBox="0 0 24 24">
+          <svg className="w-6 h-6 animate-spin text-[#053D2D]" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
           </svg>
@@ -365,7 +365,7 @@ export default function StoreEditorPage() {
             <button
               onClick={saveStoreData}
               disabled={saving}
-              className="bg-[#1a4a2e] hover:bg-[#2d6b47] disabled:opacity-60 text-white px-5 py-2 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2"
+              className="bg-[#053D2D] hover:bg-[#2d6b47] disabled:opacity-60 text-white px-5 py-2 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2"
             >
               {saving && (
                 <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -410,7 +410,7 @@ export default function StoreEditorPage() {
                     onClick={() => setActiveTab(t)}
                     className={`px-4 py-3.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
                       activeTab === t
-                        ? "border-[#1a4a2e] text-[#1a4a2e]"
+                        ? "border-[#053D2D] text-[#053D2D]"
                         : "border-transparent text-gray-500 hover:text-gray-800"
                     }`}
                   >
@@ -438,7 +438,7 @@ export default function StoreEditorPage() {
                       )}
                     </div>
                     <div className="flex items-center gap-3">
-                      <label className="cursor-pointer bg-[#1a4a2e] hover:bg-[#2d6b47] text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
+                      <label className="cursor-pointer bg-[#053D2D] hover:bg-[#2d6b47] text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
                         {uploadingBanner ? "Uploading..." : "Upload Banner"}
                         <input type="file" accept="image/*" className="hidden"
                           disabled={uploadingBanner}
@@ -474,7 +474,7 @@ export default function StoreEditorPage() {
                       )}
                     </div>
                     <div className="flex items-center gap-3">
-                      <label className="cursor-pointer bg-[#1a4a2e] hover:bg-[#2d6b47] text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
+                      <label className="cursor-pointer bg-[#053D2D] hover:bg-[#2d6b47] text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
                         {uploadingShopBanner ? "Uploading..." : "Upload Shop Banner"}
                         <input type="file" accept="image/*" className="hidden"
                           disabled={uploadingShopBanner}
@@ -715,7 +715,7 @@ export default function StoreEditorPage() {
                           )}
                         </div>
                         <div className="flex items-center gap-3">
-                          <label className="cursor-pointer bg-[#1a4a2e] hover:bg-[#2d6b47] text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
+                          <label className="cursor-pointer bg-[#053D2D] hover:bg-[#2d6b47] text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
                             {uploadingWhoWeAreImage ? "Uploading..." : "Upload Image"}
                             <input type="file" accept="image/*" className="hidden"
                               disabled={uploadingWhoWeAreImage}
@@ -754,7 +754,7 @@ export default function StoreEditorPage() {
                       )}
                     </div>
                     <div className="flex items-center gap-3">
-                      <label className="cursor-pointer bg-[#1a4a2e] hover:bg-[#2d6b47] text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
+                      <label className="cursor-pointer bg-[#053D2D] hover:bg-[#2d6b47] text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
                         {uploadingAboutBanner ? "Uploading..." : "Upload About Page Banner"}
                         <input type="file" accept="image/*" className="hidden"
                           disabled={uploadingAboutBanner}
@@ -791,12 +791,12 @@ export default function StoreEditorPage() {
                     </p>
                     <div className="grid grid-cols-2 gap-2">
                       {FARMING_PRACTICE_OPTIONS.map(p => (
-                        <label key={p.key} className="flex items-center gap-2 cursor-pointer p-2.5 rounded-lg border border-gray-200 hover:border-[#1a4a2e] transition-colors">
+                        <label key={p.key} className="flex items-center gap-2 cursor-pointer p-2.5 rounded-lg border border-gray-200 hover:border-[#053D2D] transition-colors">
                           <input
                             type="checkbox"
                             checked={farmingPractices[p.key] ?? false}
                             onChange={e => setFarmingPractices(prev => ({ ...prev, [p.key]: e.target.checked }))}
-                            className="accent-[#1a4a2e] w-4 h-4"
+                            className="accent-[#053D2D] w-4 h-4"
                           />
                           <span className="text-sm text-gray-700">{p.label}</span>
                         </label>
@@ -818,7 +818,7 @@ export default function StoreEditorPage() {
                     </div>
                     <button
                       onClick={() => setShowNewPostForm(!showNewPostForm)}
-                      className="bg-[#1a4a2e] hover:bg-[#2d6b47] text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
+                      className="bg-[#053D2D] hover:bg-[#2d6b47] text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
                     >
                       {showNewPostForm ? "Cancel" : "+ New Post"}
                     </button>
@@ -857,7 +857,7 @@ export default function StoreEditorPage() {
                               <p className="text-xs text-gray-400">No image uploaded</p>
                             )}
                           </div>
-                          <label className="cursor-pointer bg-[#1a4a2e] hover:bg-[#2d6b47] text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
+                          <label className="cursor-pointer bg-[#053D2D] hover:bg-[#2d6b47] text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
                             {uploadingBlogImage ? "Uploading..." : "Upload Image"}
                             <input type="file" accept="image/*" className="hidden"
                               disabled={uploadingBlogImage}
@@ -902,7 +902,7 @@ export default function StoreEditorPage() {
                               }
                             }}
                             disabled={savingPost}
-                            className="bg-[#1a4a2e] hover:bg-[#2d6b47] disabled:opacity-50 text-white px-6 py-2 rounded-xl text-sm font-semibold transition-colors"
+                            className="bg-[#053D2D] hover:bg-[#2d6b47] disabled:opacity-50 text-white px-6 py-2 rounded-xl text-sm font-semibold transition-colors"
                           >
                             {savingPost ? "Publishing..." : "Publish Post"}
                           </button>
@@ -974,7 +974,7 @@ export default function StoreEditorPage() {
               <button
                 onClick={saveStoreData}
                 disabled={saving}
-                className="bg-[#1a4a2e] hover:bg-[#2d6b47] disabled:opacity-60 text-white px-8 py-3 rounded-xl text-sm font-semibold transition-colors"
+                className="bg-[#053D2D] hover:bg-[#2d6b47] disabled:opacity-60 text-white px-8 py-3 rounded-xl text-sm font-semibold transition-colors"
               >
                 {saving ? "Saving Changes..." : "Save All Changes"}
               </button>
@@ -986,7 +986,7 @@ export default function StoreEditorPage() {
             <div className="sticky top-6">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Live Preview</p>
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="h-28 relative overflow-hidden bg-gradient-to-br from-[#1a4a2e] to-[#2d6b47]">
+                <div className="h-28 relative overflow-hidden bg-gradient-to-br from-[#053D2D] to-[#2d6b47]">
                   {bannerUrl ? (
                     <Image src={bannerUrl} alt="Banner preview" fill className="object-cover"/>
                   ) : (
@@ -1001,7 +1001,7 @@ export default function StoreEditorPage() {
                 </div>
                 <div className="px-4 pb-5">
                   <div className="flex items-end gap-3 -mt-6 mb-3">
-                    <div className="w-12 h-12 rounded-xl border-2 border-white shadow overflow-hidden shrink-0 relative bg-[#1a4a2e] flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-xl border-2 border-white shadow overflow-hidden shrink-0 relative bg-[#053D2D] flex items-center justify-center">
                       {logoUrl
                         ? <Image src={logoUrl} alt="Logo preview" fill className="object-cover"/>
                         : <span className="text-white font-bold text-lg">{form.farm_name.charAt(0).toUpperCase() || "?"}</span>

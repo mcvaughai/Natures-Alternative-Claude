@@ -269,7 +269,7 @@ export default function SellerOrdersPage() {
             { label: "All Orders",    value: orders.length,        color: "text-gray-900"   },
             { label: "Pending",       value: stats.pending,        color: "text-yellow-600" },
             { label: "Confirmed",     value: stats.confirmed,      color: "text-green-700"  },
-            { label: "Revenue",       value: formatCurrency(stats.totalRevenue), color: "text-[#1a4a2e]" },
+            { label: "Revenue",       value: formatCurrency(stats.totalRevenue), color: "text-[#053D2D]" },
           ].map(s => (
             <div key={s.label} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
               <p className="text-xs text-gray-400 font-medium uppercase tracking-wide">{s.label}</p>
@@ -285,11 +285,11 @@ export default function SellerOrdersPage() {
             {FILTER_TABS.map(t => (
               <button key={t} onClick={() => setTab(t)}
                 className={`flex items-center gap-1.5 px-4 py-3.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-                  tab === t ? "border-[#1a4a2e] text-[#1a4a2e]" : "border-transparent text-gray-500 hover:text-gray-800"
+                  tab === t ? "border-[#053D2D] text-[#053D2D]" : "border-transparent text-gray-500 hover:text-gray-800"
                 }`}>
                 {t}
                 <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full ${
-                  tab === t ? "bg-[#1a4a2e] text-white" : "bg-gray-100 text-gray-500"
+                  tab === t ? "bg-[#053D2D] text-white" : "bg-gray-100 text-gray-500"
                 }`}>
                   {countFor(t)}
                 </span>
@@ -299,7 +299,7 @@ export default function SellerOrdersPage() {
 
           {loading ? (
             <div className="py-20 flex justify-center">
-              <svg className="w-6 h-6 animate-spin text-[#1a4a2e]" fill="none" viewBox="0 0 24 24">
+              <svg className="w-6 h-6 animate-spin text-[#053D2D]" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
               </svg>
@@ -349,7 +349,7 @@ export default function SellerOrdersPage() {
                             <button
                               disabled={!!updating}
                               onClick={() => updateOrderStatus(order.id, "confirmed")}
-                              className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#1a4a2e] hover:bg-[#2d6b47] text-white transition-colors disabled:opacity-50 whitespace-nowrap"
+                              className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#053D2D] hover:bg-[#2d6b47] text-white transition-colors disabled:opacity-50 whitespace-nowrap"
                             >
                               {updating === order.id + "confirmed" ? "..." : "Confirm"}
                             </button>
@@ -459,7 +459,7 @@ export default function SellerOrdersPage() {
                         {selected.items.map(item => (
                           <li key={item.id} className="flex items-center justify-between text-sm">
                             <span className="flex items-center gap-2 text-gray-700">
-                              <span className="w-1.5 h-1.5 rounded-full bg-[#1a4a2e] shrink-0"/>
+                              <span className="w-1.5 h-1.5 rounded-full bg-[#053D2D] shrink-0"/>
                               {item.product_name} &times; {item.quantity}
                             </span>
                             <span className="font-medium text-gray-800 tabular-nums">
@@ -471,7 +471,7 @@ export default function SellerOrdersPage() {
                     )}
                     <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between">
                       <span className="text-sm font-semibold text-gray-700">Order Total</span>
-                      <span className="text-sm font-bold text-[#1a4a2e]">{formatCurrency(selected.total_amount)}</span>
+                      <span className="text-sm font-bold text-[#053D2D]">{formatCurrency(selected.total_amount)}</span>
                     </div>
                   </div>
                 </div>
@@ -487,7 +487,7 @@ export default function SellerOrdersPage() {
                         const done = selected.status !== "cancelled" && i <= currentIdx;
                         return (
                           <li key={step} className="flex items-center gap-2.5">
-                            <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${done ? "bg-[#1a4a2e]" : "bg-gray-200"}`}>
+                            <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${done ? "bg-[#053D2D]" : "bg-gray-200"}`}>
                               {done && (
                                 <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 12 12" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M2 6l3 3 5-5"/>
@@ -520,7 +520,7 @@ export default function SellerOrdersPage() {
                           <button
                             disabled={!!updating}
                             onClick={() => updateOrderStatus(selected.id, "confirmed")}
-                            className="text-sm font-semibold px-4 py-2 rounded-lg bg-[#1a4a2e] hover:bg-[#2d6b47] text-white transition-colors disabled:opacity-50"
+                            className="text-sm font-semibold px-4 py-2 rounded-lg bg-[#053D2D] hover:bg-[#2d6b47] text-white transition-colors disabled:opacity-50"
                           >
                             Confirm Order
                           </button>
@@ -564,12 +564,12 @@ export default function SellerOrdersPage() {
                       value={note}
                       onChange={e => setNote(e.target.value)}
                       placeholder="Add a note for this order..."
-                      className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a4a2e]/30 focus:border-[#1a4a2e] transition resize-none"
+                      className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#053D2D]/30 focus:border-[#053D2D] transition resize-none"
                     />
                     <button
                       onClick={saveNote}
                       disabled={savingNote}
-                      className="mt-2 text-xs font-semibold bg-[#1a4a2e] hover:bg-[#2d6b47] disabled:opacity-60 text-white px-4 py-1.5 rounded-lg transition-colors"
+                      className="mt-2 text-xs font-semibold bg-[#053D2D] hover:bg-[#2d6b47] disabled:opacity-60 text-white px-4 py-1.5 rounded-lg transition-colors"
                     >
                       {savingNote ? "Saving..." : "Save Note"}
                     </button>
