@@ -41,7 +41,7 @@ export default function SellerNavbar() {
   }, []);
 
   return (
-    <header className="bg-[#053D2D] py-4 flex items-center px-4 sm:px-6 shrink-0 z-40 shadow-sm">
+    <header className="bg-[#053D2D] py-4 flex items-center px-4 sm:px-6 shrink-0 z-40" style={{ boxShadow: '0px 4px 4px rgba(0,0,0,0.25)' }}>
       {/* Logo */}
       <div className="mr-8 shrink-0">
         <Image
